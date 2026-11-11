@@ -1,0 +1,29 @@
+# BrokerPilot: aplicația web, în containerul LXC dedicat din Proxmox (vezi docs/SETUP.md, secțiunea C).
+# Restul rulează în altă parte: baza de date = Supabase cloud; n8n și Cloudflare Tunnel = alt LXC (deja existent).
+# Rulează din rădăcina repo-ului:  docker compose --env-file .env -f infra/docker-compose.yml up -d
+name: brokerpilot
+
+services:
+  web:
+    image: ghcr.io/${GHCR_OWNER:-local}/brokerpilot-web:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:   # variabilele NEXT_PUBLIC_* se „coc” în imagine la build
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+        NEXT_PUBLIC_VAPI_PUBLIC_KEY: ${NEXT_PUBLIC_VAPI_PUBLIC_KEY:-}
+        NEXT_PUBLIC_VAPI_ASSISTANT_ID: ${NEXT_PUBLIC_VAPI_ASSISTANT_ID:-}
+        APP_VERSION: ${IMAGE_TAG:-dev}
+    env_file:   # secretele (Supabase, n8n, AI) vin din .env, care nu intră în git
+      - path: ../.env
+        required: false
+    ports:
+      # Ascultă pe toate interfețele LXC-ului, ca tunelul Cloudflare din celălalt LXC să ajungă la el.
+      - "3000:3000"
+    restart: unless-stopped
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }

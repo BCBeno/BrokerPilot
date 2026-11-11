@@ -1,0 +1,18 @@
+{
+  "name": "brokerpilot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BrokerPilot: platformă AI pentru brokeri de asigurări (proiect de evaluare).",
+  "workspaces": ["apps/*"],
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "dev": "npm run dev -w apps/web",
+    "lint": "npm run lint -w apps/web",
+    "typecheck": "npm run typecheck -w apps/web",
+    "test": "npm run test -w apps/web",
+    "build": "npm run build -w apps/web",
+    "validate:n8n": "node scripts/validate-n8n-json.mjs",
+    "n8n:export": "node --env-file-if-exists=.env scripts/n8n-export.mjs",
+    "compose:config": "docker compose -f infra/docker-compose.yml config -q"
+  }
+}
