@@ -4,12 +4,24 @@ import Link from "next/link";
 import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { FormData } from "@/lib/amiabila/form";
+import { Annex, type AnnexPhoto } from "./annex";
 import { FitToWidth } from "./fit-to-width";
 import { FormBack } from "./form-back";
 import { FormSheet } from "./form-sheet";
 
 /** Documentul complet, în două pagini, cu bară de unelte (ascunsă la tipar). */
-export function DocumentView({ form, backHref, notice }: { form: FormData; backHref: string; notice?: string }) {
+export function DocumentView({
+  form,
+  backHref,
+  notice,
+  photos = [],
+}: {
+  form: FormData;
+  backHref: string;
+  notice?: string;
+  /** Pozele cu daune, tipărite pe pagini de anexă după formular. */
+  photos?: AnnexPhoto[];
+}) {
   return (
     <main className="min-h-screen bg-neutral-200 px-2 py-4 print:bg-white print:p-0">
       <div className="af-noprint mx-auto mb-3 flex max-w-[794px] flex-wrap items-center justify-between gap-2">
@@ -38,6 +50,8 @@ export function DocumentView({ form, backHref, notice }: { form: FormData; backH
           <FormBack />
         </FitToWidth>
       </div>
+
+      <Annex photos={photos} />
     </main>
   );
 }

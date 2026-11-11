@@ -34,3 +34,25 @@ export async function authorizeA(request: Request, id: string) {
   const { data } = await db.from("claim_parties").select("join_token").eq("claim_id", id).eq("role", "A").maybeSingle();
   return data && sameToken(data.join_token, token) ? { db, id } : null;
 }
+
+/**
+ * Cheia oricărui șofer: tokenul din `x-claim-token` (al lui A = `aToken`, al lui B = linkul lui) identifică partea din dosar.
+ * Linkul lui B expiră după 2 ore; cel al lui A nu expiră. Orice nepotrivire = `null` (rutele răspund 404).
+ */
+export async function authorizeParty(request: Request) {
+  const token = request.headers.get("x-claim-token");
+  if (!token || !TOKEN_RE.test(token)) return null;
+  const db = getAdminClient();
+  if (!db) return "not_configured" as const;
+  const { data } = await db
+    .from("claim_parties")
+    .select("id, claim_id, role, join_token, token_expires_at, signature_path")
+    .eq("join_token", token)
+    .maybeSingle();
+  if (!data || !sameToken(data.join_token, token)) return null;
+  if (data.token_expires_at && new Date(data.token_expires_at).getTime() <= Date.now()) return "expired" as const;
+  return { db, partyId: data.id as string, claimId: data.claim_id as string, role: data.role as "A" | "B", signaturePath: data.signature_path as string | null };
+}
+
+export const EXPIRED = () => fail(410, "Linkul a expirat. Rugați-l pe celălalt șofer să genereze unul nou.", "expired");
+export const NOT_FOUND = () => fail(404, "Dosarul nu a fost găsit.", "not_found");

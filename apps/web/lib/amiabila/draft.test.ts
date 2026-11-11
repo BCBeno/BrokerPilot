@@ -45,6 +45,8 @@ describe("navigare", () => {
   it("înapoi de la rezumat duce la ultimul pas, iar primul pas nu are anterior", () => {
     expect(prevSlug("rezumat")).toBe(STEPS[STEPS.length - 1].slug);
     expect(prevSlug(STEPS[0].slug)).toBeNull();
+    expect(prevSlug("semnatura")).toBe("rezumat");
+    expect(nextSlug("semnatura")).toBeNull();
   });
 });
 

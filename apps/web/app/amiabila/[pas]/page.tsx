@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export function generateStaticParams() {
-  return [...STEPS.map((s) => ({ pas: s.slug })), { pas: "rezumat" }];
+  return [...STEPS.map((s) => ({ pas: s.slug })), { pas: "rezumat" }, { pas: "semnatura" }];
 }
 
 export default async function AmiabilaStepPage({ params }: { params: Promise<{ pas: string }> }) {

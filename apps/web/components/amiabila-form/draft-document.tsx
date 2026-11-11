@@ -39,10 +39,10 @@ export function DraftDocument() {
       backHref="/amiabila/rezumat"
       notice={
         partyB
-          ? "Documentul are datele lui A și B. Martorii, schița pe server și semnăturile se adaugă în pașii următori."
+          ? "Documentul are datele lui A și B. Semnăturile se adaugă la pasul următor; PDF-ul final se generează la finalizare."
           : claim
             ? "Șoferul B nu a trimis încă datele lui, așa că coloana lui rămâne goală. Reîncărcați pagina după ce a trimis."
-            : "Documentul are datele completate până acum. Coloana vehiculului B, martorii, schița și semnăturile se adaugă în pașii următori."
+            : "Documentul are datele completate până acum. Coloana vehiculului B și semnăturile se adaugă în pașii următori."
       }
     />
   );

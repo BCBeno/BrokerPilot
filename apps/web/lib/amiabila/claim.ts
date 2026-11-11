@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { draftSchema } from "./draft";
 import { DOC_META, DOC_TYPES, isDocConfirmed, type DocType, type ExtractedDoc } from "./documents";
+import { sketchSchema } from "./sketch";
 
 /** Cât timp e valabil linkul pentru șoferul B. */
 export const JOIN_TTL_MS = 2 * 60 * 60_000;
@@ -64,6 +65,8 @@ export function partyColumns(documents: PartySubmission["documents"]) {
 export const claimPatchSchema = z.object({
   circumstances: draftSchema.shape.circumstances.optional(),
   documents: draftSchema.shape.documents.optional(),
+  /** Schița lui A (caseta 13). `null` = a șters-o. */
+  sketch: sketchSchema.nullable().optional(),
 });
 
 /** Coloana din `claim_parties` în care se păstrează valorile fiecărui act. */
@@ -103,7 +106,15 @@ export function documentsFromColumns(row: {
 export type PartyBResponse = { submitted: false } | ({ submitted: true } & PartySubmission);
 
 /** Starea dosarului văzută de A (fără date personale ale lui B). */
-export type ClaimStatus = { status: string; bSubmitted: boolean; joinExpiresAt: string | null };
+export type ClaimStatus = {
+  status: string;
+  bSubmitted: boolean;
+  joinExpiresAt: string | null;
+  signedA: boolean;
+  signedB: boolean;
+  /** PDF-ul a fost generat (dosarul e trimis). */
+  pdfReady: boolean;
+};
 
 /** Ce vede B înainte să înceapă: doar locul și momentul. */
 export type JoinInfo = { claimId: string; ref: string; address: string; occurredAt: string | null };
@@ -116,3 +127,16 @@ export function isExpired(expiresAt: string | null, now: Date): boolean {
 export const claimChannel = (claimId: string) => `claim:${claimId}`;
 export const BROADCAST_B_JOINED = "b_joined";
 export const BROADCAST_B_SUBMITTED = "b_submitted";
+export const BROADCAST_B_SIGNED = "b_signed";
+
+/** Starea șoferului care întreabă (A sau B), de la `GET /api/party`: dosarul, semnătura și pozele lui, cu adrese temporare. */
+export type PartyState = {
+  role: "A" | "B";
+  claimId: string;
+  ref: string;
+  status: string;
+  /** Datele lui B au fost trimise (pentru A: mereu adevărat). */
+  submitted: boolean;
+  signed: boolean;
+  photos: { id: string; url: string }[];
+};

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { CarFront, CheckCircle2, FileText, ListChecks, LoaderCircle, Send } from "lucide-react";
+import { CarFront, CheckCircle2, FileText, ListChecks, LoaderCircle, PenLine, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BROADCAST_B_SUBMITTED, submissionProblem } from "@/lib/amiabila/claim";
 import { CIRCUMSTANCES, DISCLAIMER, IMPACT_LABELS } from "@/lib/amiabila/content";
@@ -48,11 +48,15 @@ export function BSummaryStep() {
 
   if (phase.state === "sent") {
     return (
-      <StepFrame slug="rezumat" heading="Datele au fost trimise" lead="Celălalt șofer le vede acum. Mai urmează semnăturile." continueLabel={null}>
+      <StepFrame slug="rezumat" heading="Datele au fost trimise" lead="Celălalt șofer le vede acum. Mai urmează semnătura." continueLabel={null}>
         <div role="status" className="flex items-start gap-3 rounded-lg border border-success/40 bg-success/10 p-4 text-[17px]">
           <CheckCircle2 className="mt-0.5 size-6 shrink-0 text-success" aria-hidden />
-          <p>Mulțumim. Nu mai aveți nimic de completat aici.</p>
+          <p>Mulțumim. Mai rămâne semnătura dumneavoastră.</p>
         </div>
+        <Button variant="cta" size="xl" className="w-full" nativeButton={false} render={<Link href={`${basePath}/semnatura`} />}>
+          <PenLine aria-hidden />
+          Treceți la semnătură
+        </Button>
         <Button variant="ghost" className="h-12 w-full text-base" onClick={() => setPhase({ state: "idle" })}>
           Vreau să corectez ceva
         </Button>

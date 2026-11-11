@@ -1,6 +1,3 @@
-# BrokerPilot: aplicația web, în containerul LXC dedicat din Proxmox (vezi docs/SETUP.md, secțiunea C).
-# Restul rulează în altă parte: baza de date = Supabase cloud; n8n și Cloudflare Tunnel = alt LXC (deja existent).
-# Rulează din rădăcina repo-ului:  docker compose --env-file .env -f infra/docker-compose.yml up -d
 name: brokerpilot
 
 services:
@@ -23,7 +20,7 @@ services:
       # Ascultă pe toate interfețele LXC-ului, ca tunelul Cloudflare din celălalt LXC să ajungă la el.
       - "3000:3000"
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 1536m   # Chromium (PDF) are nevoie de ~300–500 MB în plus
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }

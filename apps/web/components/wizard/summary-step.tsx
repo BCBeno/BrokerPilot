@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { CarFront, FileText, ListChecks, MapPin, Pencil, RotateCcw, Route, type LucideIcon } from "lucide-react";
+import { CarFront, FileText, ListChecks, MapPin, PenLine, Pencil, RotateCcw, Route, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CIRCUMSTANCES, DISCLAIMER, IMPACT_LABELS } from "@/lib/amiabila/content";
 import { resetDraft, useDraft } from "@/lib/amiabila/draft-store";
@@ -52,12 +52,12 @@ export function SummaryStep() {
   const { place, circumstances } = draft;
   const checked = CIRCUMSTANCES.filter((c) => circumstances.checked.includes(c.n));
 
-  // Dacă dosarul există pe server (pasul „Șofer B”), îl actualizăm cu actele și circumstanțele lui A. Finalizarea completă vine în S4.
+  // Dacă dosarul există pe server (pasul „Șofer B”), îl actualizăm cu actele, circumstanțele și schița lui A; finalizarea se face la pasul „Semnătura”.
   const synced = useRef("");
   const { claim } = draft;
   useEffect(() => {
     if (!claim) return;
-    const body = JSON.stringify({ circumstances, documents: draft.documents });
+    const body = JSON.stringify({ circumstances, documents: draft.documents, sketch: draft.sketch });
     if (synced.current === body) return;
     synced.current = body;
     fetch(`/api/claims/${claim.id}`, { method: "PATCH", headers: { "content-type": "application/json", "x-claim-token": claim.aToken }, body })
@@ -67,13 +67,13 @@ export function SummaryStep() {
       .catch(() => {
         synced.current = "";
       });
-  }, [claim, circumstances, draft.documents]);
+  }, [claim, circumstances, draft.documents, draft.sketch]);
 
   return (
     <StepFrame
       slug="rezumat"
       heading="Verificați datele"
-      lead="Atingeți Modifică la orice secțiune. Urmează actele, celălalt șofer, pozele și semnăturile."
+      lead="Atingeți Modifică la orice secțiune. Apoi urmează semnăturile."
       continueLabel={null}
       footnote={DISCLAIMER}
     >
@@ -130,9 +130,14 @@ export function SummaryStep() {
         </p>
       </Section>
 
-      <Button variant="cta" size="xl" className="w-full" nativeButton={false} render={<Link href="/amiabila/document" />}>
+      <Button variant="outline" size="xl" className="w-full" nativeButton={false} render={<Link href="/amiabila/document" />}>
         <FileText aria-hidden />
         Vezi formularul completat
+      </Button>
+
+      <Button variant="cta" size="xl" className="w-full" nativeButton={false} render={<Link href="/amiabila/semnatura" />}>
+        <PenLine aria-hidden />
+        Treceți la semnătură
       </Button>
 
       <Button

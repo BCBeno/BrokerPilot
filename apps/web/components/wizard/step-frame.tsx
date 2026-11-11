@@ -27,7 +27,7 @@ export function DriverBadge({ driver, className }: { driver: "A" | "B"; classNam
 function Progress({ slug }: { slug: StepSlug }) {
   const { role, steps } = useWizard();
   const total = steps.length;
-  const isSummary = slug === "rezumat";
+  const isSummary = slug === "rezumat" || slug === "semnatura";
   const current = isSummary ? total : stepIndex(slug, steps) + 1;
   const label = isSummary ? "Rezumat" : `Pasul ${current} din ${total}`;
   return (

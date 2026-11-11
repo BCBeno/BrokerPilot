@@ -1,17 +1,13 @@
 name: CI
-
-# Rulează la fiecare push pe main și la fiecare pull request.
 on:
   pull_request:
   push:
     branches: [main]
 
-# Repo public: workflow-ul poate doar să citească codul.
 permissions:
   contents: read
 
 jobs:
-  # Aplicația web: stil cod, tipuri TypeScript, teste, build.
   web:
     runs-on: ubuntu-latest
     steps:

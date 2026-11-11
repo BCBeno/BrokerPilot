@@ -24,6 +24,9 @@ WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
+# Chromium pentru PDF-ul constatării (lib/claims/pdf.ts); font-liberation = Arial/Helvetica din formular
+RUN apk add --no-cache chromium font-liberation
+ENV CHROME_PATH=/usr/bin/chromium
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=build --chown=app:app /repo/apps/web/.next/standalone ./
 COPY --from=build --chown=app:app /repo/apps/web/.next/static apps/web/.next/static

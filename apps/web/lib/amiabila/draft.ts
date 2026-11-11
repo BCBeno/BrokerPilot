@@ -3,7 +3,7 @@ import { ELIGIBILITY_KEYS, IMPACT_ZONES, type EligibilityKey } from "./content";
 import { DOC_TYPES, extractedDocSchema, isDocConfirmed, type DocType } from "./documents";
 import { sketchSchema } from "./sketch";
 
-/** Pașii wizard-ului, în ordine. S3 adaugă mai departe „sofer-b”, „poze”, „semnatura”. „rezumat” nu intră în progres. */
+/** Pașii wizard-ului, în ordine. „rezumat” și „semnatura” vin la final și nu intră în progres. */
 export const STEPS = [
   { slug: "siguranta", title: "Siguranță" },
   { slug: "eligibilitate", title: "Verificare" },
@@ -13,16 +13,18 @@ export const STEPS = [
   { slug: "circumstante", title: "Circumstanțe" },
   { slug: "impact", title: "Impact" },
   { slug: "schita", title: "Schiță" },
+  { slug: "poze", title: "Poze" },
 ] as const;
-export type StepSlug = (typeof STEPS)[number]["slug"] | "rezumat";
+export type StepSlug = (typeof STEPS)[number]["slug"] | "rezumat" | "semnatura";
 
 /** Pașii șoferului B, pe telefonul lui (`/b/[token]`). „rezumat” = verificare și trimitere. */
 export const B_STEPS = [
   { slug: "acte", title: "Acte" },
   { slug: "circumstante", title: "Circumstanțe" },
   { slug: "impact", title: "Impact" },
+  { slug: "poze", title: "Poze" },
 ] as const;
-export type StepList = readonly { readonly slug: Exclude<StepSlug, "rezumat">; readonly title: string }[];
+export type StepList = readonly { readonly slug: Exclude<StepSlug, "rezumat" | "semnatura">; readonly title: string }[];
 
 const answer = z.boolean().nullable();
 
@@ -133,7 +135,9 @@ export function canContinue(slug: StepSlug, draft: Draft, now: Date): boolean {
       return draft.circumstances.impact !== null;
     case "schita":
       return true; // schița se recomandă, dar nu blochează: se poate completa și la poliție
+    case "poze": // pozele se recomandă, dar nu blochează
     case "rezumat":
+    case "semnatura":
       return true;
   }
 }
@@ -143,19 +147,20 @@ export function stepIndex(slug: StepSlug, steps: StepList = STEPS): number {
 }
 
 export function nextSlug(slug: StepSlug, steps: StepList = STEPS): StepSlug | null {
-  if (slug === "rezumat") return null;
+  if (slug === "rezumat" || slug === "semnatura") return null;
   const i = stepIndex(slug, steps);
   return i === steps.length - 1 ? "rezumat" : steps[i + 1].slug;
 }
 
 export function prevSlug(slug: StepSlug, steps: StepList = STEPS): StepSlug | null {
+  if (slug === "semnatura") return "rezumat";
   if (slug === "rezumat") return steps[steps.length - 1].slug;
   const i = stepIndex(slug, steps);
   return i <= 0 ? null : steps[i - 1].slug;
 }
 
 export function isStepSlug(value: string): value is StepSlug {
-  return value === "rezumat" || STEPS.some((s) => s.slug === value);
+  return value === "rezumat" || value === "semnatura" || STEPS.some((s) => s.slug === value);
 }
 
 export function toggleCircumstance(checked: number[], n: number): number[] {
