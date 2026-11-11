@@ -3,7 +3,7 @@
 import { CIRCUMSTANCES } from "@/lib/amiabila/content";
 import { toggleCircumstance } from "@/lib/amiabila/draft";
 import { updateDraft, useDraft } from "@/lib/amiabila/draft-store";
-import { NumberedCheck } from "./choice";
+import { NumberedCheck, listGroup } from "./choice";
 import { StepFrame } from "./step-frame";
 
 export function CircumstancesStep() {
@@ -18,7 +18,7 @@ export function CircumstancesStep() {
       canContinue={count > 0}
       disabledHint="Bifați cel puțin o variantă ca să continuați."
     >
-      <ul className="space-y-3">
+      <ul className={listGroup}>
         {CIRCUMSTANCES.map(({ n, label }) => (
           <li key={n}>
             <NumberedCheck

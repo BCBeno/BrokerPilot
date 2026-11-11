@@ -6,10 +6,44 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 
-const rowBase =
-  "flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-xl border-2 border-input bg-card px-4 py-3 text-base font-medium transition-colors hover:border-foreground/40 has-data-[checked]:border-foreground has-data-[checked]:bg-secondary has-focus-visible:ring-3 has-focus-visible:ring-ring/50";
+/** Lista grupată: un bloc alb cu linii fine între rânduri. */
+export const listGroup = "overflow-hidden rounded-lg border bg-card divide-y";
 
-/** Întrebare cu două răspunsuri descrise în cuvinte, cu pictogramă lângă întrebare. */
+const row =
+  "flex min-h-14 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-base transition-colors hover:bg-secondary/60 has-data-[checked]:font-semibold has-focus-visible:bg-secondary";
+
+/** Listă de alegere simplă (un singur răspuns), rânduri cu bifă în dreapta. */
+export function ChoiceList({
+  labelledBy,
+  value,
+  onChange,
+  options,
+  className,
+}: {
+  labelledBy: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  className?: string;
+}) {
+  return (
+    <RadioGroup
+      aria-labelledby={labelledBy}
+      value={value}
+      onValueChange={(v) => onChange(String(v))}
+      className={cn(listGroup, "gap-0", className)}
+    >
+      {options.map((o) => (
+        <label key={o.value} className={row}>
+          <span>{o.label}</span>
+          <RadioGroupItem value={o.value} variant="check" />
+        </label>
+      ))}
+    </RadioGroup>
+  );
+}
+
+/** Întrebare cu două răspunsuri descrise în cuvinte. Pictograma stă mică, în rândul întrebării. */
 export function ChoiceQuestion({
   name,
   icon: Icon,
@@ -31,39 +65,28 @@ export function ChoiceQuestion({
 }) {
   const labelId = `${name}-label`;
   return (
-    <div className="space-y-3">
-      <div className="flex items-start gap-3">
-        <span aria-hidden className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">
-          <Icon className="size-5" />
-        </span>
-        <div>
-          <p id={labelId} className="text-lg leading-snug font-semibold">
-            {question}
-          </p>
-          {hint ? <p className="mt-0.5 text-[15px] text-muted-foreground">{hint}</p> : null}
-        </div>
+    <div className="space-y-2.5">
+      <div>
+        <p id={labelId} className="flex items-start gap-2 text-lg leading-snug font-semibold">
+          <Icon className="mt-1 size-5 shrink-0 text-primary" aria-hidden />
+          {question}
+        </p>
+        {hint ? <p className="mt-1 pl-7 text-[15px] text-muted-foreground">{hint}</p> : null}
       </div>
-      <RadioGroup
-        aria-labelledby={labelId}
+      <ChoiceList
+        labelledBy={labelId}
         value={value === null ? "" : value ? "yes" : "no"}
-        onValueChange={(v) => onChange(v === "yes")}
-        className="gap-2"
-      >
-        {[
-          { v: "yes", label: yesLabel },
-          { v: "no", label: noLabel },
-        ].map(({ v, label }) => (
-          <label key={v} className={rowBase}>
-            <span>{label}</span>
-            <RadioGroupItem value={v} className="size-5 border-2 border-input data-checked:border-foreground data-checked:bg-foreground" />
-          </label>
-        ))}
-      </RadioGroup>
+        onChange={(v) => onChange(v === "yes")}
+        options={[
+          { value: "yes", label: yesLabel },
+          { value: "no", label: noLabel },
+        ]}
+      />
     </div>
   );
 }
 
-/** Opțiune bifabilă cu numărul oficial al circumstanței. */
+/** Rând bifabil cu numărul oficial al circumstanței. Se pune într-un `<ul className={listGroup}>`. */
 export function NumberedCheck({
   n,
   label,
@@ -76,17 +99,11 @@ export function NumberedCheck({
   onChange: () => void;
 }) {
   return (
-    <label className={cn(rowBase, "justify-start")}>
-      <span
-        aria-hidden
-        className={cn(
-          "inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-base font-bold",
-          checked ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground",
-        )}
-      >
+    <label className={cn(row, "justify-start")}>
+      <span aria-hidden className="w-6 shrink-0 text-center text-base font-bold text-muted-foreground">
         {n}
       </span>
-      <span className="flex-1 leading-snug">
+      <span className={cn("flex-1 leading-snug", checked && "font-semibold")}>
         <span className="sr-only">{n}. </span>
         {label}
       </span>
@@ -95,7 +112,7 @@ export function NumberedCheck({
   );
 }
 
-/** Card radio simplu pentru grile (zona de impact, „când”). */
+/** Card radio pentru grile (zona de impact). */
 export function RadioCard({
   name,
   label,
@@ -112,12 +129,12 @@ export function RadioCard({
   return (
     <label
       className={cn(
-        "relative flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-input bg-card px-3 text-center text-base font-medium transition-colors hover:border-foreground/40 has-checked:border-foreground has-checked:bg-secondary has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
+        "relative flex min-h-14 cursor-pointer items-center justify-center gap-1.5 rounded-lg border bg-card px-3 text-center text-base transition-colors hover:bg-secondary/60 has-checked:border-foreground has-checked:bg-secondary has-checked:font-semibold has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
         className,
       )}
     >
       <input type="radio" name={name} className="sr-only" checked={checked} onChange={onChange} />
-      {checked ? <Check className="size-5 shrink-0" aria-hidden /> : null}
+      {checked ? <Check className="size-4 shrink-0" aria-hidden /> : null}
       {label}
     </label>
   );

@@ -20,7 +20,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-2 border-t pt-5 first:border-t-0 first:pt-0">
+    <section className="space-y-2">
       <div className="flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
           <Icon className="size-5 text-primary" aria-hidden />
@@ -34,7 +34,7 @@ function Section({
           Modifică
         </Link>
       </div>
-      <div className="space-y-1 text-[17px]">{children}</div>
+      <div className="space-y-1 rounded-lg border bg-card p-4 text-[17px]">{children}</div>
     </section>
   );
 }

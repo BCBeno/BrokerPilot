@@ -20,7 +20,7 @@ export function SafetyStep() {
       >
         <a
           href="tel:112"
-          className="flex h-16 w-full items-center justify-center gap-3 rounded-2xl bg-destructive text-xl font-bold text-destructive-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="flex h-16 w-full items-center justify-center gap-3 rounded-lg bg-destructive text-xl font-bold text-destructive-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <Phone className="size-6" aria-hidden />
           Sună la 112

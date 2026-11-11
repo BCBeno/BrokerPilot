@@ -1,58 +1,52 @@
 import Link from "next/link";
-import { ArrowRight, Camera, FileCheck2, QrCode } from "lucide-react";
+import { ArrowRight, FileText, IdCard, ShieldCheck, type LucideIcon } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { EmergencyLink } from "@/components/wizard/step-frame";
 import { DISCLAIMER } from "@/lib/amiabila/content";
 import { cn } from "@/lib/utils";
 
-const STEPS = [
-  { icon: Camera, text: "Fotografiați actele, iar datele se completează singure." },
-  { icon: QrCode, text: "Celălalt șofer intră pe telefonul lui, prin link sau cod QR." },
-  { icon: FileCheck2, text: "Semnați pe ecran. Brokerul primește dosarul gata făcut." },
+const NEEDED: { icon: LucideIcon; title: string; detail?: string }[] = [
+  { icon: FileText, title: "Certificatul de înmatriculare", detail: "talonul mașinii" },
+  { icon: IdCard, title: "Permisul de conducere" },
+  { icon: ShieldCheck, title: "Polița RCA", detail: "poză sau PDF" },
 ];
 
 export default function Home() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="bg-navy text-navy-foreground">
-        <div className="mx-auto w-full max-w-md px-5 pt-4 pb-14">
+        <div className="mx-auto w-full max-w-md px-5 pt-4 pb-7">
           <div className="flex h-11 items-center justify-between">
             <span className="text-lg font-bold tracking-tight">BrokerPilot</span>
             <EmergencyLink />
           </div>
-          <div className="mt-6 flex gap-2" aria-hidden>
-            <span className="inline-flex size-12 items-center justify-center rounded-full bg-driver-a text-xl font-bold text-driver-a-foreground">
-              A
-            </span>
-            <span className="inline-flex size-12 items-center justify-center rounded-full bg-driver-b text-xl font-bold text-driver-b-foreground">
-              B
-            </span>
-          </div>
-          <h1 className="mt-5 text-[2rem] leading-[1.1] font-semibold text-balance">Ați avut un accident ușor?</h1>
-          <p className="mt-3 text-lg text-navy-muted">
-            Completați amiabila de pe telefon, în câteva minute. Nu aveți nevoie de cont.
-          </p>
+          <h1 className="mt-5 text-[1.75rem] leading-[1.15] font-semibold">Amiabilă digitală</h1>
+          <p className="mt-2 text-navy-muted">Înainte să începeți</p>
         </div>
       </header>
 
-      <main className="mx-auto -mt-7 w-full max-w-md flex-1 px-4 pb-8">
-        <div className="space-y-5 rounded-2xl border bg-card p-5 shadow-sm">
-          <ul className="space-y-4">
-            {STEPS.map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-start gap-3">
-                <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">
-                  <Icon className="size-5" />
-                </span>
-                <span className="pt-1.5 text-[17px]">{text}</span>
-              </li>
-            ))}
-          </ul>
-          <Link href="/amiabila" className={cn(buttonVariants({ variant: "cta", size: "xl" }), "w-full")}>
-            Începe amiabila
-            <ArrowRight aria-hidden />
-          </Link>
-        </div>
-        <p className="mt-5 px-1 text-[15px] text-muted-foreground">{DISCLAIMER}</p>
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-8">
+        <h2 className="text-lg font-semibold">Aveți la îndemână</h2>
+        <ul className="mt-2.5 divide-y overflow-hidden rounded-lg border bg-card">
+          {NEEDED.map(({ icon: Icon, title, detail }) => (
+            <li key={title} className="flex items-center gap-3 px-4 py-3.5">
+              <Icon className="size-6 shrink-0 text-primary" aria-hidden />
+              <span className="text-[17px]">
+                {title}
+                {detail ? <span className="block text-[15px] text-muted-foreground">{detail}</span> : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[15px] text-muted-foreground">
+          Durează cam 10 minute. Celălalt șofer are nevoie doar de telefonul lui.
+        </p>
+
+        <Link href="/amiabila" className={cn(buttonVariants({ variant: "cta", size: "xl" }), "mt-6 w-full")}>
+          Începe
+          <ArrowRight aria-hidden />
+        </Link>
+        <p className="mt-6 text-[15px] text-muted-foreground">{DISCLAIMER}</p>
       </main>
     </div>
   );

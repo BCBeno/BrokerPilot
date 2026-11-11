@@ -70,7 +70,7 @@ export function EligibilityStep() {
             </ol>
             <a
               href="tel:112"
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary text-base font-semibold text-primary-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <Phone className="size-5" aria-hidden />
               Sună la 112

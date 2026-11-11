@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { canContinue, resolveOccurredAt } from "@/lib/amiabila/draft";
 import { updateDraft, useDraft } from "@/lib/amiabila/draft-store";
-import { RadioCard } from "./choice";
+import { ChoiceList } from "./choice";
 import { StepFrame } from "./step-frame";
 
 type Locating = { state: "idle" } | { state: "loading" } | { state: "message"; text: string };
@@ -88,7 +88,7 @@ export function PlaceStep() {
             id="address"
             autoComplete="street-address"
             placeholder="Bd. Unirii 12, București"
-            className="h-14 rounded-xl border-2 px-4 text-base md:text-base"
+            className="h-12 rounded-lg bg-card px-4 text-base md:text-base"
             value={place.address}
             maxLength={300}
             onChange={(e) => setPlace({ address: e.target.value, source: place.source === "gps" ? "gps" : "manual" })}
@@ -96,15 +96,20 @@ export function PlaceStep() {
         </div>
       </section>
 
-      <fieldset className="space-y-3">
-        <legend className="mb-3 flex items-center gap-2 text-lg font-semibold">
+      <div className="space-y-2.5">
+        <p id="when-label" className="flex items-center gap-2 text-lg font-semibold">
           <CalendarClock className="size-5 text-primary" aria-hidden />
           Când s-a întâmplat?
-        </legend>
-        <div className="grid grid-cols-2 gap-3">
-          <RadioCard name="when" label="Chiar acum" checked={place.whenMode === "now"} onChange={() => setPlace({ whenMode: "now" })} />
-          <RadioCard name="when" label="Mai devreme" checked={place.whenMode === "custom"} onChange={() => setPlace({ whenMode: "custom" })} />
-        </div>
+        </p>
+        <ChoiceList
+          labelledBy="when-label"
+          value={place.whenMode}
+          onChange={(v) => setPlace({ whenMode: v === "custom" ? "custom" : "now" })}
+          options={[
+            { value: "now", label: "Chiar acum" },
+            { value: "custom", label: "Mai devreme" },
+          ]}
+        />
         {place.whenMode === "custom" ? (
           <div className="space-y-2">
             <label htmlFor="when-custom" className="block text-[15px] text-muted-foreground">
@@ -113,7 +118,7 @@ export function PlaceStep() {
             <Input
               id="when-custom"
               type="datetime-local"
-              className="h-14 rounded-xl border-2 px-4 text-base md:text-base"
+              className="h-12 rounded-lg bg-card px-4 text-base md:text-base"
               value={place.customWhen}
               onChange={(e) => setPlace({ customWhen: e.target.value })}
             />
@@ -124,7 +129,7 @@ export function PlaceStep() {
             ) : null}
           </div>
         ) : null}
-      </fieldset>
+      </div>
     </StepFrame>
   );
 }

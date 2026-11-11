@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { STEPS, nextSlug, prevSlug, stepIndex, type StepSlug } from "@/lib/amiabila/draft";
+import { useHydrated } from "@/lib/amiabila/draft-store";
 import { cn } from "@/lib/utils";
 
 export function DriverBadge({ driver, className }: { driver: "A" | "B"; className?: string }) {
@@ -89,6 +90,7 @@ export function StepFrame({
   footnote,
 }: StepFrameProps) {
   const router = useRouter();
+  const hydrated = useHydrated();
   const prev = prevSlug(slug);
   const next = nextSlug(slug);
   const hasAction = continueLabel !== null && next !== null;
@@ -96,7 +98,7 @@ export function StepFrame({
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="bg-navy text-navy-foreground">
-        <div className="mx-auto w-full max-w-md px-5 pt-4 pb-12">
+        <div className="mx-auto w-full max-w-md px-5 pt-4 pb-7">
           <nav className="flex items-center justify-between">
             <Link
               href={prev ? `/amiabila/${prev}` : "/"}
@@ -115,9 +117,9 @@ export function StepFrame({
         </div>
       </header>
 
-      <main className={cn("mx-auto -mt-7 w-full max-w-md flex-1 px-4", hasAction ? "pb-44" : "pb-10")}>
-        <div className="space-y-6 rounded-2xl border bg-card p-5 shadow-sm">{children}</div>
-        {footnote ? <p className="mt-4 px-1 text-[15px] text-muted-foreground">{footnote}</p> : null}
+      <main className={cn("mx-auto w-full max-w-md flex-1 px-4 pt-6", hasAction ? "pb-44" : "pb-10")}>
+        <div className={cn("space-y-7", !hydrated && "invisible")}>{children}</div>
+        {footnote ? <p className="mt-6 text-[15px] text-muted-foreground">{footnote}</p> : null}
       </main>
 
       {hasAction ? (

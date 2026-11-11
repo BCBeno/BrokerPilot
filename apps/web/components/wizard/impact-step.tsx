@@ -76,7 +76,7 @@ export function ImpactStep() {
           rows={3}
           maxLength={1000}
           placeholder="Ex.: bara din față crăpată, aripa stângă îndoită"
-          className="rounded-xl border-2 px-4 py-3 text-base md:text-base"
+          className="rounded-lg bg-card px-4 py-3 text-base md:text-base"
           value={circumstances.damage}
           onChange={(e) => set({ damage: e.target.value })}
         />
@@ -92,7 +92,7 @@ export function ImpactStep() {
           rows={3}
           maxLength={1000}
           placeholder="Orice altceva important, de exemplu vizibilitatea sau starea drumului"
-          className="rounded-xl border-2 px-4 py-3 text-base md:text-base"
+          className="rounded-lg bg-card px-4 py-3 text-base md:text-base"
           value={circumstances.notes}
           onChange={(e) => set({ notes: e.target.value })}
         />

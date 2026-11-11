@@ -3,6 +3,7 @@
 import { Radio as RadioPrimitive } from "@base-ui/react/radio"
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group"
 import { cn } from "@/lib/utils"
+import { CheckIcon } from "lucide-react"
 
 function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
   return (
@@ -14,7 +15,31 @@ function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
   )
 }
 
-function RadioGroupItem({ className, ...props }: RadioPrimitive.Root.Props) {
+function RadioGroupItem({
+  className,
+  variant = "dot",
+  ...props
+}: RadioPrimitive.Root.Props & { variant?: "dot" | "check" }) {
+  if (variant === "check") {
+    // Rând de listă: fără cerc, doar o bifă în dreapta când e ales.
+    return (
+      <RadioPrimitive.Root
+        data-slot="radio-group-item"
+        className={cn(
+          "relative flex size-6 shrink-0 items-center justify-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+          className
+        )}
+        {...props}
+      >
+        <RadioPrimitive.Indicator
+          data-slot="radio-group-indicator"
+          className="flex items-center justify-center text-primary"
+        >
+          <CheckIcon className="size-5" />
+        </RadioPrimitive.Indicator>
+      </RadioPrimitive.Root>
+    )
+  }
   return (
     <RadioPrimitive.Root
       data-slot="radio-group-item"

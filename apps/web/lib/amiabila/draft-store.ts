@@ -39,6 +39,17 @@ export function useDraft(): Draft {
   return useSyncExternalStore(subscribe, read, () => EMPTY_DRAFT);
 }
 
+const noopSubscribe = () => () => {};
+
+/** `false` pe server și la hidratare, `true` după. Ascunde conținutul până se citește ciorna, ca să nu apară ecrane goale. */
+export function useHydrated(): boolean {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
+}
+
 export function updateDraft(change: (draft: Draft) => Draft): void {
   const next = change(read());
   cached = next;
