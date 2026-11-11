@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CarFront, FileText, ListChecks, MapPin, Pencil, RotateCcw, type LucideIcon } from "lucide-react";
+import { CarFront, FileText, ListChecks, MapPin, Pencil, RotateCcw, Route, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CIRCUMSTANCES, DISCLAIMER, IMPACT_LABELS } from "@/lib/amiabila/content";
 import { resetDraft, useDraft } from "@/lib/amiabila/draft-store";
@@ -102,6 +102,14 @@ export function SummaryStep() {
         <p>{circumstances.impact ? IMPACT_LABELS[circumstances.impact] : "Zona nu e aleasă"}</p>
         {circumstances.damage ? <p>{circumstances.damage}</p> : null}
         {circumstances.notes ? <p className="text-muted-foreground">{circumstances.notes}</p> : null}
+      </Section>
+
+      <Section icon={Route} title="Schiță" href="/amiabila/schita">
+        <p className={draft.sketch ? undefined : "text-muted-foreground"}>
+          {draft.sketch
+            ? { template: "Drum cu mașinile așezate", drawing: "Desen cu degetul", photo: "Poză cu schița" }[draft.sketch.mode]
+            : "Fără schiță"}
+        </p>
       </Section>
 
       <Button variant="cta" size="xl" className="w-full" nativeButton={false} render={<Link href="/amiabila/document" />}>

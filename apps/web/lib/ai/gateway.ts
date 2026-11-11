@@ -88,6 +88,8 @@ export function openRouterCall(taskLabel: string): ModelCall {
           messages,
           temperature: 0,
           max_tokens: 900,
+          // Doar provideri care nu colectează date și care chiar suportă json_schema (ADR-0001).
+          provider: { data_collection: "deny", require_parameters: true },
           response_format: { type: "json_schema", json_schema: { name: schemaName, strict: true, schema: jsonSchema } },
         }),
         signal: AbortSignal.timeout(45_000),

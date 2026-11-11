@@ -2,7 +2,19 @@ import { describe, expect, it } from "vitest";
 import { FORM_CIRCUMSTANCES } from "./content";
 import { EMPTY_DRAFT, type Draft } from "./draft";
 import { buildForm, countChecked, emptyParty, formatFormDate, splitName } from "./form";
-import { endAngle, pathData, sketchSchema } from "./sketch";
+import {
+  defaultTemplateSketch,
+  endAngle,
+  extendStroke,
+  fitWithin,
+  isSketchEmpty,
+  moveVehicle,
+  pathData,
+  placeMark,
+  rotateVehicle,
+  sketchSchema,
+  trailFor,
+} from "./sketch";
 import { specimenForm } from "./specimen";
 
 describe("formular amiabilă", () => {
@@ -81,6 +93,60 @@ describe("formular amiabilă", () => {
     expect(sketchSchema.safeParse(form.sketch).success).toBe(true);
     expect(countChecked(form.a)).toBe(1);
     expect(countChecked(form.b)).toBe(1);
+  });
+});
+
+describe("schiță: moduri și editare", () => {
+  it("validează cele trei moduri și respinge ce nu e poză", () => {
+    expect(sketchSchema.safeParse(defaultTemplateSketch()).success).toBe(true);
+    expect(sketchSchema.safeParse({ mode: "drawing", strokes: [[[1, 2], [3, 4]]], marks: [{ who: "A", x: 10, y: 10 }] }).success).toBe(true);
+    expect(sketchSchema.safeParse({ mode: "photo", image: "data:image/jpeg;base64,AAAA" }).success).toBe(true);
+    expect(sketchSchema.safeParse({ mode: "photo", image: "https://exemplu.ro/x.jpg" }).success).toBe(false);
+    expect(sketchSchema.safeParse({ mode: "drawing", strokes: [[[1000, 2]]], marks: [] }).success).toBe(false);
+  });
+
+  it("recunoaște o schiță goală", () => {
+    expect(isSketchEmpty(null)).toBe(true);
+    expect(isSketchEmpty({ mode: "drawing", strokes: [], marks: [] })).toBe(true);
+    expect(isSketchEmpty(defaultTemplateSketch())).toBe(false);
+  });
+
+  it("urma vehiculului stă în spatele lui, pe direcția de mers", () => {
+    const [start, end] = trailFor({ x: 200, y: 100, angle: 0 }); // merge în sus, deci urma e dedesubt
+    expect(end.y).toBeGreaterThan(100);
+    expect(start.y).toBeGreaterThan(end.y);
+    expect(start.x).toBe(200);
+    const [, east] = trailFor({ x: 200, y: 100, angle: 90 }); // merge spre dreapta, deci urma e în stânga
+    expect(east.x).toBeLessThan(200);
+  });
+
+  it("mută vehiculul în limitele caietului și îi recalculează urma", () => {
+    const v = defaultTemplateSketch().vehicles.A;
+    const moved = moveVehicle(v, { x: 9999, y: -50 });
+    expect(moved.x).toBe(450);
+    expect(moved.y).toBe(0);
+    expect(moved.path).toEqual(trailFor(moved));
+  });
+
+  it("rotește vehiculul și păstrează unghiul în intervalul -180..180", () => {
+    const v = { ...defaultTemplateSketch().vehicles.A, angle: 170 };
+    expect(rotateVehicle(v, 30).angle).toBe(-160);
+    expect(rotateVehicle(v, -15).angle).toBe(155);
+  });
+
+  it("desenul: ignoră punctele prea apropiate și ține câte un marcaj A și B", () => {
+    let s = extendStroke([], { x: 10, y: 10 }, 0);
+    s = extendStroke(s, { x: 10.5, y: 10.5 });
+    expect(s).toHaveLength(1);
+    s = extendStroke(s, { x: 30, y: 40 });
+    expect(s).toEqual([[10, 10], [30, 40]]);
+    const marks = placeMark(placeMark([], "A", { x: 5, y: 5 }), "A", { x: 50, y: 60 });
+    expect(marks).toEqual([{ who: "A", x: 50, y: 60 }]);
+  });
+
+  it("micșorează poza fără s-o mărească", () => {
+    expect(fitWithin(4000, 3000, 1000)).toEqual({ width: 1000, height: 750 });
+    expect(fitWithin(800, 600, 1000)).toEqual({ width: 800, height: 600 });
   });
 });
 

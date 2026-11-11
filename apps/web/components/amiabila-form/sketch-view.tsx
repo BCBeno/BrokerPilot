@@ -1,17 +1,19 @@
-import type { ReactNode } from "react";
+import type { PointerEvent as ReactPointerEvent, ReactNode, Ref, SVGProps } from "react";
 import {
   SKETCH_H,
   SKETCH_W,
   endAngle,
   pathData,
+  type DrawingSketch,
   type RoadTemplate,
+  type SignKind,
   type Sketch,
   type SketchVehicle,
 } from "@/lib/amiabila/sketch";
 
 /**
  * Desenează caseta 13 („Schița accidentului la momentul producerii impactului”) din modelul `Sketch`.
- * Fără sketch (încă), caseta rămâne un caiet gol, ca pe hârtie.
+ * Fără schiță (încă), caseta rămâne un caiet gol, ca pe hârtie. Aceeași componentă servește și editorul din wizard (`interactive`).
  */
 
 const ROAD = "#e6e9ef";
@@ -93,43 +95,60 @@ function Road({ template }: { template: RoadTemplate }): ReactNode {
   }
 }
 
-function Sign({ kind, x, y }: { kind: Sketch["signs"][number]["kind"]; x: number; y: number }): ReactNode {
+/** Un element care se poate trage cu degetul în editor (mașină sau semn). */
+export type Grab = { selected: string | null; onGrab: (id: string, e: ReactPointerEvent<SVGElement>) => void };
+
+function Grabbable({ id, grab, children, r }: { id: string; grab?: Grab; children: ReactNode; r: number }): ReactNode {
+  if (!grab) return <>{children}</>;
+  const selected = grab.selected === id;
   return (
-    <g transform={`translate(${x} ${y})`}>
-      {kind === "stop" && (
-        <>
-          <polygon points="-5,-12 5,-12 12,-5 12,5 5,12 -5,12 -12,5 -12,-5" fill="#dc2626" stroke="#fff" strokeWidth={1} />
-          <text textAnchor="middle" y={2.5} fontSize={6.5} fontWeight={700} fill="#fff">
-            STOP
-          </text>
-        </>
-      )}
-      {kind === "yield" && <polygon points="-12,-9 12,-9 0,12" fill="#fff" stroke="#dc2626" strokeWidth={3} strokeLinejoin="round" />}
-      {kind === "priority" && (
-        <>
-          <rect x={-9} y={-9} width={18} height={18} transform="rotate(45)" fill="#facc15" stroke="#fff" strokeWidth={2.5} />
-          <rect x={-9} y={-9} width={18} height={18} transform="rotate(45)" fill="none" stroke={INK} strokeWidth={0.8} />
-        </>
-      )}
-      {kind === "lights" && (
-        <>
-          <rect x={-5} y={-13} width={10} height={26} rx={3} fill={INK} />
-          <circle cx={0} cy={-7} r={2.8} fill="#ef4444" />
-          <circle cx={0} cy={0} r={2.8} fill="#f59e0b" />
-          <circle cx={0} cy={7} r={2.8} fill="#22c55e" />
-        </>
-      )}
-      {kind === "no-entry" && (
-        <>
-          <circle r={11} fill="#dc2626" stroke="#fff" strokeWidth={1} />
-          <rect x={-7} y={-2} width={14} height={4} fill="#fff" />
-        </>
-      )}
+    <g data-sketch-id={id} onPointerDown={(e) => grab.onGrab(id, e)} style={{ cursor: "grab", touchAction: "none" }}>
+      {children}
+      {selected && <circle r={r} fill="none" stroke="#2563eb" strokeWidth={1.6} strokeDasharray="4 3" />}
+      <circle r={r} fill="transparent" />
     </g>
   );
 }
 
-function Car({ who, v }: { who: "A" | "B"; v: SketchVehicle }): ReactNode {
+function Sign({ kind, x, y, grab, id }: { kind: SignKind; x: number; y: number; grab?: Grab; id: string }): ReactNode {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <Grabbable id={id} grab={grab} r={18}>
+        {kind === "stop" && (
+          <>
+            <polygon points="-5,-12 5,-12 12,-5 12,5 5,12 -5,12 -12,5 -12,-5" fill="#dc2626" stroke="#fff" strokeWidth={1} />
+            <text textAnchor="middle" y={2.5} fontSize={6.5} fontWeight={700} fill="#fff">
+              STOP
+            </text>
+          </>
+        )}
+        {kind === "yield" && <polygon points="-12,-9 12,-9 0,12" fill="#fff" stroke="#dc2626" strokeWidth={3} strokeLinejoin="round" />}
+        {kind === "priority" && (
+          <>
+            <rect x={-9} y={-9} width={18} height={18} transform="rotate(45)" fill="#facc15" stroke="#fff" strokeWidth={2.5} />
+            <rect x={-9} y={-9} width={18} height={18} transform="rotate(45)" fill="none" stroke={INK} strokeWidth={0.8} />
+          </>
+        )}
+        {kind === "lights" && (
+          <>
+            <rect x={-5} y={-13} width={10} height={26} rx={3} fill={INK} />
+            <circle cx={0} cy={-7} r={2.8} fill="#ef4444" />
+            <circle cx={0} cy={0} r={2.8} fill="#f59e0b" />
+            <circle cx={0} cy={7} r={2.8} fill="#22c55e" />
+          </>
+        )}
+        {kind === "no-entry" && (
+          <>
+            <circle r={11} fill="#dc2626" stroke="#fff" strokeWidth={1} />
+            <rect x={-7} y={-2} width={14} height={4} fill="#fff" />
+          </>
+        )}
+      </Grabbable>
+    </g>
+  );
+}
+
+function Car({ who, v, grab }: { who: "A" | "B"; v: SketchVehicle; grab?: Grab }): ReactNode {
   const c = COLORS[who];
   const tip = endAngle(v.path);
   const last = v.path[v.path.length - 1];
@@ -144,24 +163,63 @@ function Car({ who, v }: { who: "A" | "B"; v: SketchVehicle }): ReactNode {
         </>
       )}
       <g transform={`translate(${v.x} ${v.y}) rotate(${v.angle})`}>
-        <rect x={-11} y={-22} width={22} height={44} rx={5} fill={c.fill} stroke={INK} strokeWidth={1.2} />
-        <rect x={-8} y={-16} width={16} height={9} rx={2} fill="#ffffff" fillOpacity={0.55} />
-        <rect x={-8} y={10} width={16} height={7} rx={2} fill="#ffffff" fillOpacity={0.35} />
-        <text textAnchor="middle" y={4} fontSize={13} fontWeight={700} fill={c.text} transform={`rotate(${-v.angle} 0 0)`}>
-          {who}
-        </text>
+        <Grabbable id={who} grab={grab} r={34}>
+          <rect x={-11} y={-22} width={22} height={44} rx={5} fill={c.fill} stroke={INK} strokeWidth={1.2} />
+          <rect x={-8} y={-16} width={16} height={9} rx={2} fill="#ffffff" fillOpacity={0.55} />
+          <rect x={-8} y={10} width={16} height={7} rx={2} fill="#ffffff" fillOpacity={0.35} />
+          <text textAnchor="middle" y={4} fontSize={13} fontWeight={700} fill={c.text} transform={`rotate(${-v.angle} 0 0)`}>
+            {who}
+          </text>
+        </Grabbable>
       </g>
     </g>
   );
 }
 
-export function SketchView({ sketch }: { sketch: Sketch | null }) {
+function Drawing({ sketch }: { sketch: DrawingSketch }): ReactNode {
+  return (
+    <>
+      {sketch.strokes.map((pts, i) => (
+        <polyline
+          key={i}
+          points={pts.map((p) => p.join(",")).join(" ")}
+          fill="none"
+          stroke={INK}
+          strokeWidth={2.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+      {sketch.marks.map((m) => (
+        <g key={m.who} transform={`translate(${m.x} ${m.y})`}>
+          <circle r={12} fill={COLORS[m.who].fill} stroke={INK} strokeWidth={1.2} />
+          <text textAnchor="middle" y={4.5} fontSize={13} fontWeight={700} fill={COLORS[m.who].text}>
+            {m.who}
+          </text>
+        </g>
+      ))}
+    </>
+  );
+}
+
+type SketchViewProps = {
+  sketch: Sketch | null;
+  /** Doar în editor: trage mașinile și semnele (modul „template”). */
+  grab?: Grab;
+  /** Doar în editor: ref și evenimente pe SVG (desen liber, mutare). */
+  svgRef?: Ref<SVGSVGElement>;
+  svgProps?: SVGProps<SVGSVGElement>;
+};
+
+export function SketchView({ sketch, grab, svgRef, svgProps }: SketchViewProps) {
   return (
     <svg
+      ref={svgRef}
       viewBox={`0 0 ${SKETCH_W} ${SKETCH_H}`}
       className="af-sketch-svg"
       role="img"
       aria-label={sketch ? "Schița accidentului" : "Schița accidentului, necompletată"}
+      {...svgProps}
     >
       <defs>
         <pattern id="af-grid" width={25} height={25} patternUnits="userSpaceOnUse">
@@ -169,7 +227,7 @@ export function SketchView({ sketch }: { sketch: Sketch | null }) {
         </pattern>
       </defs>
       <rect width={SKETCH_W} height={SKETCH_H} fill="url(#af-grid)" />
-      {sketch && (
+      {sketch?.mode === "template" && (
         <>
           <Road template={sketch.road} />
           {sketch.streetNames.map((name, i) => {
@@ -190,10 +248,17 @@ export function SketchView({ sketch }: { sketch: Sketch | null }) {
             );
           })}
           {sketch.signs.map((s, i) => (
-            <Sign key={i} kind={s.kind} x={s.x} y={s.y} />
+            <Sign key={i} id={`sign-${i}`} kind={s.kind} x={s.x} y={s.y} grab={grab} />
           ))}
-          <Car who="A" v={sketch.vehicles.A} />
-          <Car who="B" v={sketch.vehicles.B} />
+          <Car who="A" v={sketch.vehicles.A} grab={grab} />
+          <Car who="B" v={sketch.vehicles.B} grab={grab} />
+        </>
+      )}
+      {sketch?.mode === "drawing" && <Drawing sketch={sketch} />}
+      {sketch?.mode === "photo" && (
+        <>
+          <rect width={SKETCH_W} height={SKETCH_H} fill="#ffffff" />
+          <image href={sketch.image} width={SKETCH_W} height={SKETCH_H} preserveAspectRatio="xMidYMid meet" />
         </>
       )}
     </svg>
