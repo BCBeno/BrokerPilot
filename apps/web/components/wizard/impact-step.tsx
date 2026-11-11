@@ -2,16 +2,16 @@
 
 import { MessageSquareText, Wrench } from "lucide-react";
 import { IMPACT_LABELS, type ImpactZone } from "@/lib/amiabila/content";
-import { updateDraft, useDraft } from "@/lib/amiabila/draft-store";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioCard } from "./choice";
 import { StepFrame } from "./step-frame";
+import { useWizard } from "./wizard-context";
 
 /** Mașina văzută de sus, cu fața în sus. */
-function CarTopDown() {
+function CarTopDown({ role }: { role: "A" | "B" }) {
   return (
     <svg viewBox="0 0 60 100" className="mx-auto h-28 w-auto" role="img" aria-label="Mașina dumneavoastră, văzută de sus">
-      <rect x="6" y="4" width="48" height="92" rx="16" className="fill-driver-a" />
+      <rect x="6" y="4" width="48" height="92" rx="16" className={role === "A" ? "fill-driver-a" : "fill-driver-b"} />
       <path d="M14 30 Q30 22 46 30 L44 44 Q30 40 16 44 Z" className="fill-primary/80" />
       <path d="M16 70 Q30 74 44 70 L46 82 Q30 88 14 82 Z" className="fill-primary/80" />
       <rect x="6" y="4" width="48" height="92" rx="16" fill="none" className="stroke-primary" strokeWidth="2" />
@@ -32,9 +32,13 @@ const GRID: (ImpactZone | "car")[] = [
 ];
 
 export function ImpactStep() {
-  const { circumstances } = useDraft();
+  const {
+    draft: { circumstances },
+    update,
+    role,
+  } = useWizard();
   const set = (patch: Partial<typeof circumstances>) =>
-    updateDraft((d) => ({ ...d, circumstances: { ...d.circumstances, ...patch } }));
+    update((d) => ({ ...d, circumstances: { ...d.circumstances, ...patch } }));
 
   return (
     <StepFrame
@@ -50,7 +54,7 @@ export function ImpactStep() {
           {GRID.map((cell) =>
             cell === "car" ? (
               <div key="car" className="flex items-center justify-center">
-                <CarTopDown />
+                <CarTopDown role={role} />
               </div>
             ) : (
               <RadioCard

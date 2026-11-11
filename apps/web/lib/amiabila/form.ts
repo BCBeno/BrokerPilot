@@ -151,10 +151,11 @@ function splitWhen(iso: string | null): { date: string; time: string } {
   return { date, time };
 }
 
-/** Mapează ciorna șoferului A pe formular. Șoferul B vine în S3; până atunci coloana lui rămâne goală. */
-export function buildForm(draft: Draft): FormData {
-  const { place, documents, circumstances, eligibility } = draft;
-  const when = splitWhen(place.occurredAt);
+/** Ce știm despre un șofer: actele verificate și circumstanțele lui. La A vine din ciornă, la B de pe server. */
+export type PartyInput = { documents: Draft["documents"]; circumstances: Draft["circumstances"] };
+
+/** Mapează actele și circumstanțele unui șofer pe coloana lui din formular (A sau B, aceleași reguli). */
+export function buildParty({ documents, circumstances }: PartyInput): Party {
   const reg = documents.registration;
   const lic = documents.license;
   const pol = documents.policy;
@@ -162,34 +163,41 @@ export function buildForm(draft: Draft): FormData {
   const holder = splitName(fieldValue(reg, "holderName") || fieldValue(lic, "fullName"));
   const driver = splitName(fieldValue(lic, "fullName"));
   const makeType = [fieldValue(reg, "make"), fieldValue(reg, "model")].filter(Boolean).join(" ");
-  const hasPlace = place.address.trim().length > 0;
 
-  const a = emptyParty();
-  a.holder = { ...a.holder, ...holder, country: reg ? "România" : "" };
-  a.vehicle = {
-    ...a.vehicle,
+  const party = emptyParty();
+  party.holder = { ...party.holder, ...holder, country: reg ? "România" : "" };
+  party.vehicle = {
+    ...party.vehicle,
     makeType,
     plate: fieldValue(reg, "plate") || fieldValue(pol, "plate"),
     country: reg ? "România" : "",
   };
-  a.insurance = {
-    ...a.insurance,
+  party.insurance = {
+    ...party.insurance,
     company: fieldValue(pol, "insurer"),
     policyNo: fieldValue(pol, "policyNo"),
     validFrom: formatFormDate(fieldValue(pol, "validFrom")),
     validTo: formatFormDate(fieldValue(pol, "validTo")),
   };
-  a.driver = {
-    ...a.driver,
+  party.driver = {
+    ...party.driver,
     ...driver,
     licenseNo: fieldValue(lic, "licenseNo"),
     category: fieldValue(lic, "categories"),
     licenseValidTo: formatFormDate(fieldValue(lic, "expiresOn")),
   };
-  a.impactPoint = circumstances.impact;
-  a.visibleDamage = circumstances.damage;
-  a.circumstances = [...circumstances.checked];
-  a.observations = circumstances.notes;
+  party.impactPoint = circumstances.impact;
+  party.visibleDamage = circumstances.damage;
+  party.circumstances = [...circumstances.checked];
+  party.observations = circumstances.notes;
+  return party;
+}
+
+/** Mapează ciorna șoferului A pe formular; coloana B vine de pe server dacă B a trimis (altfel rămâne goală, ca pe hârtie). */
+export function buildForm(draft: Draft, partyB: PartyInput | null = null): FormData {
+  const { place, eligibility } = draft;
+  const when = splitWhen(place.occurredAt);
+  const hasPlace = place.address.trim().length > 0;
 
   return {
     ...emptyForm(),
@@ -199,8 +207,8 @@ export function buildForm(draft: Draft): FormData {
     place: place.address,
     injured: draft.injured,
     otherVehiclesDamaged: eligibility.twoVehicles === true ? false : null,
-    a,
-    b: emptyParty(),
+    a: buildParty(draft),
+    b: partyB ? buildParty(partyB) : emptyParty(),
     sketch: draft.sketch,
   };
 }

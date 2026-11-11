@@ -5,6 +5,7 @@ import { CircumstancesStep } from "./circumstances-step";
 import { DocsStep } from "./docs-step";
 import { EligibilityStep } from "./eligibility-step";
 import { ImpactStep } from "./impact-step";
+import { PartnerStep } from "./partner-step";
 import { PlaceStep } from "./place-step";
 import { SafetyStep } from "./safety-step";
 import { SketchStep } from "./sketch-step";
@@ -20,6 +21,8 @@ export function WizardStep({ slug }: { slug: StepSlug }) {
       return <PlaceStep />;
     case "acte":
       return <DocsStep />;
+    case "sofer-b":
+      return <PartnerStep />;
     case "circumstante":
       return <CircumstancesStep />;
     case "impact":

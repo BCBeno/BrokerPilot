@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { canContinue } from "@/lib/amiabila/draft";
-import { updateDraft, useDraft } from "@/lib/amiabila/draft-store";
 import {
   DOC_META,
   DOC_TYPES,
@@ -26,15 +25,14 @@ import { prepareUpload } from "@/lib/amiabila/image";
 import { cn } from "@/lib/utils";
 import { listGroup } from "./choice";
 import { StepFrame } from "./step-frame";
+import { useWizard } from "./wizard-context";
 
 type Busy = { state: "idle" } | { state: "reading" } | { state: "error"; message: string };
 
-function setDoc(type: DocType, doc: ExtractedDoc | null) {
-  updateDraft((d) => ({ ...d, documents: { ...d.documents, [type]: doc } }));
-}
-
 function DocCard({ type, consent }: { type: DocType; consent: boolean }) {
-  const draft = useDraft();
+  const { draft, update } = useWizard();
+  const setDoc = (t: DocType, doc: ExtractedDoc | null) =>
+    update((d) => ({ ...d, documents: { ...d.documents, [t]: doc } }));
   const meta = DOC_META[type];
   // Actele care nu se fotografiază (permisul) arată direct câmpurile de completat.
   const doc = draft.documents[type] ?? (meta.scannable ? null : emptyDoc(type));
@@ -129,13 +127,23 @@ function DocCard({ type, consent }: { type: DocType; consent: boolean }) {
           </Button>
         </div>
       ) : (
-        <Review type={type} doc={doc} confirmed={confirmed} />
+        <Review type={type} doc={doc} confirmed={confirmed} setDoc={setDoc} />
       )}
     </section>
   );
 }
 
-function Review({ type, doc, confirmed }: { type: DocType; doc: ExtractedDoc; confirmed: boolean }) {
+function Review({
+  type,
+  doc,
+  confirmed,
+  setDoc,
+}: {
+  type: DocType;
+  doc: ExtractedDoc;
+  confirmed: boolean;
+  setDoc: (type: DocType, doc: ExtractedDoc | null) => void;
+}) {
   const scannable = DOC_META[type].scannable;
   const needsCheck = DOC_META[type].fields.some((f) => isLowConfidence(doc.fields[f.key]));
 
@@ -200,7 +208,7 @@ function Review({ type, doc, confirmed }: { type: DocType; doc: ExtractedDoc; co
 }
 
 export function DocsStep() {
-  const draft = useDraft();
+  const { draft, update } = useWizard();
   const { documents, documentsConsent } = draft;
   const matches = policyMatchesVehicle(documents.registration, documents.policy);
   const covers = policyCoversDate(documents.policy, draft.place.occurredAt ? new Date(draft.place.occurredAt) : new Date());
@@ -217,7 +225,7 @@ export function DocsStep() {
         <Checkbox
           className="mt-0.5"
           checked={documentsConsent}
-          onCheckedChange={(v) => updateDraft((d) => ({ ...d, documentsConsent: v === true }))}
+          onCheckedChange={(v) => update((d) => ({ ...d, documentsConsent: v === true }))}
         />
         <span>
           Sunt de acord ca pozele talonului și poliței să fie citite de un serviciu AI extern. Pozele nu se păstrează

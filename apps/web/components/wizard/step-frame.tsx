@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { STEPS, nextSlug, prevSlug, stepIndex, type StepSlug } from "@/lib/amiabila/draft";
+import { nextSlug, prevSlug, stepIndex, type StepSlug } from "@/lib/amiabila/draft";
 import { useHydrated } from "@/lib/amiabila/draft-store";
 import { cn } from "@/lib/utils";
+import { useWizard } from "./wizard-context";
 
 export function DriverBadge({ driver, className }: { driver: "A" | "B"; className?: string }) {
   return (
@@ -24,21 +25,22 @@ export function DriverBadge({ driver, className }: { driver: "A" | "B"; classNam
 }
 
 function Progress({ slug }: { slug: StepSlug }) {
-  const total = STEPS.length;
+  const { role, steps } = useWizard();
+  const total = steps.length;
   const isSummary = slug === "rezumat";
-  const current = isSummary ? total : stepIndex(slug) + 1;
+  const current = isSummary ? total : stepIndex(slug, steps) + 1;
   const label = isSummary ? "Rezumat" : `Pasul ${current} din ${total}`;
   return (
     <div>
       <div className="flex gap-1" aria-hidden>
-        {STEPS.map((s, i) => (
+        {steps.map((s, i) => (
           <span key={s.slug} className={cn("h-1 flex-1 rounded-full", i < current ? "bg-progress" : "bg-navy-line")} />
         ))}
       </div>
       <p className="mt-3 flex items-center gap-2 text-[15px] text-navy-muted">
-        <DriverBadge driver="A" />
+        <DriverBadge driver={role} />
         <span>
-          <span className="sr-only">Șofer A. </span>
+          <span className="sr-only">Șofer {role}. </span>
           {label}
         </span>
       </p>
@@ -91,8 +93,9 @@ export function StepFrame({
 }: StepFrameProps) {
   const router = useRouter();
   const hydrated = useHydrated();
-  const prev = prevSlug(slug);
-  const next = nextSlug(slug);
+  const { steps, basePath } = useWizard();
+  const prev = prevSlug(slug, steps);
+  const next = nextSlug(slug, steps);
   const hasAction = continueLabel !== null && next !== null;
 
   return (
@@ -101,7 +104,7 @@ export function StepFrame({
         <div className="mx-auto w-full max-w-md px-5 pt-4 pb-7">
           <nav className="flex items-center justify-between">
             <Link
-              href={prev ? `/amiabila/${prev}` : "/"}
+              href={prev ? `${basePath}/${prev}` : basePath === "/amiabila" ? "/" : basePath}
               className="-ml-2 inline-flex h-11 items-center gap-1.5 rounded-lg px-2 text-base font-medium outline-none hover:bg-white/10 focus-visible:ring-3 focus-visible:ring-white/60"
             >
               <ArrowLeft className="size-5" aria-hidden />
@@ -137,7 +140,7 @@ export function StepFrame({
               disabled={!canContinue}
               onClick={() => {
                 onContinue?.();
-                router.push(`/amiabila/${next}`);
+                router.push(`${basePath}/${next}`);
               }}
             >
               {continueLabel}

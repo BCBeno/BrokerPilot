@@ -86,6 +86,25 @@ describe("formular amiabilă", () => {
     expect(form.a.insurance).toMatchObject({ validFrom: "01.03.2026", validTo: "28.02.2027" });
     expect(form.a.impactPoint).toBe("right");
     expect(countChecked(form.a)).toBe(2);
+    expect(form.b).toEqual(emptyParty()); // B nu a trimis încă
+  });
+
+  it("umple coloana B din datele trimise de șoferul B, cu aceleași reguli ca la A", () => {
+    const field = (value: string) => ({ value, confidence: 1 });
+    const form = buildForm(EMPTY_DRAFT, {
+      documents: {
+        registration: { fields: { plate: field("CJ 99 XYZ"), make: field("Ford"), model: field("Focus") } },
+        license: { fields: { fullName: field("POPA Ana"), licenseNo: field("C1"), categories: field("B"), expiresOn: field("2030-05-05") } },
+        policy: { fields: { insurer: field("Alt SA"), policyNo: field("RCA2"), validFrom: field("2026-02-01"), validTo: field("2027-01-31") } },
+      },
+      circumstances: { checked: [1, 12], impact: "rear", damage: "bara spate", notes: "" },
+    });
+    expect(form.b.vehicle).toMatchObject({ makeType: "Ford Focus", plate: "CJ 99 XYZ" });
+    expect(form.b.driver).toMatchObject({ surname: "POPA", firstName: "Ana", licenseValidTo: "05.05.2030" });
+    expect(form.b.insurance).toMatchObject({ company: "Alt SA", validTo: "31.01.2027" });
+    expect(form.b.impactPoint).toBe("rear");
+    expect(countChecked(form.b)).toBe(2);
+    expect(countChecked(form.a)).toBe(0);
   });
 
   it("specimenul e marcat și are o schiță validă", () => {

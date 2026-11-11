@@ -2,12 +2,15 @@
 
 import { CIRCUMSTANCES } from "@/lib/amiabila/content";
 import { toggleCircumstance } from "@/lib/amiabila/draft";
-import { updateDraft, useDraft } from "@/lib/amiabila/draft-store";
 import { NumberedCheck, listGroup } from "./choice";
 import { StepFrame } from "./step-frame";
+import { useWizard } from "./wizard-context";
 
 export function CircumstancesStep() {
-  const { circumstances } = useDraft();
+  const {
+    draft: { circumstances },
+    update,
+  } = useWizard();
   const count = circumstances.checked.length;
 
   return (
@@ -26,7 +29,7 @@ export function CircumstancesStep() {
               label={label}
               checked={circumstances.checked.includes(n)}
               onChange={() =>
-                updateDraft((d) => ({
+                update((d) => ({
                   ...d,
                   circumstances: { ...d.circumstances, checked: toggleCircumstance(d.circumstances.checked, n) },
                 }))

@@ -2,7 +2,7 @@
   "name": "brokerpilot",
   "version": "0.1.0",
   "private": true,
-  "description": "BrokerPilot: platformă AI pentru brokeri de asigurări (proiect de evaluare).",
+  "description": "BrokerPilot: platformă AI pentru brokeri de asigurări.",
   "workspaces": ["apps/*"],
   "engines": { "node": ">=22.12.0" },
   "scripts": {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { CarFront, FileText, ListChecks, MapPin, Pencil, RotateCcw, Route, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CIRCUMSTANCES, DISCLAIMER, IMPACT_LABELS } from "@/lib/amiabila/content";
@@ -50,6 +51,23 @@ export function SummaryStep() {
   const router = useRouter();
   const { place, circumstances } = draft;
   const checked = CIRCUMSTANCES.filter((c) => circumstances.checked.includes(c.n));
+
+  // Dacă dosarul există pe server (pasul „Șofer B”), îl actualizăm cu actele și circumstanțele lui A. Finalizarea completă vine în S4.
+  const synced = useRef("");
+  const { claim } = draft;
+  useEffect(() => {
+    if (!claim) return;
+    const body = JSON.stringify({ circumstances, documents: draft.documents });
+    if (synced.current === body) return;
+    synced.current = body;
+    fetch(`/api/claims/${claim.id}`, { method: "PATCH", headers: { "content-type": "application/json", "x-claim-token": claim.aToken }, body })
+      .then((res) => {
+        if (!res.ok) synced.current = "";
+      })
+      .catch(() => {
+        synced.current = "";
+      });
+  }, [claim, circumstances, draft.documents]);
 
   return (
     <StepFrame
