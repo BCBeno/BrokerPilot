@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { Camera, CarFront, ImagePlus, Pencil, RotateCcw, RotateCw, Trash2, Undo2, type LucideIcon } from "lucide-react";
+import { Camera, CarFront, ImagePlus, Pencil, RotateCcw, RotateCw, StickyNote, Trash2, Undo2, type LucideIcon } from "lucide-react";
 import { SketchView } from "@/components/amiabila-form/sketch-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateDraft, useDraft, useHydrated } from "@/lib/amiabila/draft-store";
+import { Textarea } from "@/components/ui/textarea";
 import { compressPhoto } from "@/lib/amiabila/photo";
 import {
   ROAD_LABELS,
@@ -566,6 +567,23 @@ export function SketchStep() {
           {mode === "photo" ? <PhotoEditor key="photo" /> : null}
         </div>
       ) : null}
+
+      <div className="space-y-2">
+        <label htmlFor="sketch-note" className="flex items-center gap-2 text-lg font-semibold">
+          <StickyNote className="size-5 text-primary" aria-hidden />
+          Observații <span className="font-normal text-muted-foreground">(opțional)</span>
+        </label>
+        <Textarea
+          id="sketch-note"
+          rows={3}
+          maxLength={1000}
+          placeholder="Ex.: A venea dinspre Str. Florilor; B a ieșit din parcare"
+          className="rounded-lg bg-card px-4 py-3 text-base md:text-base"
+          value={draft.circumstances.notes}
+          onChange={(e) => updateDraft((d) => ({ ...d, circumstances: { ...d.circumstances, notes: e.target.value } }))}
+        />
+        <p className="text-[15px] text-muted-foreground">Același câmp ca la Impact. Apare pe formular, la caseta 14.</p>
+      </div>
     </StepFrame>
   );
 }
