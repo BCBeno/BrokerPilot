@@ -592,7 +592,10 @@
   padding: 0 6px 2px;
 }
 .af-copy {
-  margin-top: 3px;
+  position: absolute;
+  bottom: 5px;
+  left: 20px;
+  margin: 0;
   font-size: 6px;
 }
 .af-wm {
@@ -747,5 +750,10 @@
   .af-back {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    /* Foaia are mărimea A4 la 96 dpi, fără rezervă. Browserele variază cu o fracțiune de milimetru (și cu marginile alese de
+       utilizator), iar un singur rând în plus ar crea o pagină nouă. 6% rezervă păstrează foaia pe o pagină. */
+    zoom: 0.94;
+    margin: 0 auto;
+    overflow: hidden;
   }
 }

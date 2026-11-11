@@ -3,6 +3,7 @@ import { FORM_CIRCUMSTANCES } from "./content";
 import { EMPTY_DRAFT, type Draft } from "./draft";
 import { buildForm, countChecked, emptyParty, formatFormDate, splitName } from "./form";
 import {
+  angleToward,
   defaultTemplateSketch,
   endAngle,
   extendStroke,
@@ -11,6 +12,7 @@ import {
   moveVehicle,
   pathData,
   placeMark,
+  rotateMark,
   rotateVehicle,
   sketchSchema,
   trailFor,
@@ -141,7 +143,29 @@ describe("schiță: moduri și editare", () => {
     s = extendStroke(s, { x: 30, y: 40 });
     expect(s).toEqual([[10, 10], [30, 40]]);
     const marks = placeMark(placeMark([], "A", { x: 5, y: 5 }), "A", { x: 50, y: 60 });
-    expect(marks).toEqual([{ who: "A", x: 50, y: 60 }]);
+    expect(marks).toEqual([{ who: "A", x: 50, y: 60, angle: 0 }]);
+  });
+
+  it("mașinile de pe desen se rotesc și își păstrează orientarea când sunt mutate", () => {
+    let marks = placeMark([], "B", { x: 100, y: 100 });
+    marks = rotateMark(marks, "B", 90);
+    expect(marks[0].angle).toBe(90);
+    marks = placeMark(marks, "B", { x: 200, y: 50 });
+    expect(marks).toEqual([{ who: "B", x: 200, y: 50, angle: 90 }]);
+    expect(rotateMark(marks, "B", 100)[0].angle).toBe(-170);
+    expect(rotateMark(marks, "A", 45)).toEqual(marks); // A nu e pe desen: nimic de rotit
+    const parsed = sketchSchema.parse({ mode: "drawing", strokes: [], marks: [{ who: "A", x: 1, y: 1 }] });
+    expect(parsed.mode === "drawing" && parsed.marks[0].angle).toBe(0); // desenele vechi, fără unghi, rămân valide
+  });
+
+  it("calculează unghiul spre cursor, în trepte de 5°", () => {
+    const o = { x: 100, y: 100 };
+    expect(angleToward(o, { x: 100, y: 50 })).toBe(0);
+    expect(angleToward(o, { x: 150, y: 100 })).toBe(90);
+    expect(angleToward(o, { x: 100, y: 150 })).toBe(180);
+    expect(angleToward(o, { x: 50, y: 100 })).toBe(-90);
+    expect(angleToward(o, { x: 150, y: 52 })).toBe(45); // ~46,2° se rotunjește la 45°
+    expect(angleToward(o, { x: 101, y: 101 })).toBeNull(); // prea aproape de centru
   });
 
   it("micșorează poza fără s-o mărească", () => {

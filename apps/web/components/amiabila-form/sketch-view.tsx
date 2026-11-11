@@ -95,10 +95,26 @@ function Road({ template }: { template: RoadTemplate }): ReactNode {
   }
 }
 
-/** Un element care se poate trage cu degetul în editor (mașină sau semn). */
-export type Grab = { selected: string | null; onGrab: (id: string, e: ReactPointerEvent<SVGElement>) => void };
+/** Un element care se poate trage în editor (mașină sau semn). Mașinile alese au și un mâner de rotire deasupra. */
+export type Grab = {
+  selected: string | null;
+  onGrab: (id: string, e: ReactPointerEvent<SVGElement>) => void;
+  onRotate?: (id: "A" | "B", e: ReactPointerEvent<SVGElement>) => void;
+};
 
-function Grabbable({ id, grab, children, r }: { id: string; grab?: Grab; children: ReactNode; r: number }): ReactNode {
+function Grabbable({
+  id,
+  grab,
+  children,
+  r,
+  rotatable,
+}: {
+  id: string;
+  grab?: Grab;
+  children: ReactNode;
+  r: number;
+  rotatable?: boolean;
+}): ReactNode {
   if (!grab) return <>{children}</>;
   const selected = grab.selected === id;
   return (
@@ -106,6 +122,17 @@ function Grabbable({ id, grab, children, r }: { id: string; grab?: Grab; childre
       {children}
       {selected && <circle r={r} fill="none" stroke="#2563eb" strokeWidth={1.6} strokeDasharray="4 3" />}
       <circle r={r} fill="transparent" />
+      {selected && rotatable && grab.onRotate ? (
+        <g
+          data-sketch-handle={id}
+          onPointerDown={(e) => grab.onRotate?.(id as "A" | "B", e)}
+          style={{ cursor: "crosshair", touchAction: "none" }}
+        >
+          <line x1={0} y1={-24} x2={0} y2={-42} stroke="#2563eb" strokeWidth={1.4} />
+          <circle cx={0} cy={-48} r={7} fill="#ffffff" stroke="#2563eb" strokeWidth={1.8} />
+          <circle cx={0} cy={-48} r={15} fill="transparent" />
+        </g>
+      ) : null}
     </g>
   );
 }
@@ -148,6 +175,21 @@ function Sign({ kind, x, y, grab, id }: { kind: SignKind; x: number; y: number; 
   );
 }
 
+/** Mașina văzută de sus, cu botul în sus; folosită și la schița cu șablon, și la desenul liber. */
+function CarBody({ who, counterRotate = 0 }: { who: "A" | "B"; counterRotate?: number }): ReactNode {
+  const c = COLORS[who];
+  return (
+    <>
+      <rect x={-11} y={-22} width={22} height={44} rx={5} fill={c.fill} stroke={INK} strokeWidth={1.2} />
+      <rect x={-8} y={-16} width={16} height={9} rx={2} fill="#ffffff" fillOpacity={0.55} />
+      <rect x={-8} y={10} width={16} height={7} rx={2} fill="#ffffff" fillOpacity={0.35} />
+      <text textAnchor="middle" y={4} fontSize={13} fontWeight={700} fill={c.text} transform={`rotate(${-counterRotate} 0 0)`}>
+        {who}
+      </text>
+    </>
+  );
+}
+
 function Car({ who, v, grab }: { who: "A" | "B"; v: SketchVehicle; grab?: Grab }): ReactNode {
   const c = COLORS[who];
   const tip = endAngle(v.path);
@@ -163,20 +205,15 @@ function Car({ who, v, grab }: { who: "A" | "B"; v: SketchVehicle; grab?: Grab }
         </>
       )}
       <g transform={`translate(${v.x} ${v.y}) rotate(${v.angle})`}>
-        <Grabbable id={who} grab={grab} r={34}>
-          <rect x={-11} y={-22} width={22} height={44} rx={5} fill={c.fill} stroke={INK} strokeWidth={1.2} />
-          <rect x={-8} y={-16} width={16} height={9} rx={2} fill="#ffffff" fillOpacity={0.55} />
-          <rect x={-8} y={10} width={16} height={7} rx={2} fill="#ffffff" fillOpacity={0.35} />
-          <text textAnchor="middle" y={4} fontSize={13} fontWeight={700} fill={c.text} transform={`rotate(${-v.angle} 0 0)`}>
-            {who}
-          </text>
+        <Grabbable id={who} grab={grab} r={40} rotatable>
+          <CarBody who={who} counterRotate={v.angle} />
         </Grabbable>
       </g>
     </g>
   );
 }
 
-function Drawing({ sketch }: { sketch: DrawingSketch }): ReactNode {
+function Drawing({ sketch, grab }: { sketch: DrawingSketch; grab?: Grab }): ReactNode {
   return (
     <>
       {sketch.strokes.map((pts, i) => (
@@ -191,11 +228,10 @@ function Drawing({ sketch }: { sketch: DrawingSketch }): ReactNode {
         />
       ))}
       {sketch.marks.map((m) => (
-        <g key={m.who} transform={`translate(${m.x} ${m.y})`}>
-          <circle r={12} fill={COLORS[m.who].fill} stroke={INK} strokeWidth={1.2} />
-          <text textAnchor="middle" y={4.5} fontSize={13} fontWeight={700} fill={COLORS[m.who].text}>
-            {m.who}
-          </text>
+        <g key={m.who} transform={`translate(${m.x} ${m.y}) rotate(${m.angle})`}>
+          <Grabbable id={m.who} grab={grab} r={40} rotatable>
+            <CarBody who={m.who} counterRotate={m.angle} />
+          </Grabbable>
         </g>
       ))}
     </>
@@ -204,7 +240,7 @@ function Drawing({ sketch }: { sketch: DrawingSketch }): ReactNode {
 
 type SketchViewProps = {
   sketch: Sketch | null;
-  /** Doar în editor: trage mașinile și semnele (modul „template”). */
+  /** Doar în editor: trage și rotește mașinile, trage semnele. */
   grab?: Grab;
   /** Doar în editor: ref și evenimente pe SVG (desen liber, mutare). */
   svgRef?: Ref<SVGSVGElement>;
@@ -254,7 +290,7 @@ export function SketchView({ sketch, grab, svgRef, svgProps }: SketchViewProps) 
           <Car who="B" v={sketch.vehicles.B} grab={grab} />
         </>
       )}
-      {sketch?.mode === "drawing" && <Drawing sketch={sketch} />}
+      {sketch?.mode === "drawing" && <Drawing sketch={sketch} grab={grab} />}
       {sketch?.mode === "photo" && (
         <>
           <rect width={SKETCH_W} height={SKETCH_H} fill="#ffffff" />

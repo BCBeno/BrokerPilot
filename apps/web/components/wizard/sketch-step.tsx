@@ -12,13 +12,17 @@ import {
   ROAD_TEMPLATES,
   SIGN_KINDS,
   SIGN_LABELS,
+  angleToward,
   clampPoint,
   defaultTemplateSketch,
   extendStroke,
   isSketchEmpty,
   moveVehicle,
   placeMark,
+  rotateMark,
   rotateVehicle,
+  setMarkAngle,
+  setVehicleAngle,
   type DrawingSketch,
   type Sketch,
   type SketchMode,
@@ -64,6 +68,7 @@ function TemplateEditor() {
   const [selected, setSelected] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const dragging = useRef<{ id: string; dx: number; dy: number } | null>(null);
+  const rotating = useRef<"A" | "B" | null>(null);
   /** Ultima schiță, ca ridicarea degetului să salveze și ultima mișcare chiar dacă ecranul nu s-a redesenat încă. */
   const latest = useRef(work);
 
@@ -97,10 +102,27 @@ function TemplateEditor() {
     capture(svg, e.pointerId);
   };
 
-  const onMove = (e: ReactPointerEvent<SVGSVGElement>) => {
-    const drag = dragging.current;
+  const onRotate = (who: "A" | "B", e: ReactPointerEvent<SVGElement>) => {
+    e.stopPropagation();
     const svg = svgRef.current;
-    if (!drag || !svg) return;
+    if (!svg) return;
+    rotating.current = who;
+    setSelected(who);
+    capture(svg, e.pointerId);
+  };
+
+  const onMove = (e: ReactPointerEvent<SVGSVGElement>) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const who = rotating.current;
+    if (who) {
+      const w = latest.current;
+      const angle = angleToward(w.vehicles[who], toPoint(svg, e));
+      if (angle !== null) show({ ...w, vehicles: { ...w.vehicles, [who]: setVehicleAngle(w.vehicles[who], angle) } });
+      return;
+    }
+    const drag = dragging.current;
+    if (!drag) return;
     const p = toPoint(svg, e);
     const to = { x: p.x + drag.dx, y: p.y + drag.dy };
     if (drag.id === "A" || drag.id === "B") {
@@ -116,8 +138,9 @@ function TemplateEditor() {
   };
 
   const onUp = () => {
-    if (!dragging.current) return;
+    if (!dragging.current && !rotating.current) return;
     dragging.current = null;
+    rotating.current = null;
     commit(latest.current);
   };
 
@@ -149,7 +172,7 @@ function TemplateEditor() {
       <SketchView
         sketch={work}
         svgRef={svgRef}
-        grab={{ selected, onGrab }}
+        grab={{ selected, onGrab, onRotate }}
         svgProps={{
           className: svgClass,
           style: { touchAction: "none" },
@@ -159,7 +182,7 @@ function TemplateEditor() {
           onPointerDown: () => setSelected(null),
         }}
       />
-      <p className="text-[15px] text-muted-foreground">Trageți mașinile și semnele cu degetul. Atingeți o mașină ca s-o rotiți.</p>
+      <p className="text-[15px] text-muted-foreground">Trageți mașinile și semnele ca să le mutați. Atingeți o mașină și rotiți-o din cerculețul de deasupra ei sau din butoane.</p>
 
       <div className="space-y-2">
         <p className="text-base font-semibold">Drumul</p>
@@ -241,13 +264,44 @@ function DrawingEditor() {
     draft.sketch?.mode === "drawing" ? draft.sketch : { mode: "drawing", strokes: [], marks: [] },
   );
   const [tool, setTool] = useState<Tool>("pen");
+  const [selected, setSelected] = useState<"A" | "B" | null>(null);
   const [live, setLive] = useState<SketchStroke | null>(null);
   const liveRef = useRef<SketchStroke | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const dragging = useRef<{ who: "A" | "B"; dx: number; dy: number } | null>(null);
+  const rotating = useRef<"A" | "B" | null>(null);
+  /** Ultimul desen, ca ridicarea degetului să salveze și ultima mișcare chiar dacă ecranul nu s-a redesenat încă. */
+  const latest = useRef(work);
+
+  const show = (next: DrawingSketch) => {
+    latest.current = next;
+    setWork(next);
+  };
 
   const commit = (next: DrawingSketch) => {
-    setWork(next);
+    show(next);
     updateDraft((d) => ({ ...d, sketch: next }));
+  };
+
+  // Mașinile se mută trăgându-le, indiferent de unealta aleasă.
+  const onGrab = (id: string, e: ReactPointerEvent<SVGElement>) => {
+    e.stopPropagation();
+    const svg = svgRef.current;
+    const mark = latest.current.marks.find((m) => m.who === id);
+    if (!svg || !mark) return;
+    const p = toPoint(svg, e);
+    dragging.current = { who: mark.who, dx: mark.x - p.x, dy: mark.y - p.y };
+    setSelected(mark.who);
+    capture(svg, e.pointerId);
+  };
+
+  const onRotate = (who: "A" | "B", e: ReactPointerEvent<SVGElement>) => {
+    e.stopPropagation();
+    const svg = svgRef.current;
+    if (!svg) return;
+    rotating.current = who;
+    setSelected(who);
+    capture(svg, e.pointerId);
   };
 
   const onDown = (e: ReactPointerEvent<SVGSVGElement>) => {
@@ -255,26 +309,51 @@ function DrawingEditor() {
     if (!svg) return;
     const p = toPoint(svg, e);
     if (tool === "pen") {
+      setSelected(null);
       capture(svg, e.pointerId);
       liveRef.current = extendStroke([], p, 0);
       setLive(liveRef.current);
     } else {
-      commit({ ...work, marks: placeMark(work.marks, tool, p) });
+      commit({ ...latest.current, marks: placeMark(latest.current.marks, tool, p) });
+      setSelected(tool);
     }
   };
 
   const onMove = (e: ReactPointerEvent<SVGSVGElement>) => {
     const svg = svgRef.current;
-    if (!liveRef.current || !svg) return;
-    liveRef.current = extendStroke(liveRef.current, toPoint(svg, e));
-    setLive(liveRef.current);
+    if (!svg) return;
+    const w = latest.current;
+    const who = rotating.current;
+    if (who) {
+      const mark = w.marks.find((m) => m.who === who);
+      const angle = mark ? angleToward(mark, toPoint(svg, e)) : null;
+      if (angle !== null) show({ ...w, marks: setMarkAngle(w.marks, who, angle) });
+      return;
+    }
+    const drag = dragging.current;
+    if (drag) {
+      const p = toPoint(svg, e);
+      show({ ...w, marks: placeMark(w.marks, drag.who, { x: p.x + drag.dx, y: p.y + drag.dy }) });
+      return;
+    }
+    if (liveRef.current) {
+      liveRef.current = extendStroke(liveRef.current, toPoint(svg, e));
+      setLive(liveRef.current);
+    }
   };
 
   const onUp = () => {
+    if (dragging.current || rotating.current) {
+      dragging.current = null;
+      rotating.current = null;
+      commit(latest.current);
+      return;
+    }
     const stroke = liveRef.current;
     liveRef.current = null;
     setLive(null);
-    if (stroke && stroke.length >= 2 && work.strokes.length < 300) commit({ ...work, strokes: [...work.strokes, stroke] });
+    const w = latest.current;
+    if (stroke && stroke.length >= 2 && w.strokes.length < 300) commit({ ...w, strokes: [...w.strokes, stroke] });
   };
 
   const shown: DrawingSketch = live ? { ...work, strokes: [...work.strokes, live] } : work;
@@ -284,6 +363,7 @@ function DrawingEditor() {
       <SketchView
         sketch={shown}
         svgRef={svgRef}
+        grab={{ selected, onGrab, onRotate }}
         svgProps={{
           className: cn(svgClass, tool === "pen" ? "cursor-crosshair" : "cursor-copy"),
           style: { touchAction: "none" },
@@ -295,21 +375,55 @@ function DrawingEditor() {
       />
       <div className="grid grid-cols-3 gap-2">
         {(["pen", "A", "B"] as const).map((t) => (
-          <button key={t} type="button" aria-pressed={tool === t} className={chip} onClick={() => setTool(t)}>
+          <button key={t} type="button" aria-pressed={tool === t} className={chip} onClick={() => {
+              setTool(t);
+              setSelected(t !== "pen" && work.marks.some((m) => m.who === t) ? t : null);
+            }}
+          >
             {t === "pen" ? (
               <>
                 <Pencil className="mr-1.5 size-4" aria-hidden />
                 Creion
               </>
             ) : (
-              `Pune ${t}`
+              <>
+                <CarFront className="mr-1.5 size-4" aria-hidden />
+                Mașina {t}
+              </>
             )}
           </button>
         ))}
       </div>
       <p className="text-[15px] text-muted-foreground">
-        Desenați drumul și traseul. Alegeți „Pune A” sau „Pune B” și atingeți locul unde era fiecare mașină la impact.
+        Desenați drumul și traseul. Alegeți „Mașina A” sau „Mașina B” și atingeți locul unde era la impact. Apoi trageți-o ca s-o mutați și
+        rotiți-o din cerculețul de deasupra ei sau din butoane.
       </p>
+      {selected ? (
+        <div className="space-y-2">
+          <p className="text-base font-semibold">Rotește mașina {selected}</p>
+          <div className="grid grid-cols-4 gap-2">
+            {(
+              [
+                [-90, RotateCcw, "90°", "la stânga cu 90 de grade"],
+                [-15, RotateCcw, "15°", "la stânga cu 15 grade"],
+                [15, RotateCw, "15°", "la dreapta cu 15 grade"],
+                [90, RotateCw, "90°", "la dreapta cu 90 de grade"],
+              ] as const
+            ).map(([delta, Icon, label, aria]) => (
+              <Button
+                key={delta}
+                type="button"
+                variant="outline"
+                className="h-11"
+                aria-label={`Rotește mașina ${selected} ${aria}`}
+                onClick={() => commit({ ...work, marks: rotateMark(work.marks, selected, delta) })}
+              >
+                <Icon aria-hidden /> {label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 gap-2">
         <Button
           type="button"

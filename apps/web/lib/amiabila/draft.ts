@@ -9,11 +9,20 @@ export const STEPS = [
   { slug: "eligibilitate", title: "Verificare" },
   { slug: "loc-timp", title: "Loc și timp" },
   { slug: "acte", title: "Acte" },
+  { slug: "sofer-b", title: "Șofer B" },
   { slug: "circumstante", title: "Circumstanțe" },
   { slug: "impact", title: "Impact" },
   { slug: "schita", title: "Schiță" },
 ] as const;
 export type StepSlug = (typeof STEPS)[number]["slug"] | "rezumat";
+
+/** Pașii șoferului B, pe telefonul lui (`/b/[token]`). „rezumat” = verificare și trimitere. */
+export const B_STEPS = [
+  { slug: "acte", title: "Acte" },
+  { slug: "circumstante", title: "Circumstanțe" },
+  { slug: "impact", title: "Impact" },
+] as const;
+export type StepList = readonly { readonly slug: Exclude<StepSlug, "rezumat">; readonly title: string }[];
 
 const answer = z.boolean().nullable();
 
@@ -49,6 +58,17 @@ export const draftSchema = z.object({
   }),
   /** Schița accidentului (caseta 13), în modul ales de șofer. `default` păstrează ciornele salvate înainte să existe schița. */
   sketch: sketchSchema.nullable().default(null),
+  /** Dosarul creat pe server la pasul „Șofer B”. `aToken` = cheia lui A pentru status și actualizări; `joinToken` = linkul lui B. */
+  claim: z
+    .object({
+      id: z.string().uuid(),
+      ref: z.string().max(40),
+      aToken: z.string().max(64),
+      joinToken: z.string().max(64),
+      joinExpiresAt: z.string(),
+    })
+    .nullable()
+    .default(null),
 });
 export type Draft = z.infer<typeof draftSchema>;
 
@@ -60,6 +80,7 @@ export const EMPTY_DRAFT: Draft = {
   documents: { registration: null, license: null, policy: null },
   circumstances: { checked: [], impact: null, damage: "", notes: "" },
   sketch: null,
+  claim: null,
 };
 
 /** Parsează ce e în storage. La orice nepotrivire (versiune veche, date stricate) pornește de la zero. */
@@ -104,6 +125,8 @@ export function canContinue(slug: StepSlug, draft: Draft, now: Date): boolean {
       return draft.place.address.trim().length >= 3 && resolveOccurredAt(draft.place, now) !== null;
     case "acte":
       return DOC_TYPES.every((t) => isDocConfirmed(t, draft.documents[t]));
+    case "sofer-b":
+      return draft.claim !== null;
     case "circumstante":
       return draft.circumstances.checked.length > 0;
     case "impact":
@@ -115,20 +138,20 @@ export function canContinue(slug: StepSlug, draft: Draft, now: Date): boolean {
   }
 }
 
-export function stepIndex(slug: StepSlug): number {
-  return STEPS.findIndex((s) => s.slug === slug);
+export function stepIndex(slug: StepSlug, steps: StepList = STEPS): number {
+  return steps.findIndex((s) => s.slug === slug);
 }
 
-export function nextSlug(slug: StepSlug): StepSlug | null {
+export function nextSlug(slug: StepSlug, steps: StepList = STEPS): StepSlug | null {
   if (slug === "rezumat") return null;
-  const i = stepIndex(slug);
-  return i === STEPS.length - 1 ? "rezumat" : STEPS[i + 1].slug;
+  const i = stepIndex(slug, steps);
+  return i === steps.length - 1 ? "rezumat" : steps[i + 1].slug;
 }
 
-export function prevSlug(slug: StepSlug): StepSlug | null {
-  if (slug === "rezumat") return STEPS[STEPS.length - 1].slug;
-  const i = stepIndex(slug);
-  return i <= 0 ? null : STEPS[i - 1].slug;
+export function prevSlug(slug: StepSlug, steps: StepList = STEPS): StepSlug | null {
+  if (slug === "rezumat") return steps[steps.length - 1].slug;
+  const i = stepIndex(slug, steps);
+  return i <= 0 ? null : steps[i - 1].slug;
 }
 
 export function isStepSlug(value: string): value is StepSlug {

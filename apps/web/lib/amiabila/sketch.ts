@@ -69,7 +69,8 @@ export type SketchStroke = z.infer<typeof stroke>;
 const drawingSketch = z.object({
   mode: z.literal("drawing"),
   strokes: z.array(stroke).max(300),
-  marks: z.array(z.object({ who: z.enum(["A", "B"]), x, y })).max(2),
+  /** Mașinile A și B puse pe desen; `angle`: grade, 0 = cu botul în sus, în sens orar. */
+  marks: z.array(z.object({ who: z.enum(["A", "B"]), x, y, angle: z.number().min(-180).max(180).default(0) })).max(2),
 });
 export type DrawingSketch = z.infer<typeof drawingSketch>;
 
@@ -132,6 +133,22 @@ export function rotateVehicle(v: SketchVehicle, delta: number): SketchVehicle {
   return { ...turned, path: trailFor(turned) };
 }
 
+/** Unghiul (0 = în sus, sens orar, rotunjit la 5°) la care o mașină din `from` privește spre `to`. Null dacă punctele sunt prea apropiate. */
+export function angleToward(from: { x: number; y: number }, to: { x: number; y: number }): number | null {
+  if (Math.hypot(to.x - from.x, to.y - from.y) < 4) return null;
+  const deg = (Math.atan2(to.x - from.x, -(to.y - from.y)) * 180) / Math.PI;
+  return Math.round(deg / 5) * 5;
+}
+
+export function setVehicleAngle(v: SketchVehicle, angle: number): SketchVehicle {
+  const turned = { ...v, angle };
+  return { ...turned, path: trailFor(turned) };
+}
+
+export function setMarkAngle(marks: DrawingSketch["marks"], who: "A" | "B", angle: number): DrawingSketch["marks"] {
+  return marks.map((m) => (m.who === who ? { ...m, angle } : m));
+}
+
 /** Schița de la care pornește șoferul: o intersecție, cu A venind de jos și B din dreapta. */
 export function defaultTemplateSketch(): TemplateSketch {
   const a = { x: 238, y: 168, angle: 0, path: [] as SketchPoint[] };
@@ -153,10 +170,16 @@ export function extendStroke(stroke: SketchStroke, p: { x: number; y: number }, 
   return stroke.length >= 600 ? stroke : [...stroke, q];
 }
 
-/** Pune (sau mută) marcajul A ori B pe desen; fiecare literă apare o singură dată. */
+/** Pune (sau mută) mașina A ori B pe desen; fiecare apare o singură dată și își păstrează orientarea când o muți. */
 export function placeMark(marks: DrawingSketch["marks"], who: "A" | "B", p: { x: number; y: number }): DrawingSketch["marks"] {
   const c = clampPoint(p);
-  return [...marks.filter((m) => m.who !== who), { who, x: Math.round(c.x), y: Math.round(c.y) }];
+  const angle = marks.find((m) => m.who === who)?.angle ?? 0;
+  return [...marks.filter((m) => m.who !== who), { who, x: Math.round(c.x), y: Math.round(c.y), angle }];
+}
+
+/** Rotește mașina A ori B de pe desen; unghiul rămâne în intervalul -180..180. */
+export function rotateMark(marks: DrawingSketch["marks"], who: "A" | "B", delta: number): DrawingSketch["marks"] {
+  return marks.map((m) => (m.who === who ? { ...m, angle: ((((m.angle + delta + 180) % 360) + 360) % 360) - 180 } : m));
 }
 
 export function isSketchEmpty(sketch: Sketch | null): boolean {
