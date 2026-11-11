@@ -1,0 +1,751 @@
+/*
+ * Constatare amiabilă de accident: machetă după anexa nr. 7 la Norma ASF 20/2017.
+ * Culorile sunt ale formularului tipărit (albastru pentru A, galben pentru B), nu ale tokenilor aplicației.
+ * Foaia are dimensiunea A4 la 96 dpi; pe telefon o micșorează `FitToWidth`.
+ */
+.af-sheet,
+.af-back {
+  --a-line: #1c3b8f;
+  --a-bg: #e0e7f5;
+  --a-badge: #c4d0ea;
+  --b-line: #f0b323;
+  --b-bg: #fdf1de;
+  --b-badge: #fbe3b2;
+  --ink: #12288f;
+  --rule: #1f2937;
+  position: relative;
+  box-sizing: border-box;
+  background: #fff;
+  color: #111;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9px;
+  line-height: 1.2;
+  text-align: left;
+}
+.af-sheet *,
+.af-back * {
+  box-sizing: border-box;
+}
+.af-sheet {
+  width: 794px;
+  min-height: 1123px;
+  padding: 22px 20px 14px;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------- antet */
+.af-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+.af-head h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: #1a2a6c;
+}
+.af-head span {
+  font-size: 9px;
+}
+
+/* ---------------------------------------------------------------- casete */
+.af-box {
+  position: relative;
+  border: 1px solid var(--rule);
+  padding: 3px 5px 4px;
+  min-width: 0;
+}
+.af-box > .af-n {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.af-bt {
+  margin: 0 0 2px;
+  padding-left: 17px;
+  font-size: 9.5px;
+  font-weight: 700;
+  min-height: 12px;
+  line-height: 12px;
+}
+.af-bt small {
+  font-size: 8px;
+  font-weight: 400;
+}
+.af-n {
+  display: inline-block;
+  min-width: 15px;
+  height: 13px;
+  padding: 0 2px;
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background: #d4d8df;
+  color: #111;
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 13px;
+  text-align: center;
+}
+.af-n.a {
+  background: var(--a-badge);
+}
+.af-n.b {
+  background: var(--b-badge);
+}
+.af-n.gen {
+  position: static;
+  margin-right: 3px;
+  border: 1px solid var(--rule);
+}
+
+/* ---------------------------------------------------------------- câmpuri */
+.af-line {
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-end;
+  gap: 3px;
+  min-height: 15px;
+  padding-top: 1px;
+  border-bottom: 1px dotted #5b6577;
+}
+.af-l {
+  flex: none;
+  max-width: 100%;
+  font-size: 8.5px;
+  color: #111;
+}
+.af-v {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: var(--font-sans-family), Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+.af-big {
+  font-size: 12px;
+  padding: 3px 0 0 3px;
+}
+.af-row {
+  display: flex;
+  gap: 8px;
+}
+.af-cap {
+  margin-top: 2px;
+  font-size: 8.5px;
+}
+.af-free {
+  margin: 0;
+  min-height: 34px;
+  color: var(--ink);
+  font-family: var(--font-sans-family), Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 15px;
+  background-image: repeating-linear-gradient(transparent 0 14px, #5b6577 14px 15px);
+  background-size: 100% 15px;
+  overflow-wrap: anywhere;
+}
+.af-tiny {
+  display: block;
+  padding-left: 17px;
+  font-size: 7.5px;
+}
+
+.af-cb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border: 1px solid #111;
+  background: #fff;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+.af-cb.wide {
+  width: 26px;
+  height: 17px;
+  font-size: 12px;
+}
+.af-ynp {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+}
+.af-yn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+}
+
+/* ---------------------------------------------------------------- rândul 1 și 2 */
+.af-top1 {
+  display: grid;
+  grid-template-columns: 200px 92px 1fr 150px;
+  margin-bottom: 4px;
+}
+.af-top1 > .af-box {
+  min-height: 42px;
+  margin-left: -1px;
+}
+.af-top1 > .af-box:first-child {
+  margin-left: 0;
+}
+.af-top1 .af-bt {
+  padding-left: 17px;
+}
+.af-time .af-bt {
+  padding-left: 2px;
+}
+.af-injured {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.af-injured .af-ynp {
+  padding-left: 17px;
+}
+
+.af-top2 {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  margin-bottom: 5px;
+}
+.af-top2 > .af-box {
+  min-height: 52px;
+}
+.af-top2 > .af-box + .af-box {
+  margin-left: -1px;
+}
+.af-dmg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding-left: 2px;
+}
+.af-dmg-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.af-dmg-grid small {
+  font-size: 7.5px;
+  line-height: 1.15;
+}
+.af-wit .af-free {
+  min-height: 34px;
+}
+
+/* ---------------------------------------------------------------- coloanele A / centru / B */
+.af-main {
+  display: grid;
+  grid-template-columns: 276px 1fr 276px;
+}
+.af-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 3px solid var(--a-line);
+  border-right: 3px solid var(--a-line);
+  background: var(--a-bg);
+}
+.af-col.b {
+  border-color: var(--b-line);
+  background: var(--b-bg);
+}
+.af-colhead {
+  padding: 3px 0 2px;
+  background: var(--a-line);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+.af-col.b .af-colhead {
+  background: var(--b-line);
+  color: #2b2100;
+}
+.af-col .af-box {
+  margin: 0;
+  border-color: var(--a-line);
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  background: transparent;
+}
+.af-col.b .af-box {
+  border-color: var(--b-line);
+}
+.af-col > .af-box:last-child {
+  border-bottom: 0;
+}
+.af-col.a .af-n {
+  background: var(--a-badge);
+}
+.af-col.b .af-n {
+  background: var(--b-badge);
+}
+.af-col.a .af-line {
+  border-bottom-color: #3b4f86;
+}
+.af-col.b .af-line {
+  border-bottom-color: #a77a10;
+}
+.af-vehicle .af-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.af-vehicle .af-split > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid #3b4f86;
+  padding: 0 3px 3px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.af-col.b .af-vehicle .af-split > div {
+  border-color: #a77a10;
+}
+.af-sub {
+  margin: 0 -3px 1px;
+  padding: 1px 0;
+  background: rgba(28, 59, 143, 0.15);
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-align: center;
+}
+.af-col.b .af-sub {
+  background: rgba(240, 179, 35, 0.3);
+}
+.af-vehicle .af-l {
+  font-size: 7.5px;
+  line-height: 1.15;
+}
+.af-vehicle .af-line {
+  flex: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+.af-vehicle .af-v {
+  flex: none;
+  min-height: 13px;
+}
+.af-casco {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 7.5px;
+  font-style: italic;
+}
+.af-casco .af-ynp {
+  flex: none;
+}
+
+/* ---------------------------------------------------------------- caseta 12 */
+.af-center {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  background: #fff;
+}
+.af-centerhead {
+  padding: 3px 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+.af-circ {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 0 4px;
+}
+.af-circ-lead {
+  margin: 0 0 3px;
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+}
+.af-circ-lead small {
+  display: block;
+  font-size: 6.5px;
+  font-weight: 400;
+}
+.af-circ-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.af-circ-row {
+  display: grid;
+  grid-template-columns: 12px 10px 1fr 10px 12px;
+  align-items: center;
+  gap: 2px;
+  min-height: 22px;
+  border-bottom: 1px solid #cbd0d9;
+}
+.af-cn {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-align: center;
+}
+.af-ct {
+  font-size: 7.6px;
+  line-height: 1.12;
+  text-align: center;
+}
+.af-count {
+  display: grid;
+  grid-template-columns: 10px 26px 1fr 26px 10px;
+  align-items: center;
+  gap: 2px;
+  margin-top: 5px;
+}
+.af-count-t {
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+}
+.af-arrow {
+  font-size: 11px;
+  text-align: center;
+}
+.af-legal {
+  margin: 4px 0 3px;
+  border: 1px solid var(--rule);
+  padding: 2px 3px;
+  font-size: 6.4px;
+  line-height: 1.15;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- partea de jos */
+.af-lower {
+  display: grid;
+  grid-template-columns: 150px 1fr 150px;
+}
+.af-side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-left: 3px solid var(--a-line);
+  background: var(--a-bg);
+}
+.af-side.b {
+  border-left: 0;
+  border-right: 3px solid var(--b-line);
+  background: var(--b-bg);
+}
+.af-side .af-box {
+  border: 0;
+  border-bottom: 1px solid var(--a-line);
+}
+.af-side.b .af-box {
+  border-bottom-color: var(--b-line);
+}
+.af-side .af-box:last-child {
+  flex: 1;
+  border-bottom: 0;
+}
+.af-impact .af-bt {
+  font-size: 8.5px;
+  line-height: 1.15;
+  min-height: 24px;
+}
+.af-art {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 6px;
+  height: 92px;
+}
+.af-car {
+  height: 92px;
+  width: auto;
+}
+.af-bike {
+  height: 82px;
+  width: auto;
+}
+.af-damage .af-bt {
+  font-size: 8.5px;
+}
+.af-damage .af-free {
+  font-size: 9px;
+  min-height: 60px;
+}
+.af-sketch {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  border-top: 0;
+}
+.af-sketch-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  border-top: 1px solid var(--rule);
+  font-size: 9px;
+}
+.af-sketch-head .af-n {
+  border-top: 0;
+  border-bottom: 1px solid var(--rule);
+  border-left: 0;
+  height: 14px;
+}
+.af-sketch-head .af-n.b {
+  border-right: 0;
+  border-left: 1px solid var(--rule);
+}
+.af-sketch-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  flex: 1;
+}
+.af-sketch-note {
+  margin: 0;
+  padding: 2px 4px;
+  border-top: 1px solid #cbd0d9;
+  font-size: 6.5px;
+  color: #444;
+  text-align: center;
+}
+
+.af-foot {
+  display: grid;
+  grid-template-columns: 276px 1fr 276px;
+}
+.af-foot .af-col {
+  border-top: 1px solid var(--a-line);
+}
+.af-foot .af-col.b {
+  border-top-color: var(--b-line);
+}
+.af-obs .af-free {
+  min-height: 48px;
+  font-size: 9.5px;
+}
+.af-sign {
+  display: flex;
+  flex-direction: column;
+  padding: 0 4px;
+  background: #fff;
+}
+.af-sign-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  border: 1px solid var(--rule);
+  font-size: 9px;
+}
+.af-sign-head .af-n {
+  border: 0;
+  height: 14px;
+}
+.af-sign-pad {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+  min-height: 52px;
+}
+.af-sign-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+}
+.af-sign-cell img {
+  max-height: 46px;
+  max-width: 100%;
+}
+.af-letters {
+  display: flex;
+  justify-content: space-between;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 6px 2px;
+}
+.af-copy {
+  margin-top: 3px;
+  font-size: 6px;
+}
+.af-wm {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(185, 28, 28, 0.13);
+  font-size: 150px;
+  font-weight: 800;
+  letter-spacing: 12px;
+  pointer-events: none;
+  transform: rotate(-32deg);
+  user-select: none;
+}
+
+/* ---------------------------------------------------------------- pagina 2 */
+.af-back {
+  display: grid;
+  width: 1123px;
+  height: 794px;
+  grid-template-columns: 1fr 1fr;
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+.af-instr {
+  padding: 26px 30px 18px 34px;
+}
+.af-instr h2 {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #123b9a;
+  text-align: center;
+}
+.af-instr h3 {
+  margin: 8px 0 3px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #123b9a;
+  text-align: center;
+  text-decoration: underline;
+}
+.af-instr h4 {
+  margin: 6px 0 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #123b9a;
+  text-decoration: underline;
+}
+.af-instr p {
+  margin: 0 0 4px;
+}
+.af-instr ol {
+  margin: 0 0 4px;
+  padding-left: 30px;
+}
+.af-instr ol ol {
+  list-style: lower-alpha;
+  padding-left: 22px;
+}
+.af-instr .caps {
+  font-weight: 700;
+  text-align: center;
+  text-decoration: underline;
+}
+.af-instr .fine {
+  margin-top: 6px;
+  font-size: 7px;
+  line-height: 1.2;
+}
+.af-cover {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 80px 40px 60px;
+  background: #1a47b8;
+  color: #fff;
+}
+.af-cover .oval {
+  padding: 30px 24px;
+  border-radius: 50%;
+  background: #fff;
+  color: #1a47b8;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+.af-cover ul {
+  margin: 0;
+  padding: 0 0 0 20px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 2.2;
+  list-style: none;
+}
+.af-cover .arrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.af-cover .arrow svg {
+  flex: none;
+}
+
+/* ---------------------------------------------------------------- scalare și tipărire */
+.af-fit-outer {
+  width: 100%;
+  overflow: hidden;
+}
+.af-fit-inner {
+  transform-origin: top left;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+@page landscape {
+  size: A4 landscape;
+  margin: 0;
+}
+.af-back {
+  page: landscape;
+}
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+  .af-noprint {
+    display: none !important;
+  }
+  .af-fit-outer {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .af-fit-inner {
+    transform: none !important;
+  }
+  .af-page-break {
+    break-after: page;
+  }
+  .af-sheet,
+  .af-back {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

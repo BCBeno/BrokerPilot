@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CarFront, ListChecks, MapPin, Pencil, RotateCcw, type LucideIcon } from "lucide-react";
+import { CarFront, FileText, ListChecks, MapPin, Pencil, RotateCcw, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CIRCUMSTANCES, DISCLAIMER, IMPACT_LABELS } from "@/lib/amiabila/content";
 import { resetDraft, useDraft } from "@/lib/amiabila/draft-store";
+import { fieldValue } from "@/lib/amiabila/documents";
 import { StepFrame } from "./step-frame";
 
 function Section({
@@ -63,6 +64,26 @@ export function SummaryStep() {
         <p className="text-muted-foreground">{formatWhen(place.occurredAt)}</p>
       </Section>
 
+      <Section icon={FileText} title="Acte" href="/amiabila/acte">
+        {draft.documents.registration || draft.documents.license || draft.documents.policy ? (
+          <>
+            <p>
+              {fieldValue(draft.documents.registration, "plate") || "Număr lipsă"}
+              {fieldValue(draft.documents.registration, "make")
+                ? `, ${fieldValue(draft.documents.registration, "make")} ${fieldValue(draft.documents.registration, "model")}`
+                : ""}
+            </p>
+            <p>{fieldValue(draft.documents.license, "fullName") || "Permis necompletat"}</p>
+            <p className="text-muted-foreground">
+              {fieldValue(draft.documents.policy, "insurer") || "Poliță necompletată"}
+              {fieldValue(draft.documents.policy, "validTo") ? `, valabilă până la ${fieldValue(draft.documents.policy, "validTo")}` : ""}
+            </p>
+          </>
+        ) : (
+          <p className="text-muted-foreground">Actele nu sunt completate</p>
+        )}
+      </Section>
+
       <Section icon={ListChecks} title="Circumstanțe" href="/amiabila/circumstante">
         {checked.length === 0 ? (
           <p className="text-muted-foreground">Nimic bifat</p>
@@ -82,6 +103,11 @@ export function SummaryStep() {
         {circumstances.damage ? <p>{circumstances.damage}</p> : null}
         {circumstances.notes ? <p className="text-muted-foreground">{circumstances.notes}</p> : null}
       </Section>
+
+      <Button variant="cta" size="xl" className="w-full" nativeButton={false} render={<Link href="/amiabila/document" />}>
+        <FileText aria-hidden />
+        Vezi formularul completat
+      </Button>
 
       <Button
         variant="ghost"

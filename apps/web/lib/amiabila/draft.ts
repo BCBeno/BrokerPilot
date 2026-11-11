@@ -1,13 +1,17 @@
 import { z } from "zod";
 import { ELIGIBILITY_KEYS, IMPACT_ZONES, type EligibilityKey } from "./content";
+import { DOC_TYPES, extractedDocSchema, isDocConfirmed, type DocType } from "./documents";
+import { sketchSchema } from "./sketch";
 
-/** Pașii wizard-ului, în ordine. S3 adaugă aici „acte”, „sofer-b”, „poze”, „semnatura”. „rezumat” nu intră în progres. */
+/** Pașii wizard-ului, în ordine. S3 adaugă mai departe „sofer-b”, „poze”, „semnatura”. „rezumat” nu intră în progres. */
 export const STEPS = [
   { slug: "siguranta", title: "Siguranță" },
   { slug: "eligibilitate", title: "Verificare" },
   { slug: "loc-timp", title: "Loc și timp" },
+  { slug: "acte", title: "Acte" },
   { slug: "circumstante", title: "Circumstanțe" },
   { slug: "impact", title: "Impact" },
+  { slug: "schita", title: "Schiță" },
 ] as const;
 export type StepSlug = (typeof STEPS)[number]["slug"] | "rezumat";
 
@@ -29,12 +33,22 @@ export const draftSchema = z.object({
     /** ISO complet, completat la „Continuă”. */
     occurredAt: z.string().nullable(),
   }),
+  /** Acordul pentru trimiterea pozelor de acte la serviciul AI (excepția GDPR din ADR). */
+  documentsConsent: z.boolean(),
+  documents: z.object(
+    Object.fromEntries(DOC_TYPES.map((t) => [t, extractedDocSchema.nullable()])) as Record<
+      DocType,
+      z.ZodNullable<typeof extractedDocSchema>
+    >,
+  ),
   circumstances: z.object({
     checked: z.array(z.number().int().min(1).max(17)).max(17),
     impact: z.enum(IMPACT_ZONES).nullable(),
     damage: z.string().max(1000),
     notes: z.string().max(1000),
   }),
+  /** Schița accidentului (caseta 13), în modul ales de șofer. `default` păstrează ciornele salvate înainte să existe schița. */
+  sketch: sketchSchema.nullable().default(null),
 });
 export type Draft = z.infer<typeof draftSchema>;
 
@@ -42,7 +56,10 @@ export const EMPTY_DRAFT: Draft = {
   injured: null,
   eligibility: { twoVehicles: null, onlyMaterialDamage: null, bothInsured: null, agreed: null },
   place: { address: "", lat: null, lng: null, source: null, whenMode: "now", customWhen: "", occurredAt: null },
+  documentsConsent: false,
+  documents: { registration: null, license: null, policy: null },
   circumstances: { checked: [], impact: null, damage: "", notes: "" },
+  sketch: null,
 };
 
 /** Parsează ce e în storage. La orice nepotrivire (versiune veche, date stricate) pornește de la zero. */
@@ -85,10 +102,14 @@ export function canContinue(slug: StepSlug, draft: Draft, now: Date): boolean {
       return evaluateEligibility(draft.eligibility).status === "eligible";
     case "loc-timp":
       return draft.place.address.trim().length >= 3 && resolveOccurredAt(draft.place, now) !== null;
+    case "acte":
+      return DOC_TYPES.every((t) => isDocConfirmed(t, draft.documents[t]));
     case "circumstante":
       return draft.circumstances.checked.length > 0;
     case "impact":
       return draft.circumstances.impact !== null;
+    case "schita":
+      return true; // schița se recomandă, dar nu blochează: se poate completa și la poliție
     case "rezumat":
       return true;
   }

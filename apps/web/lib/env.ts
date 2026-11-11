@@ -8,6 +8,9 @@ const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   N8N_WEBHOOK_BASE: z.url().optional(),
   BP_WEBHOOK_SECRET: z.string().min(1).optional(),
+  OPENROUTER_API_KEY: z.string().min(1).optional(),
+  MODEL_VISION: z.string().min(1).optional(),
+  AI_DAILY_BUDGET_USD: z.coerce.number().positive().default(5),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

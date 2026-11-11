@@ -13,41 +13,49 @@ export type DocType = (typeof DOC_TYPES)[number];
 export type FieldKind = "text" | "plate" | "vin" | "date" | "year";
 export type FieldDef = { key: string; label: string; kind: FieldKind; placeholder?: string };
 
-export const DOC_META: Record<DocType, { label: string; hint: string; fields: FieldDef[] }> = {
+/**
+ * `scannable: false` = actul nu se fotografiază și nu pleacă niciodată la AI; datele se scriu de mână.
+ * Permisul are pe față poza, data nașterii și CNP-ul, iar noi avem nevoie doar de 4 câmpuri (minimizarea datelor, ADR-0001).
+ */
+export const DOC_META: Record<DocType, { label: string; hint: string; scannable: boolean; fields: FieldDef[] }> = {
   registration: {
     label: "Talonul mașinii",
     hint: "Certificatul de înmatriculare, pagina cu datele mașinii.",
+    scannable: true,
     fields: [
-      { key: "plate", label: "Număr de înmatriculare", kind: "plate", placeholder: "B 123 ABC" },
+      { key: "plate", label: "Număr de înmatriculare", kind: "plate", placeholder: "ex. B 123 ABC" },
       { key: "vin", label: "Serie șasiu (VIN)", kind: "vin" },
       { key: "make", label: "Marca", kind: "text" },
       { key: "model", label: "Modelul", kind: "text" },
-      { key: "year", label: "An fabricație", kind: "year", placeholder: "2018" },
-      { key: "holderName", label: "Titular", kind: "text" },
+      { key: "year", label: "An fabricație", kind: "year", placeholder: "ex. 2018" },
     ],
   },
   license: {
     label: "Permisul de conducere",
-    hint: "Fața permisului, cu poza și numele.",
+    hint: "Îl completați dumneavoastră, cu permisul în față. Nu îl fotografiem.",
+    scannable: false,
     fields: [
       { key: "fullName", label: "Nume și prenume", kind: "text" },
       { key: "licenseNo", label: "Număr permis", kind: "text" },
-      { key: "categories", label: "Categorii", kind: "text", placeholder: "B" },
+      { key: "categories", label: "Categorii", kind: "text", placeholder: "ex. B" },
       { key: "expiresOn", label: "Valabil până la", kind: "date" },
     ],
   },
   policy: {
     label: "Polița RCA",
     hint: "Poza sau PDF-ul poliței, pagina cu seria și valabilitatea.",
+    scannable: true,
     fields: [
       { key: "insurer", label: "Asigurător", kind: "text" },
       { key: "policyNo", label: "Serie și număr poliță", kind: "text" },
       { key: "validFrom", label: "Valabilă de la", kind: "date" },
       { key: "validTo", label: "Valabilă până la", kind: "date" },
-      { key: "plate", label: "Număr de înmatriculare", kind: "plate", placeholder: "B 123 ABC" },
+      { key: "plate", label: "Număr de înmatriculare", kind: "plate", placeholder: "ex. B 123 ABC" },
     ],
   },
 };
+
+export const SCANNABLE_TYPES = DOC_TYPES.filter((t) => DOC_META[t].scannable);
 
 /** Sub acest prag câmpul se marchează cu galben pe ecranul de verificare. */
 export const LOW_CONFIDENCE = 0.75;
@@ -169,4 +177,26 @@ export function policyCoversDate(doc: ExtractedDoc | null | undefined, onDate: D
   if (!from || !to) return null;
   const day = onDate.toISOString().slice(0, 10);
   return day >= from && day <= to;
+}
+
+/** „Datele sunt corecte”: omul a verificat actul, deci câmpurile valide devin sigure. Cele goale sau în format greșit rămân de corectat. */
+export function confirmDoc(type: DocType, doc: ExtractedDoc, now: Date): ExtractedDoc {
+  const fields: ExtractedDoc["fields"] = {};
+  for (const def of DOC_META[type].fields) {
+    const current = doc.fields[def.key];
+    fields[def.key] = current?.value ? editField(def, current.value, now) : { value: null, confidence: 0 };
+  }
+  return { fields };
+}
+
+export function emptyDoc(type: DocType): ExtractedDoc {
+  return { fields: Object.fromEntries(DOC_META[type].fields.map((f) => [f.key, { value: null, confidence: 0 }])) };
+}
+
+/** Numărul din poliță trebuie să fie al mașinii din talon. `null` = nu putem compara încă. */
+export function policyMatchesVehicle(registration: ExtractedDoc | null, policy: ExtractedDoc | null): boolean | null {
+  const a = fieldValue(registration, "plate").replace(/\s/g, "");
+  const b = fieldValue(policy, "plate").replace(/\s/g, "");
+  if (!a || !b) return null;
+  return a === b;
 }

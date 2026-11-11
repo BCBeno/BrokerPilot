@@ -63,6 +63,30 @@ export const CIRCUMSTANCES: readonly { n: number; label: string }[] = [
   { n: 17, label: "nu a respectat un indicator de prioritate sau semaforul" },
 ];
 
+/**
+ * Formularea tipărită pe formularul oficial, caseta 12 (anexa nr. 7 la Norma ASF 20/2017), în ordinea 1–17.
+ * Wizard-ul folosește formulări mai prietenoase (`CIRCUMSTANCES`); documentul generat le folosește pe acestea.
+ */
+export const FORM_CIRCUMSTANCES: readonly string[] = [
+  "în staționare / oprit",
+  "la momentul plecării / deschiderii portierei",
+  "la momentul opririi",
+  "ieșind dintr-un parcaj, loc privat, drum de pământ",
+  "intrând într-un parcaj, loc privat, drum de pământ",
+  "intrând într-un sens giratoriu",
+  "circulând într-un sens giratoriu",
+  "lovind spatele unui vehicul în timpul deplasării pe aceeași bandă",
+  "deplasându-se în același sens dar pe benzi de circulație diferite",
+  "schimbând banda de circulație",
+  "depășind",
+  "virând la dreapta",
+  "virând la stânga",
+  "mergând cu spatele",
+  "intrând pe banda destinată pentru circulația în sens opus",
+  "venind din dreapta (într-o intersecție)",
+  "neobservând indicatorul de prioritate sau lumina roșie a semaforului",
+];
+
 export const IMPACT_ZONES = [
   "front-left",
   "front",
