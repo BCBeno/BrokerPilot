@@ -94,6 +94,7 @@ export async function importPortfolio(_prev: ImportState, form: FormData): Promi
 
 type PartyData = {
   client_id: string | null;
+  contact_consent_at: string | null;
   driver: { fullName?: string; phone?: string; email?: string } | null;
   vehicle: { plate?: string; vin?: string; make?: string; model?: string; year?: string } | null;
   insurance: { plate?: string; insurer?: string; policyNo?: string; validFrom?: string; validTo?: string } | null;
@@ -110,7 +111,7 @@ export async function addPartyToPortfolio(claimId: string, role: "A" | "B"): Pro
   const r = z.enum(["A", "B"]).parse(role);
   const { db, broker } = await requireBroker();
 
-  const { data } = await db.from("claim_parties").select("client_id, driver, vehicle, insurance").eq("claim_id", id).eq("role", r).maybeSingle();
+  const { data } = await db.from("claim_parties").select("client_id, contact_consent_at, driver, vehicle, insurance").eq("claim_id", id).eq("role", r).maybeSingle();
   const party = data as PartyData | null;
   if (!party) throw new Error("Partea nu există în acest dosar.");
   if (party.client_id) return { clientId: party.client_id, created: false };
@@ -120,6 +121,8 @@ export async function addPartyToPortfolio(claimId: string, role: "A" | "B"): Pro
   const link = async (clientId: string, method: "broker_added" | "broker_matched") => {
     const up = await db.from("claim_parties").update({ client_id: clientId }).eq("claim_id", id).eq("role", r).is("client_id", null);
     if (up.error) throw new Error("Nu am putut lega clientul de dosar.");
+    // Acordul din rezumat ajunge pe client, fără să suprascrie unul mai vechi.
+    if (party.contact_consent_at) await db.from("clients").update({ consent_gdpr_at: party.contact_consent_at }).eq("id", clientId).is("consent_gdpr_at", null);
     await db.from("events").insert({ entity_type: "claim", entity_id: id, type: "client_linked", payload: { role: r, client_id: clientId, method, broker_id: broker.id } });
     revalidatePath("/broker", "layout");
   };

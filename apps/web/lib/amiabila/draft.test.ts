@@ -104,6 +104,12 @@ describe("parseDraft", () => {
     const draft: Draft = { ...EMPTY_DRAFT, injured: false };
     expect(parseDraft(JSON.stringify(draft))).toEqual(draft);
   });
+
+  it("păstrează o ciornă salvată înainte de acordul GDPR și bannerul de reluare", () => {
+    const { contactConsent, lastStep, updatedAt, ...old } = { ...EMPTY_DRAFT, injured: false };
+    void [contactConsent, lastStep, updatedAt];
+    expect(parseDraft(JSON.stringify(old))).toEqual({ ...EMPTY_DRAFT, injured: false });
+  });
 });
 
 describe("circumstanțe", () => {

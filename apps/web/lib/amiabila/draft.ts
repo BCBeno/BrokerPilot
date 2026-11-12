@@ -71,6 +71,12 @@ export const draftSchema = z.object({
     })
     .nullable()
     .default(null),
+  /** Acordul GDPR (opțional, din rezumat) ca brokerul să-l păstreze ca client și să-l contacteze. Separat de `documentsConsent`. */
+  contactConsent: z.boolean().default(false),
+  /** Ultimul pas deschis după „siguranta”, pentru bannerul „Aveți o declarație începută”. */
+  lastStep: z.string().max(20).nullable().default(null),
+  /** ISO, pus de store la fiecare modificare. */
+  updatedAt: z.string().max(40).nullable().default(null),
 });
 export type Draft = z.infer<typeof draftSchema>;
 
@@ -83,6 +89,9 @@ export const EMPTY_DRAFT: Draft = {
   circumstances: { checked: [], impact: null, damage: "", notes: "" },
   sketch: null,
   claim: null,
+  contactConsent: false,
+  lastStep: null,
+  updatedAt: null,
 };
 
 /** Parsează ce e în storage. La orice nepotrivire (versiune veche, date stricate) pornește de la zero. */

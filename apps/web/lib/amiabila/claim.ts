@@ -67,6 +67,8 @@ export const claimPatchSchema = z.object({
   documents: draftSchema.shape.documents.optional(),
   /** Schița lui A (caseta 13). `null` = a șters-o. */
   sketch: sketchSchema.nullable().optional(),
+  /** Acordul GDPR al lui A din rezumat; serverul pune ora la prima bifare. */
+  contactConsent: z.boolean().optional(),
 });
 
 /** Coloana din `claim_parties` în care se păstrează valorile fiecărui act. */

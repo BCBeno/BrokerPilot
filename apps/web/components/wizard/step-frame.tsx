@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { ArrowLeft, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { nextSlug, prevSlug, stepIndex, type StepSlug } from "@/lib/amiabila/draft";
@@ -99,8 +100,14 @@ export function StepFrame({
 }: StepFrameProps) {
   const router = useRouter();
   const hydrated = useHydrated();
-  const { steps, basePath } = useWizard();
+  const { steps, basePath, draft, update } = useWizard();
   const prev = prevSlug(slug, steps);
+
+  // Ținem minte pasul pentru bannerul de reluare. „siguranta” nu se notează, ca să nu șteargă pasul la care revine șoferul.
+  const recorded = hydrated && draft.lastStep === slug;
+  useEffect(() => {
+    if (hydrated && !recorded && slug !== "siguranta") update((d) => ({ ...d, lastStep: slug }));
+  }, [hydrated, recorded, slug, update]);
   const next = nextSlug(slug, steps);
   const target = nextHref ?? (next ? `${basePath}/${next}` : null);
   const hasAction = continueLabel !== null && target !== null;

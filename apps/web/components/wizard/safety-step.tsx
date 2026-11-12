@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { updateDraft, useDraft } from "@/lib/amiabila/draft-store";
 import { ChoiceQuestion } from "./choice";
+import { ResumeBanner } from "./resume-banner";
 import { StepFrame } from "./step-frame";
 
 export function SafetyStep() {
@@ -55,6 +56,7 @@ export function SafetyStep() {
       canContinue={draft.injured === false}
       disabledHint="Alegeți un răspuns ca să continuați."
     >
+      <ResumeBanner />
       <ChoiceQuestion
         name="injured"
         icon={Ambulance}

@@ -42,7 +42,7 @@ export async function PATCH(request: Request, ctx: Ctx) {
 
   const body = claimPatchSchema.safeParse(await request.json().catch(() => null));
   if (!body.success) return fail(400, "Cerere invalidă.", "bad_request");
-  const { circumstances, documents, sketch } = body.data;
+  const { circumstances, documents, sketch, contactConsent } = body.data;
   const locked = await auth.db.from("claims").select("status").eq("id", auth.id).single();
   if (locked.error) return SERVER_ERROR();
   if (locked.data.status === "submitted" || locked.data.status === "closed") return fail(409, "Dosarul a fost deja trimis.", "locked");
@@ -71,6 +71,12 @@ export async function PATCH(request: Request, ctx: Ctx) {
       const row = await auth.db.from("claim_files").insert({ claim_id: auth.id, party_role: "A", kind: "sketch", storage_path: path });
       if (row.error) return SERVER_ERROR();
     }
+  }
+  if (contactConsent !== undefined) {
+    // Ora primei bifări rămâne dovada acordului; debifarea îl retrage.
+    const party = auth.db.from("claim_parties").update({ contact_consent_at: contactConsent ? new Date().toISOString() : null }).eq("claim_id", auth.id).eq("role", "A");
+    const saved = contactConsent ? await party.is("contact_consent_at", null) : await party;
+    if (saved.error) return SERVER_ERROR();
   }
   return NextResponse.json({ ok: true });
 }

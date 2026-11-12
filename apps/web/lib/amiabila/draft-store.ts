@@ -42,8 +42,7 @@ export function createDraftStore(key: string): DraftStore {
     };
   }
 
-  function update(change: (draft: Draft) => Draft) {
-    const next = change(read());
+  function write(next: Draft) {
     cached = next;
     cachedRaw = JSON.stringify(next);
     try {
@@ -54,7 +53,10 @@ export function createDraftStore(key: string): DraftStore {
     listeners.forEach((l) => l());
   }
 
-  return { read, subscribe, update, reset: () => update(() => EMPTY_DRAFT) };
+  const update = (change: (draft: Draft) => Draft) => write({ ...change(read()), updatedAt: new Date().toISOString() });
+
+  // Fără ștampilă: o ciornă golită nu e „începută”.
+  return { read, subscribe, update, reset: () => write(EMPTY_DRAFT) };
 }
 
 const stores = new Map<string, DraftStore>();

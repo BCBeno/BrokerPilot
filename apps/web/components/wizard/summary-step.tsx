@@ -18,7 +18,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { CIRCUMSTANCES, DISCLAIMER, IMPACT_LABELS } from "@/lib/amiabila/content";
 import { canContinue, type Draft, type StepSlug } from "@/lib/amiabila/draft";
-import { resetDraft, useDraft } from "@/lib/amiabila/draft-store";
+import { Checkbox } from "@/components/ui/checkbox";
+import { resetDraft, updateDraft, useDraft } from "@/lib/amiabila/draft-store";
 import { fieldValue } from "@/lib/amiabila/documents";
 import { cn } from "@/lib/utils";
 import { StepFrame } from "./step-frame";
@@ -102,7 +103,7 @@ export function SummaryStep() {
   const { claim } = draft;
   useEffect(() => {
     if (!claim) return;
-    const body = JSON.stringify({ circumstances, documents: draft.documents, sketch: draft.sketch });
+    const body = JSON.stringify({ circumstances, documents: draft.documents, sketch: draft.sketch, contactConsent: draft.contactConsent });
     if (synced.current === body) return;
     synced.current = body;
     fetch(`/api/claims/${claim.id}`, { method: "PATCH", headers: { "content-type": "application/json", "x-claim-token": claim.aToken }, body })
@@ -112,7 +113,7 @@ export function SummaryStep() {
       .catch(() => {
         synced.current = "";
       });
-  }, [claim, circumstances, draft.documents, draft.sketch]);
+  }, [claim, circumstances, draft.documents, draft.sketch, draft.contactConsent]);
 
   return (
     <StepFrame
@@ -187,6 +188,18 @@ export function SummaryStep() {
             : "Fără schiță"}
         </p>
       </Section>
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-4 text-[15px] leading-snug">
+        <Checkbox
+          className="mt-0.5"
+          checked={draft.contactConsent}
+          onCheckedChange={(v) => updateDraft((d) => ({ ...d, contactConsent: v === true }))}
+        />
+        <span>
+          Sunt de acord ca brokerul să îmi păstreze datele de contact și să mă contacteze despre asigurările mele.
+          <span className="mt-1 block text-muted-foreground">Opțional. Dosarul merge mai departe oricum. Puteți retrage acordul oricând.</span>
+        </span>
+      </label>
 
       <Button variant="outline" size="xl" className="w-full" nativeButton={false} render={<Link href="/amiabila/document" />}>
         <FileText aria-hidden />
