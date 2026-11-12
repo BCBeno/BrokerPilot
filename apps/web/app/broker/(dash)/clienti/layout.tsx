@@ -10,6 +10,7 @@ type RawClient = {
   id: string;
   full_name: string;
   phone: string | null;
+  needs_review: boolean;
   vehicles: { plate: string }[];
   policies: PolicyLite[];
 };
@@ -19,7 +20,7 @@ export default async function ClientsLayout({ children }: { children: React.Reac
   const { db } = await requireBroker();
   const { data, error } = await db
     .from("clients")
-    .select("id, full_name, phone, vehicles(plate), policies(id, client_id, vehicle_id, type, valid_from, valid_to)")
+    .select("id, full_name, phone, needs_review, vehicles(plate), policies(id, client_id, vehicle_id, type, valid_from, valid_to)")
     .order("full_name")
     .limit(500);
   const today = todayRo();
@@ -33,6 +34,7 @@ export default async function ClientsLayout({ children }: { children: React.Reac
       id: c.id,
       name: displayName(c.full_name),
       phone: c.phone,
+      needsReview: c.needs_review,
       plates: c.vehicles.map((v) => v.plate),
       policyCount: c.policies.length,
       dueDays: due ?? null,

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Plate } from "@/components/broker/plate";
 import { RenewalActions } from "@/components/broker/renewal-actions";
+import { VerifyClient } from "@/components/broker/verify-client";
 import { StateText } from "@/components/broker/renewal-state";
 import { DueText, RoleTag, StatusPill } from "@/components/broker/status-pill";
 import { STATUS_LABELS, type ClaimStatus } from "@/lib/broker/claims";
@@ -27,6 +28,7 @@ type Client = {
   email: string | null;
   telegram_chat_id: number | null;
   consent_gdpr_at: string | null;
+  needs_review: boolean;
   created_at: string;
 };
 type Vehicle = { id: string; plate: string; vin: string | null; make: string | null; model: string | null; year: number | null };
@@ -48,6 +50,8 @@ const METHOD_LABELS: Record<string, string> = {
   phone: "recunoscut automat după telefon",
   broker_matched: "legat de broker",
   broker_added: "adăugat în portofoliu din dosar",
+  consent_added: "adăugat în portofoliu (a acceptat contactul și și-a scanat polița)",
+  policy_scanned: "recunoscut după poliță; polița scanată a fost adăugată",
 };
 
 /**
@@ -63,7 +67,7 @@ export default async function ClientDetail({ params }: { params: Promise<{ id: s
   const today = todayRo();
 
   const [clientRes, vehiclesRes, policiesRes, partiesRes, convRes] = await Promise.all([
-    db.from("clients").select("id, full_name, phone, email, telegram_chat_id, consent_gdpr_at, created_at").eq("id", id.data).maybeSingle(),
+    db.from("clients").select("id, full_name, phone, email, telegram_chat_id, consent_gdpr_at, needs_review, created_at").eq("id", id.data).maybeSingle(),
     db.from("vehicles").select("id, plate, vin, make, model, year").eq("client_id", id.data).order("plate"),
     db.from("policies").select(POLICY_SELECT).eq("client_id", id.data).order("valid_to", { ascending: false }),
     db
@@ -175,6 +179,7 @@ export default async function ClientDetail({ params }: { params: Promise<{ id: s
               <span>{client.consent_gdpr_at ? `acord GDPR din ${roDate(client.consent_gdpr_at)}` : "fără acord GDPR"}</span>
               {client.telegram_chat_id && <span>primește mesaje pe Telegram</span>}
             </p>
+            {client.needs_review && <VerifyClient clientId={client.id} />}
           </div>
           {client.phone && (
             <a

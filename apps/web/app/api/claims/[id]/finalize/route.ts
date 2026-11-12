@@ -4,6 +4,7 @@ import { isComplete, missingItems } from "@/lib/claims/completeness";
 import { CLAIM_BUCKET, pdfPath } from "@/lib/claims/files";
 import { loadClaimDocument } from "@/lib/claims/form-data";
 import { linkClaimParties, partyClients } from "@/lib/claims/link-client";
+import { addConsentingPartiesToPortfolio } from "@/lib/claims/portfolio-from-party";
 import { PdfUnavailableError, internalBaseUrl, makeRenderKey, renderPdf } from "@/lib/claims/pdf";
 import { NOT_CONFIGURED, SERVER_ERROR, TOO_MANY, authorizeA, clientIp, fail } from "@/lib/claims/server";
 import { buildCompletedPayload, sendClaimCompleted, type WebhookResult } from "@/lib/claims/webhook";
@@ -66,6 +67,8 @@ export async function POST(request: Request, ctx: Ctx) {
   if (up.error) return SERVER_ERROR();
   const saved = await db.from("claims").update({ pdf_path: path, status: "submitted", missing_items: missing }).eq("id", id);
   if (saved.error) return SERVER_ERROR();
+  // Cine a bifat acordul de contact intră în portofoliu cu polița scanată (apare în Reînnoiri); apoi legarea restului.
+  await addConsentingPartiesToPortfolio(db, id);
   // Recunoaște clienții agenției după poliță sau număr de înmatriculare (fără LLM; nu blochează finalizarea).
   await linkClaimParties(db, id);
 

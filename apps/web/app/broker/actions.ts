@@ -52,6 +52,15 @@ export async function closeClaim(claimId: string) {
   revalidatePath("/broker", "layout");
 }
 
+/** „Marchează ca verificat”: brokerul a confirmat datele unui client adăugat automat din dosar. */
+export async function verifyClient(clientId: string) {
+  const id = z.uuid().parse(clientId);
+  const { db } = await requireBroker();
+  const { error } = await db.from("clients").update({ needs_review: false }).eq("id", id);
+  if (error) throw new Error("Nu am putut salva. Încercați din nou.");
+  revalidatePath("/broker", "layout");
+}
+
 const snoozeSchema = z.union([z.literal(1), z.literal(3), z.literal(7)]);
 
 /**

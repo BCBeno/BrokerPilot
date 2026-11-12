@@ -3,10 +3,9 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { normalizeEmail, normalizePhone, normalizePlate, normalizeVin, normalizeDate } from "@/lib/amiabila/documents";
 import { parsePortfolio, planImport, type ExistingPortfolio, type RowError } from "@/lib/broker/portfolio";
 import { requireBroker } from "@/lib/broker/session";
-import { decideLink, type Candidate } from "@/lib/claims/link-client";
+import { addPartyToPortfolio as addPartyToPortfolioDb } from "@/lib/claims/portfolio-from-party";
 
 export type ImportState =
   | { status: "idle" }
@@ -92,89 +91,18 @@ export async function importPortfolio(_prev: ImportState, form: FormData): Promi
   };
 }
 
-type PartyData = {
-  client_id: string | null;
-  contact_consent_at: string | null;
-  driver: { fullName?: string; phone?: string; email?: string } | null;
-  vehicle: { plate?: string; vin?: string; make?: string; model?: string; year?: string } | null;
-  insurance: { plate?: string; insurer?: string; policyNo?: string; validFrom?: string; validTo?: string } | null;
-};
-
 export type AddToPortfolioResult = { clientId: string; created: boolean };
 
 /**
- * „Adaugă în portofoliu” din dosar, pentru un șofer care nu era client: întâi caută un client existent (poliță, apoi număr);
- * dacă nu e, creează clientul, vehiculul și polița RCA din datele citite din actele lui. Leagă partea și notează în `events`.
+ * „Adaugă în portofoliu” din dosar, pentru un șofer care nu era client (logica e în `lib/claims/portfolio-from-party.ts`,
+ * aceeași pe care o rulează finalizarea pentru cine a bifat acordul de contact). Cu sesiunea brokerului, deci prin RLS.
  */
 export async function addPartyToPortfolio(claimId: string, role: "A" | "B"): Promise<AddToPortfolioResult> {
   const id = z.uuid().parse(claimId);
   const r = z.enum(["A", "B"]).parse(role);
   const { db, broker } = await requireBroker();
-
-  const { data } = await db.from("claim_parties").select("client_id, contact_consent_at, driver, vehicle, insurance").eq("claim_id", id).eq("role", r).maybeSingle();
-  const party = data as PartyData | null;
-  if (!party) throw new Error("Partea nu există în acest dosar.");
-  if (party.client_id) return { clientId: party.client_id, created: false };
-
-  const plate = normalizePlate(party.vehicle?.plate || party.insurance?.plate || "");
-  const policyNo = party.insurance?.policyNo?.trim() || null;
-  const link = async (clientId: string, method: "broker_added" | "broker_matched") => {
-    const up = await db.from("claim_parties").update({ client_id: clientId }).eq("claim_id", id).eq("role", r).is("client_id", null);
-    if (up.error) throw new Error("Nu am putut lega clientul de dosar.");
-    // Acordul din rezumat ajunge pe client, fără să suprascrie unul mai vechi.
-    if (party.contact_consent_at) await db.from("clients").update({ consent_gdpr_at: party.contact_consent_at }).eq("id", clientId).is("consent_gdpr_at", null);
-    await db.from("events").insert({ entity_type: "claim", entity_id: id, type: "client_linked", payload: { role: r, client_id: clientId, method, broker_id: broker.id } });
-    revalidatePath("/broker", "layout");
-  };
-
-  const match = await db.rpc("match_party_client", {
-    p_agency: broker.agency_id,
-    p_policy_no: policyNo,
-    p_plate: plate,
-    p_phone: party.driver?.phone || null,
-  });
-  const found = match.error ? null : decideLink((match.data ?? []) as Candidate[]);
-  if (found) {
-    await link(found.clientId, "broker_matched");
-    return { clientId: found.clientId, created: false };
-  }
-
-  const name = party.driver?.fullName?.trim();
-  if (!name) throw new Error("Șoferul nu are nume în dosar; nu îl pot adăuga.");
-  const clientId = randomUUID();
-  const client = await db.from("clients").insert({
-    id: clientId,
-    agency_id: broker.agency_id,
-    full_name: name,
-    phone: party.driver?.phone ? normalizePhone(party.driver.phone) : null,
-    email: party.driver?.email ? normalizeEmail(party.driver.email) : null,
-  });
-  if (client.error) throw new Error("Nu am putut crea clientul.");
-
-  let vehicleId: string | null = null;
-  if (plate) {
-    vehicleId = randomUUID();
-    const year = Number(party.vehicle?.year);
-    const v = await db.from("vehicles").insert({
-      id: vehicleId,
-      client_id: clientId,
-      plate,
-      vin: party.vehicle?.vin ? normalizeVin(party.vehicle.vin) : null,
-      make: party.vehicle?.make || null,
-      model: party.vehicle?.model || null,
-      year: Number.isInteger(year) && year >= 1950 && year <= 2100 ? year : null,
-    });
-    if (v.error) vehicleId = null;
-  }
-
-  const validFrom = normalizeDate(party.insurance?.validFrom ?? "");
-  const validTo = normalizeDate(party.insurance?.validTo ?? "");
-  const insurer = party.insurance?.insurer?.trim();
-  if (insurer && policyNo && validFrom && validTo && validTo >= validFrom) {
-    // Polița RCA a șoferului (nu e vândută de noi: fără broker). Dacă există deja la alt client, o sărim.
-    await db.from("policies").insert({ client_id: clientId, vehicle_id: vehicleId, type: "RCA", insurer, policy_no: policyNo, valid_from: validFrom, valid_to: validTo });
-  }
-
-  await link(clientId, "broker_added");
-  return { clientId, created: true };
+  const res = await addPartyToPortfolioDb(db, { agencyId: broker.agency_id, claimId: id, role: r, actor: { kind: "broker", brokerId: broker.id } });
+  if (!res) throw new Error("Clientul nu se poate identifica sigur (poliță sau număr la mai mulți clienți). Legați-l manual.");
+  revalidatePath("/broker", "layout");
+  return res;
 }

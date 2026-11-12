@@ -12,6 +12,7 @@ export type ClientListRow = {
   id: string;
   name: string;
   phone: string | null;
+  needsReview: boolean;
   plates: string[];
   policyCount: number;
   /** Zile până la cea mai apropiată poliță de reînnoit (negativ = expirată), `null` = nimic în fereastră. */
@@ -122,6 +123,7 @@ export function ClientsList({ rows }: { rows: ClientListRow[] }) {
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="truncate text-[13px] font-semibold">
                     {r.name}
+                    {r.needsReview && <span className="ml-1.5 text-[12px] font-medium text-tone-todo">de verificat</span>}
                   </span>
                   {r.dueDays !== null && (
                     <DueText tone={expiryBadge(r.dueDays).tone} className="text-[12px]">

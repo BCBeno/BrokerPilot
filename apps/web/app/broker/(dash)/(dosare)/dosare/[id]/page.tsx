@@ -443,6 +443,8 @@ const LINK_METHODS: Record<string, string> = {
   phone: "recunoscut după telefon",
   broker_matched: "legat de broker de clientul existent",
   broker_added: "adăugat în portofoliu de broker",
+  consent_added: "adăugat în portofoliu (a acceptat contactul și și-a scanat polița)",
+  policy_scanned: "recunoscut după poliță; polița scanată a fost adăugată",
 };
 const eventLabel = (e: { type: string; payload: { role?: string; method?: string } | null }) =>
   e.type === "client_linked"

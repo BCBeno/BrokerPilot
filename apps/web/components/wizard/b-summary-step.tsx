@@ -5,9 +5,11 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { CarFront, CheckCircle2, FileText, ListChecks, LoaderCircle, PenLine, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { BROADCAST_B_SUBMITTED, submissionProblem } from "@/lib/amiabila/claim";
 import { CIRCUMSTANCES, DISCLAIMER, IMPACT_LABELS } from "@/lib/amiabila/content";
 import { fieldValue } from "@/lib/amiabila/documents";
+import { updateDraft } from "@/lib/amiabila/draft-store";
 import { signalClaim } from "@/lib/claims/realtime";
 import { StepFrame } from "./step-frame";
 import { useWizard } from "./wizard-context";
@@ -32,7 +34,7 @@ export function BSummaryStep() {
       const res = await fetch(`/api/claims/join/${token}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ documents, circumstances }),
+        body: JSON.stringify({ documents, circumstances, contactConsent: draft.contactConsent }),
       });
       const json = (await res.json().catch(() => ({}))) as { claimId?: string; error?: string };
       if (res.ok && json.claimId) {
@@ -129,6 +131,18 @@ export function BSummaryStep() {
           Modifică impactul
         </Link>
       </section>
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-4 text-[15px] leading-snug">
+        <Checkbox
+          className="mt-0.5"
+          checked={draft.contactConsent}
+          onCheckedChange={(v) => updateDraft((d) => ({ ...d, contactConsent: v === true }))}
+        />
+        <span>
+          Sunt de acord ca brokerul să îmi păstreze datele de contact și să mă contacteze despre asigurările mele.
+          <span className="mt-1 block text-muted-foreground">Opțional. Dosarul merge mai departe oricum. Puteți retrage acordul oricând.</span>
+        </span>
+      </label>
 
       {problem ? (
         <p role="status" className="text-[15px] text-muted-foreground">

@@ -13,14 +13,14 @@ export type PolicyRow = PolicyLite & {
   insurer: string;
   policy_no: string;
   premium: number | null;
-  clients: { full_name: string; phone: string | null } | null;
+  clients: { full_name: string; phone: string | null; needs_review: boolean } | null;
   vehicles: { plate: string; make: string | null; model: string | null } | null;
 };
 
 export type RenewalItem = { policy: PolicyRow; days: number; state: RenewalState; brokerName: string | null };
 
 export const POLICY_SELECT =
-  "id, client_id, vehicle_id, type, insurer, policy_no, valid_from, valid_to, premium, clients(full_name, phone), vehicles(plate, make, model)";
+  "id, client_id, vehicle_id, type, insurer, policy_no, valid_from, valid_to, premium, clients(full_name, phone, needs_review), vehicles(plate, make, model)";
 
 /** Evenimentele de reînnoire pentru polițele date (cele mai noi primele). */
 export async function loadRenewalEvents(db: SupabaseClient, policyIds: string[]): Promise<RenewalEvent[]> {

@@ -10,6 +10,8 @@ export const JOIN_TTL_MS = 2 * 60 * 60_000;
 export const partySubmissionSchema = z.object({
   documents: draftSchema.shape.documents,
   circumstances: draftSchema.shape.circumstances,
+  /** Acordul de contact al lui B, dat pe telefonul lui. */
+  contactConsent: z.boolean().optional(),
 });
 export type PartySubmission = z.infer<typeof partySubmissionSchema>;
 

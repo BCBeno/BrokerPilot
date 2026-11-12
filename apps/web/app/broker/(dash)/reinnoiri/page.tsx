@@ -118,6 +118,7 @@ function RenewalRow({ item }: { item: RenewalItem }) {
         <Link href={`/broker/clienti/${p.client_id}`} className="font-medium hover:underline">
           {displayName(p.clients?.full_name) || "Client"}
         </Link>
+        {p.clients?.needs_review && <span className="ml-1.5 text-[12px] font-medium text-tone-todo">de verificat</span>}
         {p.clients?.phone && (
           <a href={`tel:${p.clients.phone.replace(/\s/g, "")}`} className="block text-[12px] whitespace-nowrap text-muted-foreground tabular-nums hover:underline">
             {phoneDisplay(p.clients.phone)}

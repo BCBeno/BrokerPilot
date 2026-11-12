@@ -64,6 +64,13 @@ export async function POST(request: Request, ctx: Ctx) {
 
   const saved = await db.from("claim_parties").update(partyColumns(body.data.documents)).eq("id", party.id);
   if (saved.error) return SERVER_ERROR();
+  // Ora primei bifări rămâne dovada acordului; debifarea (la o retrimitere) îl retrage.
+  const consent = body.data.contactConsent;
+  if (consent !== undefined) {
+    const upd = db.from("claim_parties").update({ contact_consent_at: consent ? new Date().toISOString() : null }).eq("id", party.id);
+    const done = consent ? await upd.is("contact_consent_at", null) : await upd;
+    if (done.error) return SERVER_ERROR();
+  }
   const claim = await db.from("claims").update({ circumstances_b: body.data.circumstances }).eq("id", party.claim_id);
   if (claim.error) return SERVER_ERROR();
   return NextResponse.json({ ok: true, claimId: party.claim_id });
