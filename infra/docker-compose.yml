@@ -6,7 +6,7 @@ services:
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
-      args:   # variabilele NEXT_PUBLIC_* se „coc” în imagine la build
+      args:  
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-}
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
