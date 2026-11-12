@@ -12,7 +12,7 @@ export const STATUS_LABELS: Record<ClaimStatus, string> = {
   closed: "Închis",
 };
 
-export const CHANNEL_LABELS: Record<string, string> = { web: "web", telegram: "Telegram", voice: "voce" };
+export const CHANNEL_LABELS: Record<string, string> = { web: "din aplicație", telegram: "din Telegram", voice: "din apel vocal" };
 
 /** Filtrele din listă, în ordinea în care le parcurge brokerul. „noi” = trimise și nepreluate. */
 export const LIST_FILTERS = [

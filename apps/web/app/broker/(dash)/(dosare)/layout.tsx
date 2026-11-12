@@ -18,7 +18,7 @@ export default async function ClaimsLayout({ children }: { children: React.React
           Nu am putut încărca dosarele. Reîncărcați pagina.
         </p>
       )}
-      <div className="grid min-h-0 flex-1 gap-2.5 p-2.5 lg:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid min-h-0 flex-1 lg:grid-cols-[300px_minmax(0,1fr)]">
         <ClaimsList rows={rows} />
         {children}
       </div>

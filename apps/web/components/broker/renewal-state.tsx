@@ -2,7 +2,7 @@ import { ToneBadge } from "@/components/broker/status-pill";
 import { roDate } from "@/lib/broker/renewals";
 import type { RenewalItem } from "@/lib/broker/renewals-data";
 
-/** Ce s-a făcut cu o reînnoire: reînnoită, contactat (cine, când), amânată până la o dată, sau încă nimic. */
+/** Ce s-a făcut cu o reînnoire: reînnoită, contactat (cine, când), amânată până la o dată; nimic dacă încă nu s-a făcut nimic. */
 export function StateText({ item }: { item: RenewalItem }) {
   const { state, brokerName } = item;
   const by = brokerName ? ` (${brokerName.split(" ")[0]})` : "";
@@ -24,7 +24,8 @@ export function StateText({ item }: { item: RenewalItem }) {
         </span>
       );
     default:
-      return state.reminderDue ? <ToneBadge tone="todo">Reamintire: azi</ToneBadge> : <span className="text-muted-foreground">Necontactat</span>;
+      // Necontactat nu se mai scrie: butonul „Am contactat” de pe același rând spune deja asta.
+      return state.reminderDue ? <ToneBadge tone="todo">Reamintire: azi</ToneBadge> : null;
   }
 }
 

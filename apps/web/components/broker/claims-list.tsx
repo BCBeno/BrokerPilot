@@ -55,7 +55,7 @@ export function ClaimsList({ rows }: { rows: ClaimListRow[] }) {
   return (
     <section
       aria-label="Dosare"
-      className={cn("flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card", activeId && "hidden lg:flex")}
+      className={cn("flex min-h-0 flex-col overflow-hidden border-r border-border bg-card", activeId && "hidden lg:flex")}
     >
       <div className="space-y-2 border-b border-border p-2.5">
         <div className="relative">
@@ -98,7 +98,7 @@ export function ClaimsList({ rows }: { rows: ClaimListRow[] }) {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "block border-l-[3px] px-2.5 py-2 text-[12px] hover:bg-muted/60",
-                  active ? "border-l-navy bg-[#F3F7FE]" : "border-l-transparent",
+                  active ? "border-l-navy bg-row-selected" : "border-l-transparent",
                 )}
               >
                 <div className="flex items-baseline justify-between gap-2">
@@ -112,14 +112,11 @@ export function ClaimsList({ rows }: { rows: ClaimListRow[] }) {
                 </div>
                 <div className="mt-0.5 flex items-center gap-1.5">
                   <StatusPill status={r.status} />
-                  <span className="truncate text-muted-foreground">
-                    {CHANNEL_LABELS[r.channel] ?? r.channel}
-                    {r.location && ` · ${r.location}`}
-                  </span>
+                  <span className="truncate text-muted-foreground">{r.location || CHANNEL_LABELS[r.channel] || r.channel}</span>
                 </div>
                 <div className="mt-0.5 flex items-center justify-between gap-2 text-muted-foreground">
-                  <span className="truncate">
-                    {r.plateA || "—"} / {r.plateB || "—"}
+                  <span className="truncate tabular-nums">
+                    {r.plateA || "—"}, {r.plateB || "B lipsește"}
                   </span>
                   {r.missingBlocking ? (
                     <span className="shrink-0 rounded bg-tone-danger px-1 font-medium text-tone-danger-foreground">
@@ -135,8 +132,11 @@ export function ClaimsList({ rows }: { rows: ClaimListRow[] }) {
         })}
         {visible.length === 0 && <li className="p-4 text-[13px] text-muted-foreground">Niciun dosar pentru filtrul ales.</li>}
       </ul>
-      <p className="border-t border-border px-2.5 py-1.5 text-[12px] text-muted-foreground">
-        {visible.length} din {rows.length} dosare · {live ? "actualizare automată" : "fără actualizare automată"}
+      <p className="flex justify-between gap-2 border-t border-border px-2.5 py-1.5 text-[12px] text-muted-foreground">
+        <span>
+          {visible.length} din {rows.length} dosare
+        </span>
+        <span>{live ? "se actualizează singură" : "reîncărcați pentru noutăți"}</span>
       </p>
     </section>
   );

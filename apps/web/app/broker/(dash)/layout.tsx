@@ -1,4 +1,5 @@
 import { BrokerNav } from "@/components/broker/broker-nav";
+import { displayName } from "@/lib/broker/format";
 import { requireBroker } from "@/lib/broker/session";
 import { signOut } from "../actions";
 
@@ -17,7 +18,9 @@ export default async function BrokerShell({ children }: { children: React.ReactN
           <BrokerNav />
         </div>
         <div className="flex items-center gap-3 text-[13px]">
-          <span className="hidden text-navy-muted sm:inline">{broker.name}</span>
+          {/* Fixturile sunt fictive (regula proiectului); o spunem o dată aici, nu la fiecare nume. */}
+          <span className="hidden rounded border border-navy-line px-1.5 text-[12px] text-navy-muted md:inline">Date fictive</span>
+          <span className="hidden text-navy-muted sm:inline">{displayName(broker.name)}</span>
           <form action={signOut}>
             <button type="submit" className="rounded px-2 py-1 text-navy-foreground hover:bg-white/10">
               Ieșire

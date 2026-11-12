@@ -54,6 +54,8 @@
   --color-tone-work-foreground: var(--tone-work-foreground);
   --color-tone-danger: var(--tone-danger);
   --color-tone-danger-foreground: var(--tone-danger-foreground);
+  --color-plate-band: var(--plate-band);
+  --color-row-selected: var(--row-selected);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -120,6 +122,10 @@
   --tone-work-foreground: #4a3a8a;
   --tone-danger: #fdecea;
   --tone-danger-foreground: #8a1c12;
+  /* Banda albastră UE de pe plăcuța de înmatriculare (doar în componenta Plate) */
+  --plate-band: #1d3f9e;
+  /* Rândul selectat din listele brokerului */
+  --row-selected: #e6edf9;
   --border: #dde3ee;
   --input: #c5cedd;
   --ring: #2f6fde;
@@ -162,6 +168,7 @@
   --warning: #3a3012;
   --warning-foreground: #ffd966;
   --border: #2c3857;
+  --row-selected: #222c47;
   --input: #3a4770;
   --ring: #6fa0f5;
   --sidebar: #172038;

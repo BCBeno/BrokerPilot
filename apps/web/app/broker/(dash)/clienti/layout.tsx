@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClientsList, type ClientListRow } from "@/components/broker/clients-list";
 import { daysUntil, inRenewalWindow, isRenewed, todayRo, type PolicyLite } from "@/lib/broker/renewals";
+import { displayName } from "@/lib/broker/format";
 import { requireBroker } from "@/lib/broker/session";
 
 export const metadata: Metadata = { title: "Clienți · BrokerPilot" };
@@ -30,7 +31,7 @@ export default async function ClientsLayout({ children }: { children: React.Reac
       .sort((a, b) => a - b)[0];
     return {
       id: c.id,
-      name: c.full_name,
+      name: displayName(c.full_name),
       phone: c.phone,
       plates: c.vehicles.map((v) => v.plate),
       policyCount: c.policies.length,
@@ -45,7 +46,7 @@ export default async function ClientsLayout({ children }: { children: React.Reac
           Nu am putut încărca clienții. Reîncărcați pagina.
         </p>
       )}
-      <div className="grid min-h-0 flex-1 gap-2.5 p-2.5 lg:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid min-h-0 flex-1 lg:grid-cols-[300px_minmax(0,1fr)]">
         <ClientsList rows={rows} />
         {children}
       </div>

@@ -50,6 +50,20 @@ const TONE_STYLE: Record<Tone, string> = {
   danger: "bg-tone-danger text-tone-danger-foreground",
 };
 
+const TONE_TEXT: Record<Tone, string> = {
+  neutral: "text-muted-foreground",
+  info: "text-tone-info-foreground",
+  ok: "text-tone-ok-foreground",
+  todo: "text-tone-todo-foreground",
+  work: "text-tone-work-foreground",
+  danger: "text-tone-danger-foreground",
+};
+
+/** Termen scris colorat, fără pastilă („expirată de 11 zile”): pastilele rămân pentru statusul dosarelor. */
+export function DueText({ tone, children, className }: { tone: Tone; children: React.ReactNode; className?: string }) {
+  return <span className={cn("font-medium whitespace-nowrap", TONE_TEXT[tone], className)}>{children}</span>;
+}
+
 /** Etichetă mică cu ton (ex. „expiră în 5 zile”); textul poartă sensul, culoarea doar îl întărește. */
 export function ToneBadge({ tone, children, className }: { tone: Tone; children: React.ReactNode; className?: string }) {
   return (
