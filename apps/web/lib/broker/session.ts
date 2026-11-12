@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { getServerClient } from "@/lib/supabase/server";
 
-export type Broker = { id: string; name: string };
+export type Broker = { id: string; name: string; agency_id: string };
 
 /**
  * Brokerul logat și clientul lui (RLS pe agenție). Fără sesiune → login; cont fără broker activ → login cu mesaj.
@@ -14,7 +14,7 @@ export async function requireBroker(): Promise<{ db: SupabaseClient; broker: Bro
   const { data } = await db.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) redirect("/broker/login");
-  const { data: broker } = await db.from("brokers").select("id, name").eq("auth_user_id", userId).eq("active", true).maybeSingle();
+  const { data: broker } = await db.from("brokers").select("id, name, agency_id").eq("auth_user_id", userId).eq("active", true).maybeSingle();
   if (!broker) redirect("/broker/login?e=not_broker");
   return { db, broker };
 }
