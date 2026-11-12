@@ -1,0 +1,115 @@
+{
+  "_note": "Surse publice pentru baza de cunoștințe de demo (S4b/S9). Doar documente publice; se folosesc intern, cu citare. `mirror: true` = copie găzduită de un terț (de înlocuit cu sursa oficială când o găsim). Rulează: node scripts/scrape-sources.mjs",
+  "license_default": "Document public. Folosit doar ca bază de cunoștințe internă de demo, cu citare; fără redistribuire.",
+  "sources": [
+    {
+      "id": "legea-132-2017-asf",
+      "title": "Legea 132/2017 privind asigurarea RCA (text ASF)",
+      "publisher": "ASF",
+      "doc_type": "lege",
+      "format": "pdf",
+      "url": "https://asfromania.ro/uploads/articole/attachments/658419caba221479879230.pdf"
+    },
+    {
+      "id": "norma-20-2017-legislatie",
+      "title": "Norma ASF 20/2017 privind asigurările auto din România",
+      "publisher": "legislatie.just.ro",
+      "doc_type": "norma",
+      "format": "html",
+      "url": "https://legislatie.just.ro/Public/DetaliiDocument/257259"
+    },
+    {
+      "id": "norma-20-2017-consolidat-asf",
+      "title": "Norma 20/2017, versiune consolidată (ASF)",
+      "publisher": "ASF",
+      "doc_type": "norma",
+      "format": "pdf",
+      "url": "https://www.asfromania.ro/uploads/articole/attachments/658d6647abe80456461406.pdf"
+    },
+    {
+      "id": "asf-anexa-7-formular-amiabila",
+      "title": "Anexa 7: formular constatare amiabilă de accident",
+      "publisher": "ASF",
+      "doc_type": "formular",
+      "format": "pdf",
+      "url": "https://asfromania.ro/files/consultare/2016/Anexa%20nr.7_formular_constatare_amiabila.pdf"
+    },
+    {
+      "id": "baar-lansare-amiabila",
+      "title": "BAAR: lansarea aplicației Amiabila",
+      "publisher": "BAAR",
+      "doc_type": "faq",
+      "format": "html",
+      "url": "https://www.baar.ro/lansare-amiabila/"
+    },
+    {
+      "id": "baar-intrebari",
+      "title": "BAAR: întrebări frecvente",
+      "publisher": "BAAR",
+      "doc_type": "faq",
+      "format": "html",
+      "url": "https://www.baar.ro/intrebari/"
+    },
+    {
+      "id": "baar-intrebari-rca-clasa-bm",
+      "title": "BAAR: întrebări despre polițe RCA, clase B/M, daunalitate",
+      "publisher": "BAAR",
+      "doc_type": "faq",
+      "format": "html",
+      "url": "https://www.baar.ro/intrebari-si-raspunsuri-legate-de-certificatele-de-daunalitate-si-clasa-b-m/"
+    },
+    {
+      "id": "baar-ghid-carte-verde",
+      "title": "BAAR: ghid Carte Verde",
+      "publisher": "BAAR",
+      "doc_type": "ghid",
+      "format": "pdf",
+      "url": "https://www.baar.ro/wp-content/uploads/2017/07/GhidCarteVerde-1.pdf"
+    },
+    {
+      "id": "allianz-ipid-rca",
+      "title": "Allianz-Țiriac: document de informare RCA (IPID)",
+      "publisher": "Allianz-Țiriac",
+      "insurer": "Allianz-Țiriac",
+      "doc_type": "conditii-rca",
+      "format": "pdf",
+      "url": "https://www.allianztiriac.ro/content/dam/onemarketing/cee/azro/documente/ipid/IPID_RCA_PF.pdf"
+    },
+    {
+      "id": "allianz-ghid-casco-my-car",
+      "title": "Allianz-Țiriac: ghid de beneficii auto (My Car)",
+      "publisher": "Allianz-Țiriac",
+      "insurer": "Allianz-Țiriac",
+      "doc_type": "conditii-casco",
+      "format": "pdf",
+      "url": "https://www.allianztiriac.ro/content/dam/onemarketing/cee/azro/documente/ipid/Ghid_beneficii_My_Car.pdf"
+    },
+    {
+      "id": "generali-pid-rca-2025",
+      "title": "Generali: document de informare RCA (PID, 2025)",
+      "publisher": "Generali",
+      "insurer": "Generali",
+      "doc_type": "conditii-rca",
+      "format": "pdf",
+      "url": "https://www.generali.ro/wp-content/uploads/2025/12/PID-RCA_2025.pdf"
+    },
+    {
+      "id": "omniasig-pid-rca",
+      "title": "Omniasig: document de informare RCA (PID)",
+      "publisher": "Omniasig",
+      "insurer": "Omniasig",
+      "doc_type": "conditii-rca",
+      "format": "pdf",
+      "url": "https://omniasig.ro/sites/default/files/2022-10/PID_D_RCA.PDF"
+    },
+    {
+      "id": "groupama-conditii-casco-gradual",
+      "title": "Groupama: condiții generale CASCO Gradual (ed. 13, ian. 2025)",
+      "publisher": "Groupama",
+      "insurer": "Groupama",
+      "doc_type": "conditii-casco",
+      "format": "pdf",
+      "url": "https://www.groupama.ro/wp-content/uploads/2025/04/Conditii-generale-CASCO-Gradual_Editia-a-13a_Ianuarie-2025.pdf"
+    }
+  ]
+}

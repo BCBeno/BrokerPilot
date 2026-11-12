@@ -10,8 +10,9 @@ import { z } from "zod";
 export const DOC_TYPES = ["registration", "license", "policy"] as const;
 export type DocType = (typeof DOC_TYPES)[number];
 
-export type FieldKind = "text" | "plate" | "vin" | "date" | "year";
-export type FieldDef = { key: string; label: string; kind: FieldKind; placeholder?: string };
+export type FieldKind = "text" | "plate" | "vin" | "date" | "year" | "phone" | "email";
+/** `optional`: câmpul poate rămâne gol fără să blocheze „Continuă”; dacă e completat, trebuie să fie valid. */
+export type FieldDef = { key: string; label: string; kind: FieldKind; placeholder?: string; optional?: boolean };
 
 /**
  * `scannable: false` = actul nu se fotografiază și nu pleacă niciodată la AI; datele se scriu de mână.
@@ -31,14 +32,18 @@ export const DOC_META: Record<DocType, { label: string; hint: string; scannable:
     ],
   },
   license: {
-    label: "Permisul de conducere",
-    hint: "Îl completați dumneavoastră, cu permisul în față. Nu îl fotografiem.",
+    label: "Permisul și datele de contact",
+    hint: "Le completați dumneavoastră, cu permisul în față. Permisul nu se fotografiază. Datele de contact apar în formular și ajung doar la asigurător și la broker.",
     scannable: false,
     fields: [
       { key: "fullName", label: "Nume și prenume", kind: "text" },
       { key: "licenseNo", label: "Număr permis", kind: "text" },
       { key: "categories", label: "Categorii", kind: "text", placeholder: "ex. B" },
       { key: "expiresOn", label: "Valabil până la", kind: "date" },
+      { key: "birthDate", label: "Data nașterii", kind: "date", placeholder: "ZZ.LL.AAAA", optional: true },
+      { key: "address", label: "Adresa dumneavoastră", kind: "text", placeholder: "Strada, număr, localitate, județ" },
+      { key: "phone", label: "Telefon", kind: "phone", placeholder: "ex. 0722 123 456" },
+      { key: "email", label: "E-mail (opțional)", kind: "email", placeholder: "ex. nume@exemplu.ro", optional: true },
     ],
   },
   policy: {
@@ -116,6 +121,30 @@ export function normalizeYear(raw: string, now: Date): string | null {
   return Number.isInteger(y) && y >= 1950 && y <= now.getFullYear() + 1 ? String(y) : null;
 }
 
+/**
+ * Telefon românesc (fix sau mobil) în forma „0722 123 456”; numerele cu prefix internațional rămân „+49 …” compacte.
+ * `null` dacă nu arată a număr de telefon.
+ */
+export function normalizePhone(raw: string): string | null {
+  const t = raw.trim();
+  if (!/^[+\d][\d\s.()/-]*$/.test(t)) return null;
+  let digits = t.replace(/\D/g, "");
+  const international = t.startsWith("+") || digits.startsWith("00");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (international && digits.startsWith("40")) {
+    digits = `0${digits.slice(2)}`;
+  } else if (international) {
+    return digits.length >= 8 && digits.length <= 15 ? `+${digits}` : null;
+  }
+  if (!/^0[23567]\d{8}$/.test(digits)) return null;
+  return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
+}
+
+export function normalizeEmail(raw: string): string | null {
+  const t = raw.trim().toLowerCase();
+  return t.length <= 120 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t) ? t : null;
+}
+
 /** Curăță un câmp după tipul lui. Valoarea invalidă rămâne, dar cu încredere mică (omul decide). */
 export function normalizeField(def: FieldDef, field: ExtractedField, now: Date): ExtractedField {
   const raw = field.value?.trim();
@@ -133,6 +162,12 @@ export function normalizeField(def: FieldDef, field: ExtractedField, now: Date):
       break;
     case "year":
       value = normalizeYear(raw, now);
+      break;
+    case "phone":
+      value = normalizePhone(raw);
+      break;
+    case "email":
+      value = normalizeEmail(raw);
       break;
     case "text":
       break;
@@ -160,10 +195,16 @@ export function editField(def: FieldDef, text: string, now: Date): ExtractedFiel
   return normalizeField(def, { value: text, confidence: 1 }, now);
 }
 
+/** Un câmp cere atenție dacă e gol sau nesigur; un câmp opțional gol e în regulă (dar unul completat greșit nu). */
+export function fieldNeedsCheck(def: FieldDef, field: ExtractedField | undefined): boolean {
+  if (def.optional && (!field || field.value === null)) return false;
+  return isLowConfidence(field);
+}
+
 /** Un act e „gata” când nu are câmpuri goale sau nesigure (după verificarea omului). */
 export function isDocConfirmed(type: DocType, doc: ExtractedDoc | null | undefined): boolean {
   if (!doc) return false;
-  return DOC_META[type].fields.every((f) => !isLowConfidence(doc.fields[f.key]));
+  return DOC_META[type].fields.every((f) => !fieldNeedsCheck(f, doc.fields[f.key]));
 }
 
 export function fieldValue(doc: ExtractedDoc | null | undefined, key: string): string {

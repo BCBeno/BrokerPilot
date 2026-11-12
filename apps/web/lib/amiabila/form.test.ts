@@ -61,6 +61,10 @@ describe("formular amiabilă", () => {
             licenseNo: { value: "B0000001", confidence: 1 },
             categories: { value: "B", confidence: 1 },
             expiresOn: { value: "2031-09-20", confidence: 1 },
+            birthDate: { value: "1988-05-14", confidence: 1 },
+            address: { value: "Str. Fictivă 12, București", confidence: 1 },
+            phone: { value: "0722 123 456", confidence: 1 },
+            email: { value: "mihai@example.ro", confidence: 1 },
           },
         },
         policy: {
@@ -82,7 +86,16 @@ describe("formular amiabilă", () => {
     expect(form.otherVehiclesDamaged).toBe(false);
     expect(form.a.vehicle).toMatchObject({ makeType: "Dacia Logan", plate: "B 123 ABC" });
     expect(form.a.holder).toMatchObject({ surname: "IONESCU", firstName: "Mihai" });
-    expect(form.a.driver).toMatchObject({ licenseNo: "B0000001", licenseValidTo: "20.09.2031" });
+    expect(form.a.driver).toMatchObject({
+      licenseNo: "B0000001",
+      licenseValidTo: "20.09.2031",
+      birthDate: "14.05.1988",
+      address: "Str. Fictivă 12, București",
+      country: "România",
+      contact: "0722 123 456 / mihai@example.ro",
+    });
+    expect(form.a.holder).toMatchObject({ address: "Str. Fictivă 12, București", contact: "0722 123 456 / mihai@example.ro" });
+    expect(form.a.insurance.branchCountry).toBe("România");
     expect(form.a.insurance).toMatchObject({ validFrom: "01.03.2026", validTo: "28.02.2027" });
     expect(form.a.impactPoint).toBe("right");
     expect(countChecked(form.a)).toBe(2);

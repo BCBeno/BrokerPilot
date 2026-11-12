@@ -19,7 +19,7 @@ export function FormBack() {
         <p>
           Prezentul formular corespunde modelului elaborat de Insurance Europe. Astfel, dacă unul dintre conducătorii auto implicați în
           accidentul rutier posedă un formular într-o altă limbă, nu contează pe care dintre ele îl completați,{" "}
-          <u>dar trebuie să vă asigurați că veți păstra copie, iar originalul formularului completat pentru a-l trimite asigurătorului.</u>
+          <u>dar trebuie să vă asigurați că veți păstra fie copie, fie originalul formularului completat pentru a-l trimite asigurătorului.</u>
         </p>
 
         <h4>INSTRUCȚIUNI</h4>

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { FORM_CIRCUMSTANCES, type ImpactZone } from "@/lib/amiabila/content";
 import { countChecked, type FormData, type Party, type YesNo } from "@/lib/amiabila/form";
-import { BikeArt, CarImpact } from "./impact-art";
+import { BikeArt, CarImpact, TruckArt } from "./impact-art";
 import { SketchView } from "./sketch-view";
 import "./form.css";
 
@@ -85,13 +85,13 @@ function VehicleBox({ p, who }: { p: Party; who: Who }) {
         <div>
           <div className="af-sub">CU MOTOR</div>
           <Line label="Marcă, tip" value={v.makeType} />
-          <Line label="Nr. înmatriculare/înregistrare:" value={v.plate} />
-          <Line label="Țara în care vehiculul este înmatriculat/înregistrat:" value={v.country} />
+          <Line label="Nr. înmatriculare/înregistrare" value={v.plate} />
+          <Line label="Țara în care este înmatriculat/înregistrat" value={v.country} />
         </div>
         <div>
           <div className="af-sub">REMORCĂ</div>
-          <Line label="Nr. înmatriculare/înregistrare:" value={v.trailerPlate} />
-          <Line label="Țara în care vehiculul este înmatriculat/înregistrat:" value={v.trailerCountry} />
+          <Line label="Nr. înmatriculare/înregistrare" value={v.trailerPlate} />
+          <Line label="Țara în care este înmatriculată/înregistrată" value={v.trailerCountry} />
         </div>
       </div>
     </Box>
@@ -101,7 +101,7 @@ function VehicleBox({ p, who }: { p: Party; who: Who }) {
 function InsuranceBox({ p, who }: { p: Party; who: Who }) {
   const i = p.insurance;
   return (
-    <Box n={8} who={who} title={<>Societatea de asigurare <small>(vezi documentul de asigurare)</small></>}>
+    <Box n={8} who={who} title={<>Societate de asigurare <small>(vezi documentul de asigurare)</small></>}>
       <Line label="DENUMIRE:" value={i.company} />
       <Line label="Polița nr.:" value={i.policyNo} />
       <Line label="Carte Verde nr.:" value={i.greenCardNo} />
@@ -112,11 +112,11 @@ function InsuranceBox({ p, who }: { p: Party; who: Who }) {
       </Row>
       <div className="af-cap">Sucursala (sau agenția, sau brokerul):</div>
       <Line label="DENUMIRE:" value={i.branchName} />
-      <Line label="Adresa:" value={i.branchAddress} />
+      <Line label="Adresă:" value={i.branchAddress} />
       <Line label="Țara:" value={i.branchCountry} />
       <Line label="Tel. sau e-mail:" value={i.branchContact} />
       <div className="af-casco">
-        <span>Daunele materiale ale vehiculului sunt acoperite prin o poliță CASCO?</span>
+        <span>Daunele materiale ale vehiculului sunt acoperite printr-o poliță CASCO?</span>
         <YesNoPair value={i.casco} />
       </div>
     </Box>
@@ -130,7 +130,7 @@ function DriverBox({ p, who }: { p: Party; who: Who }) {
       <Line label="NUME:" value={d.surname} />
       <Line label="Prenume:" value={d.firstName} />
       <Line label="Data nașterii:" value={d.birthDate} />
-      <Line label="Adresa:" value={d.address} />
+      <Line label="Adresă:" value={d.address} />
       <Line label="Țara:" value={d.country} />
       <Line label="Tel. sau e-mail:" value={d.contact} />
       <Line label="Permis de conducere nr.:" value={d.licenseNo} />
@@ -147,6 +147,7 @@ function ImpactBox({ p, who, letter }: { p: Party; who: Who; letter: "A" | "B" }
       <div className="af-art">
         <BikeArt />
         <CarImpact zone={zone} />
+        <TruckArt />
       </div>
     </Box>
   );
@@ -173,10 +174,14 @@ function Circumstances({ form }: { form: FormData }) {
   const b = new Set(form.b.circumstances);
   return (
     <div className="af-circ">
-      <p className="af-circ-lead">
-        Marcați cu X fiecare căsuță utilă pentru explicarea desenului
-        <small>* (la pct. 1 și 2 tăiați situația care nu corespunde)</small>
-      </p>
+      <div className="af-circ-lead">
+        <span className="af-ab">A</span>
+        <p>
+          Marcați cu X fiecare căsuță utilă pentru explicarea desenului
+          <small>* la pct. 1 și 2 tăiați situația care nu corespunde</small>
+        </p>
+        <span className="af-ab">B</span>
+      </div>
       <div className="af-circ-list">
         {FORM_CIRCUMSTANCES.map((label, i) => {
           const n = i + 1;
@@ -204,8 +209,20 @@ function Circumstances({ form }: { form: FormData }) {
       </div>
       <p className="af-legal">
         <strong>Trebuie semnat de ambii conducători de vehicule.</strong> Nu constituie o recunoaștere a responsabilității, ci un cumul de
-        elemente și fapte care vor ajuta în soluționarea rapidă a cazului de despăgubire.
+        elemente și fapte care vor ajuta în soluționarea rapidă a cererii de despăgubire.
       </p>
+      {/* Ca pe formularul oficial, titlul casetei 13 stă în coloana de mijloc, deasupra caroiajului. */}
+      <div className="af-sketch-title">
+        <div className="af-sketch-head">
+          <span className="af-n">13.</span>
+          <strong>Schița accidentului în momentul producerii impactului</strong>
+          <span className="af-n">13.</span>
+        </div>
+        <p className="af-sketch-note">
+          Indicați: 1. poziția drumului 2. direcția de deplasare a vehiculelor A,B prin săgeți 3. poziția vehiculelor în momentul impactului
+          4. semnele de circulație 5. numele străzilor sau drumurilor
+        </p>
+      </div>
     </div>
   );
 }
@@ -227,10 +244,16 @@ export function FormSheet({ form }: { form: FormData }) {
         <Box title="Ora" className="af-time">
           <div className="af-v af-big">{form.time}</div>
         </Box>
-        <Box n={2} title="Localizare" className="af-place">
-          <Line label="Țara:" value={form.country} />
-          <Line label="Locul:" value={form.place} />
-        </Box>
+        <section className="af-box af-place">
+          <Num n={2} />
+          <div className="af-place-l">
+            <h3 className="af-bt">Localizare</h3>
+            <Line label="Țara:" value={form.country} />
+          </div>
+          <div className="af-place-r">
+            <Line label="Locul:" value={form.place} />
+          </div>
+        </section>
         <Box n={3} className="af-injured">
           <small className="af-tiny">Vătămări corporale, chiar dacă sunt ușoare</small>
           <YesNoPair value={form.injured} order="da-nu" />
@@ -250,7 +273,7 @@ export function FormSheet({ form }: { form: FormData }) {
             </div>
           </div>
         </Box>
-        <Box n={5} title="Martori : nume, adresă, tel.:" className="af-wit">
+        <Box n={5} title="Martori : nume, adrese, tel.:" className="af-wit">
           <p className="af-free">{form.witnesses}</p>
         </Box>
       </div>
@@ -286,16 +309,7 @@ export function FormSheet({ form }: { form: FormData }) {
           <DamageBox p={form.a} who="a" letter="A" />
         </div>
         <section className="af-sketch">
-          <div className="af-sketch-head">
-            <span className="af-n a">13.</span>
-            <strong>Schița accidentului la momentul producerii impactului</strong>
-            <span className="af-n b">13.</span>
-          </div>
           <SketchView sketch={form.sketch} />
-          <p className="af-sketch-note">
-            Indicați: 1. configurația drumului · 2. traseul vehiculelor A și B, prin săgeți · 3. poziția lor la momentul impactului · 4. semnele
-            de circulație fixe · 5. denumirea străzilor.
-          </p>
         </section>
         <div className="af-side b">
           <ImpactBox p={form.b} who="b" letter="B" />
@@ -330,6 +344,9 @@ export function FormSheet({ form }: { form: FormData }) {
         </div>
       </div>
 
+      <div className="af-gdpr">
+        Protecția datelor cu caracter personal este dată de Legea nr. 677/2001, cu modificările și completările ulterioare
+      </div>
       <footer className="af-copy">Drept de autor 2001 © Insurance Europe aisbl.</footer>
     </article>
   );

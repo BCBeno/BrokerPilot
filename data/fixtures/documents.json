@@ -1,0 +1,242 @@
+[
+  {
+    "client_id": "21000000-0000-4000-8000-000000000001",
+    "test_data": true,
+    "holder": {
+      "first": "Andreea",
+      "last": "Grigore",
+      "cnp": "2971001185821",
+      "birthDate": "1997-10-01"
+    },
+    "registration": {
+      "plate": "B 200 TST",
+      "vin": "TSTSPEC0000000001",
+      "make": "Dacia",
+      "model": "Sandero",
+      "year": "2014"
+    },
+    "policy": {
+      "insurer": "Asigurător Test A",
+      "policyNo": "FX-RCA-0001",
+      "validFrom": "2026-09-29",
+      "validTo": "2027-09-29",
+      "plate": "B 200 TST"
+    },
+    "license": {
+      "fullName": "Grigore Andreea",
+      "licenseNo": "TST1000000",
+      "categories": "B",
+      "expiresOn": "2029-03-11"
+    }
+  },
+  {
+    "client_id": "21000000-0000-4000-8000-000000000002",
+    "test_data": true,
+    "holder": {
+      "first": "Bogdan",
+      "last": "Albu",
+      "cnp": "1930116022331",
+      "birthDate": "1993-01-16"
+    },
+    "registration": {
+      "plate": "CJ 11 TST",
+      "vin": "TSTSPEC0000000002",
+      "make": "Opel",
+      "model": "Astra",
+      "year": "2009"
+    },
+    "policy": {
+      "insurer": "Asigurător Test B",
+      "policyNo": "FX-RCA-0002",
+      "validFrom": "2025-11-15",
+      "validTo": "2026-11-15",
+      "plate": "CJ 11 TST"
+    },
+    "license": {
+      "fullName": "Albu Bogdan",
+      "licenseNo": "TST1000137",
+      "categories": "B",
+      "expiresOn": "2031-01-10"
+    }
+  },
+  {
+    "client_id": "21000000-0000-4000-8000-000000000003",
+    "test_data": true,
+    "holder": {
+      "first": "Cristina",
+      "last": "Nistor",
+      "cnp": "2760219172098",
+      "birthDate": "1976-02-19"
+    },
+    "registration": {
+      "plate": "TM 12 TST",
+      "vin": "TSTSPEC0000000003",
+      "make": "Dacia",
+      "model": "Duster",
+      "year": "2013"
+    },
+    "policy": {
+      "insurer": "Asigurător Test C",
+      "policyNo": "FX-RCA-0003",
+      "validFrom": "2026-07-12",
+      "validTo": "2027-07-12",
+      "plate": "TM 12 TST"
+    },
+    "license": {
+      "fullName": "Nistor Cristina",
+      "licenseNo": "TST1000274",
+      "categories": "B",
+      "expiresOn": "2030-04-14"
+    }
+  },
+  {
+    "client_id": "21000000-0000-4000-8000-000000000004",
+    "test_data": true,
+    "holder": {
+      "first": "Dan",
+      "last": "Neagu",
+      "cnp": "1750108388720",
+      "birthDate": "1975-01-08"
+    },
+    "registration": {
+      "plate": "IS 13 TST",
+      "vin": "TSTSPEC0000000004",
+      "make": "Ford",
+      "model": "Focus",
+      "year": "2008"
+    },
+    "policy": {
+      "insurer": "Asigurător Test D",
+      "policyNo": "FX-RCA-0004",
+      "validFrom": "2026-06-27",
+      "validTo": "2027-06-27",
+      "plate": "IS 13 TST"
+    },
+    "license": {
+      "fullName": "Neagu Dan",
+      "licenseNo": "TST1000411",
+      "categories": "B",
+      "expiresOn": "2033-06-15"
+    }
+  },
+  {
+    "client_id": "21000000-0000-4000-8000-000000000005",
+    "test_data": true,
+    "holder": {
+      "first": "Eugenia",
+      "last": "Dragomir",
+      "cnp": "6011124053702",
+      "birthDate": "2001-11-24"
+    },
+    "registration": {
+      "plate": "BV 14 TST",
+      "vin": "TSTSPEC0000000005",
+      "make": "Dacia",
+      "model": "Logan",
+      "year": "2009"
+    },
+    "policy": {
+      "insurer": "Asigurător Test A",
+      "policyNo": "FX-RCA-0005",
+      "validFrom": "2026-05-21",
+      "validTo": "2026-11-17",
+      "plate": "BV 14 TST"
+    },
+    "license": {
+      "fullName": "Dragomir Eugenia",
+      "licenseNo": "TST1000548",
+      "categories": "B",
+      "expiresOn": "2028-01-25"
+    }
+  },
+  {
+    "client_id": "21000000-0000-4000-8000-000000000006",
+    "test_data": true,
+    "holder": {
+      "first": "Florin",
+      "last": "Barbu",
+      "cnp": "1700507059234",
+      "birthDate": "1970-05-07"
+    },
+    "registration": {
+      "plate": "CT 15 TST",
+      "vin": "TSTSPEC0000000006",
+      "make": "Renault",
+      "model": "Clio",
+      "year": "2012"
+    },
+    "policy": {
+      "insurer": "Asigurător Test B",
+      "policyNo": "FX-RCA-0006",
+      "validFrom": "2026-09-16",
+      "validTo": "2027-09-16",
+      "plate": "CT 15 TST"
+    },
+    "license": {
+      "fullName": "Barbu Florin",
+      "licenseNo": "TST1000685",
+      "categories": "B",
+      "expiresOn": "2033-04-27"
+    }
+  },
+  {
+    "client_id": "21000000-0000-4000-8000-000000000007",
+    "test_data": true,
+    "holder": {
+      "first": "Gabriela",
+      "last": "Șerban",
+      "cnp": "2961203200604",
+      "birthDate": "1996-12-03"
+    },
+    "registration": {
+      "plate": "DJ 16 TST",
+      "vin": "TSTSPEC0000000007",
+      "make": "Seat",
+      "model": "Leon",
+      "year": "2023"
+    },
+    "policy": {
+      "insurer": "Asigurător Test C",
+      "policyNo": "FX-RCA-0007",
+      "validFrom": "2026-08-04",
+      "validTo": "2027-08-04",
+      "plate": "DJ 16 TST"
+    },
+    "license": {
+      "fullName": "Șerban Gabriela",
+      "licenseNo": "TST1000822",
+      "categories": "B",
+      "expiresOn": "2033-01-16"
+    }
+  },
+  {
+    "client_id": "21000000-0000-4000-8000-000000000008",
+    "test_data": true,
+    "holder": {
+      "first": "Horia",
+      "last": "Gheorghiu",
+      "cnp": "5010725300546",
+      "birthDate": "2001-07-25"
+    },
+    "registration": {
+      "plate": "SB 17 TST",
+      "vin": "TSTSPEC0000000008",
+      "make": "Skoda",
+      "model": "Fabia",
+      "year": "2014"
+    },
+    "policy": {
+      "insurer": "Asigurător Test D",
+      "policyNo": "FX-RCA-0008",
+      "validFrom": "2025-11-21",
+      "validTo": "2026-11-21",
+      "plate": "SB 17 TST"
+    },
+    "license": {
+      "fullName": "Gheorghiu Horia",
+      "licenseNo": "TST1000959",
+      "categories": "B",
+      "expiresOn": "2031-12-19"
+    }
+  }
+]

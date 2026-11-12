@@ -13,6 +13,11 @@
     "build": "npm run build -w apps/web",
     "validate:n8n": "node scripts/validate-n8n-json.mjs",
     "n8n:export": "node --env-file-if-exists=.env scripts/n8n-export.mjs",
+    "data:fixtures": "node scripts/generate-fixtures.mjs",
+    "data:specimens": "node scripts/generate-specimens.mjs",
+    "data:scrape": "node scripts/scrape-sources.mjs",
+    "data:apply": "node scripts/apply-fixtures.mjs",
+    "smoke": "node scripts/smoke-claim.mjs",
     "compose:config": "docker compose -f infra/docker-compose.yml config -q"
   }
 }

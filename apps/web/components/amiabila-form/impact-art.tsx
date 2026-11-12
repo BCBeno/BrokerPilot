@@ -40,6 +40,21 @@ export function CarImpact({ zone }: { zone: ImpactZone | null }) {
   );
 }
 
+/** Vehiculul mare (autoutilitară) văzut de sus; formularul oficial îl tipărește lângă mașină, ca a treia siluetă. */
+export function TruckArt() {
+  return (
+    <svg viewBox="0 0 60 150" className="af-truck" role="img" aria-label="Autoutilitară văzută de sus">
+      <rect x={14} y={10} width={32} height={30} rx={6} fill="#fff" stroke="#111" strokeWidth={2} />
+      <path d="M18 18 Q30 13 42 18 L41 28 L19 28 Z" fill="#e5e7eb" stroke="#111" strokeWidth={1.2} />
+      <rect x={10} y={42} width={40} height={100} rx={3} fill="#fff" stroke="#111" strokeWidth={2} />
+      <rect x={8} y={18} width={6} height={12} rx={2} fill="#111" />
+      <rect x={46} y={18} width={6} height={12} rx={2} fill="#111" />
+      <rect x={6} y={106} width={6} height={22} rx={2} fill="#111" />
+      <rect x={48} y={106} width={6} height={22} rx={2} fill="#111" />
+    </svg>
+  );
+}
+
 /** Motocicleta văzută de sus; formularul oficial o tipărește lângă mașină. */
 export function BikeArt() {
   return (

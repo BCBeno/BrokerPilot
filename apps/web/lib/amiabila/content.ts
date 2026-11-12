@@ -69,13 +69,13 @@ export const CIRCUMSTANCES: readonly { n: number; label: string }[] = [
  */
 export const FORM_CIRCUMSTANCES: readonly string[] = [
   "în staționare / oprit",
-  "la momentul plecării / deschiderii portierei",
+  "la momentul plecării / deschizând portiera",
   "la momentul opririi",
-  "ieșind dintr-un parcaj, loc privat, drum de pământ",
-  "intrând într-un parcaj, loc privat, drum de pământ",
+  "ieșind dintr-o parcare auto, loc privat, drum de pământ",
+  "intrând într-o parcare auto, loc privat, drum de pământ",
   "intrând într-un sens giratoriu",
   "circulând într-un sens giratoriu",
-  "lovind spatele unui vehicul în timpul deplasării pe aceeași bandă",
+  "lovind spatele unui vehicul în timpul deplasării pe același sens și pe aceeași bandă",
   "deplasându-se în același sens dar pe benzi de circulație diferite",
   "schimbând banda de circulație",
   "depășind",

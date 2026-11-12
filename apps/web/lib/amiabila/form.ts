@@ -164,8 +164,13 @@ export function buildParty({ documents, circumstances }: PartyInput): Party {
   const driver = splitName(fieldValue(lic, "fullName"));
   const makeType = [fieldValue(reg, "make"), fieldValue(reg, "model")].filter(Boolean).join(" ");
 
+  const address = fieldValue(lic, "address");
+  const contact = [fieldValue(lic, "phone"), fieldValue(lic, "email")].filter(Boolean).join(" / ");
+  // Pe formular, asiguratul și conducătorul sunt aceeași persoană (singurul titular pe care îl cunoaștem).
+  const country = address ? "România" : "";
+
   const party = emptyParty();
-  party.holder = { ...party.holder, ...holder, country: reg ? "România" : "" };
+  party.holder = { ...party.holder, ...holder, address, country: reg || address ? "România" : "", contact };
   party.vehicle = {
     ...party.vehicle,
     makeType,
@@ -178,10 +183,16 @@ export function buildParty({ documents, circumstances }: PartyInput): Party {
     policyNo: fieldValue(pol, "policyNo"),
     validFrom: formatFormDate(fieldValue(pol, "validFrom")),
     validTo: formatFormDate(fieldValue(pol, "validTo")),
+    // Eligibilitatea cere poliță RCA obligatorie românească, deci țara asigurătorului e România.
+    branchCountry: fieldValue(pol, "insurer") ? "România" : "",
   };
   party.driver = {
     ...party.driver,
     ...driver,
+    birthDate: formatFormDate(fieldValue(lic, "birthDate")),
+    address,
+    country,
+    contact,
     licenseNo: fieldValue(lic, "licenseNo"),
     category: fieldValue(lic, "categories"),
     licenseValidTo: formatFormDate(fieldValue(lic, "expiresOn")),

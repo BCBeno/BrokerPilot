@@ -1,0 +1,600 @@
+{
+  "claims": [
+    {
+      "id": "51000000-0000-4000-8000-000000000001",
+      "public_ref": "BP-DEMO-00011",
+      "status": "draft",
+      "channel": "web",
+      "accident_hours_ago": 1,
+      "location_text": "Str. Inventată 46, București (fictiv)",
+      "lat": 44.42285243589729,
+      "lng": 26.095501575763336,
+      "eligibility": {
+        "injuries": false,
+        "vehicles": 2,
+        "eligible": true
+      },
+      "circumstances_a": {
+        "checked": [
+          1,
+          12
+        ]
+      },
+      "circumstances_b": null,
+      "ai_summary": null,
+      "missing_items": [
+        "semnătura șoferului A",
+        "datele șoferului B"
+      ],
+      "broker_id": null,
+      "client_a": "21000000-0000-4000-8000-000000000001",
+      "client_b": null
+    },
+    {
+      "id": "51000000-0000-4000-8000-000000000002",
+      "public_ref": "BP-DEMO-00012",
+      "status": "awaiting_b",
+      "channel": "web",
+      "accident_hours_ago": 2,
+      "location_text": "Str. Specimen 72, Cluj-Napoca (fictiv)",
+      "lat": 46.78006190927122,
+      "lng": 23.625579854735545,
+      "eligibility": {
+        "injuries": false,
+        "vehicles": 2,
+        "eligible": true
+      },
+      "circumstances_a": {
+        "checked": [
+          2,
+          6
+        ]
+      },
+      "circumstances_b": null,
+      "ai_summary": null,
+      "missing_items": [
+        "datele și semnătura șoferului B"
+      ],
+      "broker_id": null,
+      "client_a": "21000000-0000-4000-8000-000000000003",
+      "client_b": null
+    },
+    {
+      "id": "51000000-0000-4000-8000-000000000003",
+      "public_ref": "BP-DEMO-00013",
+      "status": "signed",
+      "channel": "web",
+      "accident_hours_ago": 6,
+      "location_text": "Bd. Test 41, Timișoara (fictiv)",
+      "lat": 45.74212152529843,
+      "lng": 21.21115350423269,
+      "eligibility": {
+        "injuries": false,
+        "vehicles": 2,
+        "eligible": true
+      },
+      "circumstances_a": {
+        "checked": [
+          3
+        ]
+      },
+      "circumstances_b": {
+        "checked": [
+          9,
+          14
+        ]
+      },
+      "ai_summary": "Tamponare în trafic, ambele părți au semnat. Dosarul așteaptă trimiterea.",
+      "missing_items": [],
+      "broker_id": null,
+      "client_a": "21000000-0000-4000-8000-000000000005",
+      "client_b": "21000000-0000-4000-8000-000000000006"
+    },
+    {
+      "id": "51000000-0000-4000-8000-000000000004",
+      "public_ref": "BP-DEMO-00014",
+      "status": "submitted",
+      "channel": "web",
+      "accident_hours_ago": 20,
+      "location_text": "Calea Demo 10, Iași (fictiv)",
+      "lat": 47.149775785551405,
+      "lng": 27.610854713147134,
+      "eligibility": {
+        "injuries": false,
+        "vehicles": 2,
+        "eligible": true
+      },
+      "circumstances_a": {
+        "checked": [
+          5,
+          13
+        ]
+      },
+      "circumstances_b": {
+        "checked": [
+          7
+        ]
+      },
+      "ai_summary": "Tamponare ușoară la semafor; ambele părți au semnat, poze cu avarii atașate. Dosar complet.",
+      "missing_items": [],
+      "broker_id": null,
+      "client_a": "21000000-0000-4000-8000-000000000007",
+      "client_b": "21000000-0000-4000-8000-000000000008"
+    },
+    {
+      "id": "51000000-0000-4000-8000-000000000005",
+      "public_ref": "BP-DEMO-00015",
+      "status": "submitted",
+      "channel": "telegram",
+      "accident_hours_ago": 30,
+      "location_text": "Calea Demo 71, Brașov (fictiv)",
+      "lat": 45.636305417809446,
+      "lng": 25.587765068280323,
+      "eligibility": {
+        "injuries": false,
+        "vehicles": 2,
+        "eligible": true
+      },
+      "circumstances_a": {
+        "checked": [
+          4
+        ]
+      },
+      "circumstances_b": {
+        "checked": [
+          8,
+          15
+        ]
+      },
+      "ai_summary": "Tamponare ușoară la semafor; ambele părți au semnat, poze cu avarii atașate. Dosar complet.",
+      "missing_items": [],
+      "broker_id": null,
+      "client_a": "21000000-0000-4000-8000-000000000009",
+      "client_b": "21000000-0000-4000-8000-000000000010"
+    },
+    {
+      "id": "51000000-0000-4000-8000-000000000006",
+      "public_ref": "BP-DEMO-00016",
+      "status": "in_progress",
+      "channel": "web",
+      "accident_hours_ago": 72,
+      "location_text": "Str. Specimen 34, Constanța (fictiv)",
+      "lat": 44.155130386911516,
+      "lng": 28.628933960660547,
+      "eligibility": {
+        "injuries": false,
+        "vehicles": 2,
+        "eligible": true
+      },
+      "circumstances_a": {
+        "checked": [
+          9,
+          14
+        ]
+      },
+      "circumstances_b": {
+        "checked": [
+          1,
+          12
+        ]
+      },
+      "ai_summary": "Coliziune la intersecție, fără răniți. Dosarul e preluat de broker; se verifică seria poliței lui B.",
+      "missing_items": [
+        "număr poliță vehicul B"
+      ],
+      "broker_id": "10000000-0000-4000-8000-000000000002",
+      "client_a": "21000000-0000-4000-8000-000000000011",
+      "client_b": "21000000-0000-4000-8000-000000000012"
+    },
+    {
+      "id": "51000000-0000-4000-8000-000000000007",
+      "public_ref": "BP-DEMO-00017",
+      "status": "in_progress",
+      "channel": "voice",
+      "accident_hours_ago": 120,
+      "location_text": "Calea Demo 29, Craiova (fictiv)",
+      "lat": 44.32408892722316,
+      "lng": 23.80452483945768,
+      "eligibility": {
+        "injuries": false,
+        "vehicles": 2,
+        "eligible": true
+      },
+      "circumstances_a": {
+        "checked": [
+          7
+        ]
+      },
+      "circumstances_b": {
+        "checked": [
+          2,
+          6
+        ]
+      },
+      "ai_summary": "Coliziune la intersecție, fără răniți. Dosarul e preluat de broker; se verifică seria poliței lui B.",
+      "missing_items": [
+        "număr poliță vehicul B"
+      ],
+      "broker_id": "10000000-0000-4000-8000-000000000001",
+      "client_a": "21000000-0000-4000-8000-000000000013",
+      "client_b": "21000000-0000-4000-8000-000000000014"
+    },
+    {
+      "id": "51000000-0000-4000-8000-000000000008",
+      "public_ref": "BP-DEMO-00018",
+      "status": "closed",
+      "channel": "telegram",
+      "accident_hours_ago": 600,
+      "location_text": "Str. Fictivă 74, Sibiu (fictiv)",
+      "lat": 45.803552280910495,
+      "lng": 24.122908719195426,
+      "eligibility": {
+        "injuries": false,
+        "vehicles": 2,
+        "eligible": true
+      },
+      "circumstances_a": {
+        "checked": [
+          8,
+          15
+        ]
+      },
+      "circumstances_b": {
+        "checked": [
+          3
+        ]
+      },
+      "ai_summary": "Daună soluționată, despăgubire acordată de asigurătorul părții vinovate. Dosar închis.",
+      "missing_items": [],
+      "broker_id": "10000000-0000-4000-8000-000000000002",
+      "client_a": "21000000-0000-4000-8000-000000000015",
+      "client_b": "21000000-0000-4000-8000-000000000016"
+    }
+  ],
+  "parties": [
+    {
+      "id": "61000000-0000-4000-8000-000000000001",
+      "claim_id": "51000000-0000-4000-8000-000000000001",
+      "role": "A",
+      "client_id": "21000000-0000-4000-8000-000000000001",
+      "driver": {
+        "name": "Andreea Grigore (fictiv)"
+      },
+      "vehicle": {
+        "plate": "B 200 TST",
+        "make": "Dacia",
+        "model": "Sandero"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test A",
+        "policy_no": "FX-RCA-0001"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000002",
+      "claim_id": "51000000-0000-4000-8000-000000000001",
+      "role": "B",
+      "client_id": null,
+      "driver": null,
+      "vehicle": null,
+      "insurance": null,
+      "extraction_confidence": null,
+      "join_token": "demo-token-only-for-seed-fx00000000000001"
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000003",
+      "claim_id": "51000000-0000-4000-8000-000000000002",
+      "role": "A",
+      "client_id": "21000000-0000-4000-8000-000000000003",
+      "driver": {
+        "name": "Cristina Nistor (fictiv)"
+      },
+      "vehicle": {
+        "plate": "TM 12 TST",
+        "make": "Dacia",
+        "model": "Duster"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test C",
+        "policy_no": "FX-RCA-0003"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000004",
+      "claim_id": "51000000-0000-4000-8000-000000000002",
+      "role": "B",
+      "client_id": null,
+      "driver": null,
+      "vehicle": null,
+      "insurance": null,
+      "extraction_confidence": null,
+      "join_token": "demo-token-only-for-seed-fx00000000000002"
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000005",
+      "claim_id": "51000000-0000-4000-8000-000000000003",
+      "role": "A",
+      "client_id": "21000000-0000-4000-8000-000000000005",
+      "driver": {
+        "name": "Eugenia Dragomir (fictiv)"
+      },
+      "vehicle": {
+        "plate": "BV 14 TST",
+        "make": "Dacia",
+        "model": "Logan"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test A",
+        "policy_no": "FX-RCA-0005"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000006",
+      "claim_id": "51000000-0000-4000-8000-000000000003",
+      "role": "B",
+      "client_id": "21000000-0000-4000-8000-000000000006",
+      "driver": {
+        "name": "Florin Barbu (fictiv)"
+      },
+      "vehicle": {
+        "plate": "CT 15 TST",
+        "make": "Renault",
+        "model": "Clio"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test B",
+        "policy_no": "FX-RCA-0006"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000007",
+      "claim_id": "51000000-0000-4000-8000-000000000004",
+      "role": "A",
+      "client_id": "21000000-0000-4000-8000-000000000007",
+      "driver": {
+        "name": "Gabriela Șerban (fictiv)"
+      },
+      "vehicle": {
+        "plate": "DJ 16 TST",
+        "make": "Seat",
+        "model": "Leon"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test C",
+        "policy_no": "FX-RCA-0007"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000008",
+      "claim_id": "51000000-0000-4000-8000-000000000004",
+      "role": "B",
+      "client_id": "21000000-0000-4000-8000-000000000008",
+      "driver": {
+        "name": "Horia Gheorghiu (fictiv)"
+      },
+      "vehicle": {
+        "plate": "SB 17 TST",
+        "make": "Skoda",
+        "model": "Fabia"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test D",
+        "policy_no": "FX-RCA-0008"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000009",
+      "claim_id": "51000000-0000-4000-8000-000000000005",
+      "role": "A",
+      "client_id": "21000000-0000-4000-8000-000000000009",
+      "driver": {
+        "name": "Irina Enache (fictiv)"
+      },
+      "vehicle": {
+        "plate": "B 208 TST",
+        "make": "Audi",
+        "model": "A4"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test A",
+        "policy_no": "FX-RCA-0009"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000010",
+      "claim_id": "51000000-0000-4000-8000-000000000005",
+      "role": "B",
+      "client_id": "21000000-0000-4000-8000-000000000010",
+      "driver": {
+        "name": "Lucian Voicu (fictiv)"
+      },
+      "vehicle": {
+        "plate": "CJ 19 TST",
+        "make": "Skoda",
+        "model": "Octavia"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test B",
+        "policy_no": "FX-RCA-0010"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000011",
+      "claim_id": "51000000-0000-4000-8000-000000000006",
+      "role": "A",
+      "client_id": "21000000-0000-4000-8000-000000000011",
+      "driver": {
+        "name": "Maria Luca (fictiv)"
+      },
+      "vehicle": {
+        "plate": "TM 20 TST",
+        "make": "BMW",
+        "model": "320d"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test C",
+        "policy_no": "FX-RCA-0011"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000012",
+      "claim_id": "51000000-0000-4000-8000-000000000006",
+      "role": "B",
+      "client_id": "21000000-0000-4000-8000-000000000012",
+      "driver": {
+        "name": "Nicoleta Lazăr (fictiv)"
+      },
+      "vehicle": {
+        "plate": "IS 21 TST",
+        "make": "Volkswagen",
+        "model": "Passat"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test D",
+        "policy_no": "FX-RCA-0012"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000013",
+      "claim_id": "51000000-0000-4000-8000-000000000007",
+      "role": "A",
+      "client_id": "21000000-0000-4000-8000-000000000013",
+      "driver": {
+        "name": "Octavian Badea (fictiv)"
+      },
+      "vehicle": {
+        "plate": "BV 22 TST",
+        "make": "Hyundai",
+        "model": "i30"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test A",
+        "policy_no": "FX-RCA-0013"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000014",
+      "claim_id": "51000000-0000-4000-8000-000000000007",
+      "role": "B",
+      "client_id": "21000000-0000-4000-8000-000000000014",
+      "driver": {
+        "name": "Paula Olteanu (fictiv)"
+      },
+      "vehicle": {
+        "plate": "CT 23 TST",
+        "make": "Volkswagen",
+        "model": "Golf"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test B",
+        "policy_no": "FX-RCA-0014"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000015",
+      "claim_id": "51000000-0000-4000-8000-000000000008",
+      "role": "A",
+      "client_id": "21000000-0000-4000-8000-000000000015",
+      "driver": {
+        "name": "Sorin Oprea (fictiv)"
+      },
+      "vehicle": {
+        "plate": "DJ 24 TST",
+        "make": "Toyota",
+        "model": "Corolla"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test C",
+        "policy_no": "FX-RCA-0015"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000016",
+      "claim_id": "51000000-0000-4000-8000-000000000008",
+      "role": "B",
+      "client_id": "21000000-0000-4000-8000-000000000016",
+      "driver": {
+        "name": "Tudor Epure (fictiv)"
+      },
+      "vehicle": {
+        "plate": "SB 25 TST",
+        "make": "Dacia",
+        "model": "Sandero"
+      },
+      "insurance": {
+        "insurer": "Asigurător Test D",
+        "policy_no": "FX-RCA-0016"
+      },
+      "extraction_confidence": {
+        "plate": 0.97,
+        "policy_no": 0.94
+      },
+      "join_token": null
+    }
+  ]
+}

@@ -14,8 +14,8 @@ import {
   editField,
   emptyDoc,
   extractedDocSchema,
+  fieldNeedsCheck,
   isDocConfirmed,
-  isLowConfidence,
   policyCoversDate,
   policyMatchesVehicle,
   type DocType,
@@ -145,7 +145,7 @@ function Review({
   setDoc: (type: DocType, doc: ExtractedDoc | null) => void;
 }) {
   const scannable = DOC_META[type].scannable;
-  const needsCheck = DOC_META[type].fields.some((f) => isLowConfidence(doc.fields[f.key]));
+  const needsCheck = DOC_META[type].fields.some((f) => fieldNeedsCheck(f, doc.fields[f.key]));
 
   return (
     <div className="space-y-3">
@@ -153,13 +153,13 @@ function Review({
         <p className="text-[15px] text-muted-foreground">
           {scannable
             ? "Câmpurile galbene sunt nesigure sau goale. Verificați-le cu actul în față."
-            : "Completați câmpurile galbene cu permisul în față."}
+            : "Completați câmpurile galbene. Data nașterii și e-mailul sunt opționale."}
         </p>
       ) : null}
       <div className={cn(listGroup)}>
         {DOC_META[type].fields.map((def) => {
           const field = doc.fields[def.key];
-          const low = isLowConfidence(field);
+          const low = fieldNeedsCheck(def, field);
           return (
             <div key={`${def.key}:${field?.value ?? ""}`} className={cn("space-y-1.5 px-4 py-3", low && "bg-warning")}>
               <label htmlFor={`${type}-${def.key}`} className="flex items-center justify-between gap-2 text-[15px] text-muted-foreground">
@@ -175,6 +175,8 @@ function Review({
                 id={`${type}-${def.key}`}
                 defaultValue={field?.value ?? ""}
                 placeholder={def.placeholder}
+                type={def.kind === "email" ? "email" : def.kind === "phone" ? "tel" : "text"}
+                inputMode={def.kind === "email" ? "email" : def.kind === "phone" ? "tel" : undefined}
                 className="h-11 rounded-lg bg-card px-3 text-base md:text-base"
                 maxLength={200}
                 autoComplete="off"
@@ -217,7 +219,7 @@ export function DocsStep() {
     <StepFrame
       slug="acte"
       heading="Actele dumneavoastră"
-      lead="Fotografiați talonul și polița, iar noi citim datele. Permisul îl completați dumneavoastră. Verificați totul la final."
+      lead="Fotografiați talonul și polița, iar noi citim datele. Permisul și datele de contact le completați dumneavoastră. Verificați totul la final."
       canContinue={canContinue("acte", draft, new Date())}
       disabledHint="Verificați cele trei acte ca să continuați."
     >

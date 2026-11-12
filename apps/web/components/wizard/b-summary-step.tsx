@@ -83,6 +83,10 @@ export function BSummaryStep() {
             {fieldValue(documents.registration, "model")}
           </p>
           <p>{fieldValue(documents.license, "fullName") || "Permis necompletat"}</p>
+          <p className="text-muted-foreground">
+            {[fieldValue(documents.license, "phone"), fieldValue(documents.license, "email")].filter(Boolean).join(" · ") ||
+              "Telefon necompletat"}
+          </p>
           <p className="text-muted-foreground">{fieldValue(documents.policy, "insurer") || "Poliță necompletată"}</p>
         </div>
         <Link href={`${basePath}/acte`} className={editLink}>

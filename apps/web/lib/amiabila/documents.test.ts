@@ -10,7 +10,9 @@ import {
   extractionSchema,
   isDocConfirmed,
   normalizeDate,
+  normalizeEmail,
   normalizeExtraction,
+  normalizePhone,
   normalizePlate,
   normalizeVin,
   normalizeYear,
@@ -61,6 +63,57 @@ describe("normalizeYear", () => {
     expect(normalizeYear("2018", NOW)).toBe("2018");
     expect(normalizeYear("1900", NOW)).toBeNull();
     expect(normalizeYear("2099", NOW)).toBeNull();
+  });
+});
+
+describe("normalizePhone / normalizeEmail", () => {
+  it("formatează telefoane românești din mai multe scrieri", () => {
+    expect(normalizePhone("0722123456")).toBe("0722 123 456");
+    expect(normalizePhone("0722 123 456")).toBe("0722 123 456");
+    expect(normalizePhone("+40 722 123 456")).toBe("0722 123 456");
+    expect(normalizePhone("0040722123456")).toBe("0722 123 456");
+    expect(normalizePhone("021 234 5678")).toBe("0212 345 678");
+  });
+  it("acceptă prefix străin și respinge ce nu e număr", () => {
+    expect(normalizePhone("+49 151 2345 6789")).toBe("+4915123456789");
+    expect(normalizePhone("12345")).toBeNull();
+    expect(normalizePhone("0122123456")).toBeNull();
+    expect(normalizePhone("sună-mă")).toBeNull();
+  });
+  it("validează e-mailul și îl scrie cu litere mici", () => {
+    expect(normalizeEmail(" Ion.Popescu@Exemplu.RO ")).toBe("ion.popescu@exemplu.ro");
+    expect(normalizeEmail("ion@")).toBeNull();
+    expect(normalizeEmail("ion popescu@exemplu.ro")).toBeNull();
+  });
+});
+
+describe("câmpuri opționale (permis și contact)", () => {
+  const ok = (value: string) => ({ value, confidence: 1 });
+  const license = (over: Record<string, { value: string | null; confidence: number }> = {}): ExtractedDoc => ({
+    fields: {
+      fullName: ok("IONESCU Mihai"),
+      licenseNo: ok("B0000001"),
+      categories: ok("B"),
+      expiresOn: ok("2031-09-20"),
+      birthDate: { value: null, confidence: 0 },
+      address: ok("Str. Fictivă 12, București"),
+      phone: ok("0722 123 456"),
+      email: { value: null, confidence: 0 },
+      ...over,
+    },
+  });
+
+  it("data nașterii și e-mailul pot rămâne goale", () => {
+    expect(isDocConfirmed("license", license())).toBe(true);
+  });
+  it("telefonul și adresa sunt obligatorii", () => {
+    expect(isDocConfirmed("license", license({ phone: { value: null, confidence: 0 } }))).toBe(false);
+    expect(isDocConfirmed("license", license({ address: { value: null, confidence: 0 } }))).toBe(false);
+  });
+  it("un e-mail completat greșit blochează, unul gol nu", () => {
+    const bad = confirmDoc("license", license({ email: ok("nu-e-email") }), NOW);
+    expect(isDocConfirmed("license", bad)).toBe(false);
+    expect(isDocConfirmed("license", confirmDoc("license", license({ email: ok("a@b.ro") }), NOW))).toBe(true);
   });
 });
 

@@ -503,7 +503,7 @@ revoke all on all sequences in schema public from anon, authenticated;
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
   ('claim-files', 'claim-files', false, 10485760,
-   array['image/jpeg', 'image/png', 'image/webp', 'application/pdf']),
+   array['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'application/json']),
   ('kb-docs', 'kb-docs', false, 26214400,
    array['application/pdf', 'text/plain', 'text/html', 'text/markdown'])
 on conflict (id) do update

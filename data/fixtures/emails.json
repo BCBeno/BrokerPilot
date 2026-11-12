@@ -1,0 +1,818 @@
+[
+  {
+    "id": "fx-0001",
+    "from_name": "Bogdan Albu",
+    "from_email": "bogdan.albu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000002",
+    "subject": "Accident azi-dimineață, ce fac?",
+    "body": "Bună ziua, am avut un accident în Cluj-Napoca acum o oră, mașina CJ 11 TST e lovită în spate. Nu sunt răniți. Avem poliță FX-RCA-0002 la Asigurător Test B. Cum procedez cu amiabila? Mulțumesc, Bogdan Albu",
+    "received_hours_ago": 126,
+    "expected": {
+      "category": "daună",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "plate",
+      "name",
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0002",
+    "from_name": "Eugenia Dragomir",
+    "from_email": "eugenia.dragomir@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000005",
+    "subject": "URGENT: accident cu răniți",
+    "body": "Am fost implicat într-un accident, o persoană e rănită, am sunat la 112. Vă rog să mă sunați urgent la 0700000204. Eugenia Dragomir",
+    "received_hours_ago": 29,
+    "expected": {
+      "category": "daună",
+      "priority": "P1"
+    },
+    "pii_present": [
+      "phone",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0003",
+    "from_name": "Horia Gheorghiu",
+    "from_email": "horia.gheorghiu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000008",
+    "subject": "Stadiul dosarului de daună",
+    "body": "Bună ziua, vă scriu pentru dosarul de daună deschis acum două săptămâni pentru SB 17 TST. A trecut timp și nu am primit nicio veste de la asigurător. Puteți verifica? Poliță FX-RCA-0008.",
+    "received_hours_ago": 111,
+    "expected": {
+      "category": "daună",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "plate",
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0004",
+    "from_name": "Maria Luca",
+    "from_email": "maria.luca@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000011",
+    "subject": "Poze avarii, vehicul TM 20 TST",
+    "body": "Vă trimit fotografiile cu avariile. Mașina nu mai poate fi condusă și trebuie tractată. Ce pași urmează? Mă găsiți la 0700000210.",
+    "received_hours_ago": 118,
+    "expected": {
+      "category": "daună",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "phone",
+      "plate"
+    ]
+  },
+  {
+    "id": "fx-0005",
+    "from_name": "Paula Olteanu",
+    "from_email": "paula.olteanu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000014",
+    "subject": "Geam spart în parcare",
+    "body": "Mi s-a spart geamul lateral în parcare, mașina CT 23 TST. Am CASCO, poliță FX-RCA-0014. Ce documente vă trebuie? Paula Olteanu",
+    "received_hours_ago": 239,
+    "expected": {
+      "category": "daună",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "plate",
+      "name",
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0006",
+    "from_name": "Ștefan Constantin",
+    "from_email": "stefan.constantin@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000017",
+    "subject": "Accident azi-dimineață, ce fac?",
+    "body": "Bună ziua, am avut un accident în București acum o oră, mașina B 216 TST e lovită în spate. Nu sunt răniți. Avem poliță FX-RCA-0017 la Asigurător Test A. Cum procedez cu amiabila? Mulțumesc, Ștefan Constantin",
+    "received_hours_ago": 226,
+    "expected": {
+      "category": "daună",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "plate",
+      "name",
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0007",
+    "from_name": "Alexandra Filip",
+    "from_email": "alexandra.filip@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000020",
+    "subject": "URGENT: accident cu răniți",
+    "body": "Am fost implicat într-un accident, o persoană e rănită, am sunat la 112. Vă rog să mă sunați urgent la 0700000219. Alexandra Filip",
+    "received_hours_ago": 85,
+    "expected": {
+      "category": "daună",
+      "priority": "P1"
+    },
+    "pii_present": [
+      "phone",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0008",
+    "from_name": "Emil Manea",
+    "from_email": "emil.manea@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000023",
+    "subject": "Stadiul dosarului de daună",
+    "body": "Bună ziua, vă scriu pentru dosarul de daună deschis acum două săptămâni pentru DJ 32 TST. A trecut timp și nu am primit nicio veste de la asigurător. Puteți verifica? Poliță FX-RCA-0023.",
+    "received_hours_ago": 107,
+    "expected": {
+      "category": "daună",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "plate",
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0009",
+    "from_name": "Laura Pavel",
+    "from_email": "laura.pavel@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000026",
+    "subject": "Poze avarii, vehicul CJ 35 TST",
+    "body": "Vă trimit fotografiile cu avariile. Mașina nu mai poate fi condusă și trebuie tractată. Ce pași urmează? Mă găsiți la 0700000225.",
+    "received_hours_ago": 85,
+    "expected": {
+      "category": "daună",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "phone",
+      "plate"
+    ]
+  },
+  {
+    "id": "fx-0010",
+    "from_name": "Răzvan Ungureanu",
+    "from_email": "razvan.ungureanu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000029",
+    "subject": "Geam spart în parcare",
+    "body": "Mi s-a spart geamul lateral în parcare, mașina BV 38 TST. Am CASCO, poliță FX-RCA-0029. Ce documente vă trebuie? Răzvan Ungureanu",
+    "received_hours_ago": 67,
+    "expected": {
+      "category": "daună",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "plate",
+      "name",
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0011",
+    "from_name": "Bogdan Albu",
+    "from_email": "bogdan.albu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000002",
+    "subject": "Ofertă RCA pentru CJ 11 TST",
+    "body": "Aș dori o ofertă RCA pentru CJ 11 TST, proprietar Bogdan Albu. Am clasa de bonus-malus B0. Vă rog să comparați mai mulți asigurători.",
+    "received_hours_ago": 236,
+    "expected": {
+      "category": "ofertă",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "plate",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0012",
+    "from_name": "Eugenia Dragomir",
+    "from_email": "eugenia.dragomir@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000005",
+    "subject": "Cerere ofertă CASCO",
+    "body": "Bună ziua, mi-am cumpărat o mașină nouă și caut CASCO cu franșiză mică. Mă puteți suna la 0700000204? Eugenia Dragomir",
+    "received_hours_ago": 131,
+    "expected": {
+      "category": "ofertă",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "phone",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0013",
+    "from_name": "Horia Gheorghiu",
+    "from_email": "horia.gheorghiu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000008",
+    "subject": "Asigurare locuință",
+    "body": "Vreau să asigur apartamentul de 55 mp din Sibiu. Ce variante aveți (PAD plus asigurare facultativă)?",
+    "received_hours_ago": 64,
+    "expected": {
+      "category": "ofertă",
+      "priority": "P4"
+    },
+    "pii_present": []
+  },
+  {
+    "id": "fx-0014",
+    "from_name": "Maria Luca",
+    "from_email": "maria.luca@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000011",
+    "subject": "Ofertă RCA pentru două mașini",
+    "body": "Avem două mașini în familie și vrem să le asigurăm la același broker. Puteți face o ofertă combinată? Maria Luca",
+    "received_hours_ago": 126,
+    "expected": {
+      "category": "ofertă",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0015",
+    "from_name": "Paula Olteanu",
+    "from_email": "paula.olteanu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000014",
+    "subject": "Ofertă RCA pentru CT 23 TST",
+    "body": "Aș dori o ofertă RCA pentru CT 23 TST, proprietar Paula Olteanu. Am clasa de bonus-malus B0. Vă rog să comparați mai mulți asigurători.",
+    "received_hours_ago": 232,
+    "expected": {
+      "category": "ofertă",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "plate",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0016",
+    "from_name": "Ștefan Constantin",
+    "from_email": "stefan.constantin@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000017",
+    "subject": "Cerere ofertă CASCO",
+    "body": "Bună ziua, mi-am cumpărat o mașină nouă și caut CASCO cu franșiză mică. Mă puteți suna la 0700000216? Ștefan Constantin",
+    "received_hours_ago": 180,
+    "expected": {
+      "category": "ofertă",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "phone",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0017",
+    "from_name": "Alexandra Filip",
+    "from_email": "alexandra.filip@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000020",
+    "subject": "Asigurare locuință",
+    "body": "Vreau să asigur apartamentul de 55 mp din Iași. Ce variante aveți (PAD plus asigurare facultativă)?",
+    "received_hours_ago": 133,
+    "expected": {
+      "category": "ofertă",
+      "priority": "P4"
+    },
+    "pii_present": []
+  },
+  {
+    "id": "fx-0018",
+    "from_name": "Emil Manea",
+    "from_email": "emil.manea@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000023",
+    "subject": "Ofertă RCA pentru două mașini",
+    "body": "Avem două mașini în familie și vrem să le asigurăm la același broker. Puteți face o ofertă combinată? Emil Manea",
+    "received_hours_ago": 110,
+    "expected": {
+      "category": "ofertă",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0019",
+    "from_name": "Laura Pavel",
+    "from_email": "laura.pavel@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000026",
+    "subject": "Reînnoire RCA CJ 35 TST",
+    "body": "Polița FX-RCA-0026 expiră pe 2027-01-18. Vreau să o reînnoiesc cu aceleași date. Care e prețul? Laura Pavel",
+    "received_hours_ago": 86,
+    "expected": {
+      "category": "reînnoire",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "plate",
+      "name",
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0020",
+    "from_name": "Răzvan Ungureanu",
+    "from_email": "razvan.ungureanu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000029",
+    "subject": "Mi-a expirat polița RCA",
+    "body": "Polița mea a expirat acum câteva zile și nu știu dacă pot circula. Ce fac, urgent? Mașina BV 38 TST. Telefon 0700000228.",
+    "received_hours_ago": 128,
+    "expected": {
+      "category": "reînnoire",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "phone",
+      "plate"
+    ]
+  },
+  {
+    "id": "fx-0021",
+    "from_name": "Bogdan Albu",
+    "from_email": "bogdan.albu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000002",
+    "subject": "Reînnoire poliță luna viitoare",
+    "body": "Am primit un mesaj că polița expiră luna viitoare. Puteți să-mi trimiteți o ofertă de reînnoire? Bogdan Albu",
+    "received_hours_ago": 206,
+    "expected": {
+      "category": "reînnoire",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0022",
+    "from_name": "Eugenia Dragomir",
+    "from_email": "eugenia.dragomir@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000005",
+    "subject": "Schimb asigurătorul la reînnoire",
+    "body": "Prețul de anul trecut a fost prea mare. Dacă găsiți ceva mai bun la reînnoirea din 2026-11-17, aș schimba asigurătorul. Eugenia Dragomir",
+    "received_hours_ago": 162,
+    "expected": {
+      "category": "reînnoire",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0023",
+    "from_name": "Horia Gheorghiu",
+    "from_email": "horia.gheorghiu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000008",
+    "subject": "Reînnoire RCA SB 17 TST",
+    "body": "Polița FX-RCA-0008 expiră pe 2026-11-21. Vreau să o reînnoiesc cu aceleași date. Care e prețul? Horia Gheorghiu",
+    "received_hours_ago": 147,
+    "expected": {
+      "category": "reînnoire",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "plate",
+      "name",
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0024",
+    "from_name": "Maria Luca",
+    "from_email": "maria.luca@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000011",
+    "subject": "Mi-a expirat polița RCA",
+    "body": "Polița mea a expirat acum câteva zile și nu știu dacă pot circula. Ce fac, urgent? Mașina TM 20 TST. Telefon 0700000210.",
+    "received_hours_ago": 141,
+    "expected": {
+      "category": "reînnoire",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "phone",
+      "plate"
+    ]
+  },
+  {
+    "id": "fx-0025",
+    "from_name": "Paula Olteanu",
+    "from_email": "paula.olteanu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000014",
+    "subject": "Reînnoire poliță luna viitoare",
+    "body": "Am primit un mesaj că polița expiră luna viitoare. Puteți să-mi trimiteți o ofertă de reînnoire? Paula Olteanu",
+    "received_hours_ago": 187,
+    "expected": {
+      "category": "reînnoire",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0026",
+    "from_name": "Ștefan Constantin",
+    "from_email": "stefan.constantin@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000017",
+    "subject": "Schimb asigurătorul la reînnoire",
+    "body": "Prețul de anul trecut a fost prea mare. Dacă găsiți ceva mai bun la reînnoirea din 2026-12-03, aș schimba asigurătorul. Ștefan Constantin",
+    "received_hours_ago": 230,
+    "expected": {
+      "category": "reînnoire",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0027",
+    "from_name": "Alexandra Filip",
+    "from_email": "alexandra.filip@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000020",
+    "subject": "Reclamație: întârziere la despăgubire",
+    "body": "Sunt nemulțumit că despăgubirea pentru IS 29 TST întârzie de două luni. Cer o explicație scrisă. Alexandra Filip",
+    "received_hours_ago": 23,
+    "expected": {
+      "category": "reclamație",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "plate",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0028",
+    "from_name": "Emil Manea",
+    "from_email": "emil.manea@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000023",
+    "subject": "Nemulțumit de preț",
+    "body": "Prima mea a crescut cu 40% fără nicio explicație. Dacă nu se rezolvă, plec la alt broker. Emil Manea",
+    "received_hours_ago": 62,
+    "expected": {
+      "category": "reclamație",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0029",
+    "from_name": "Laura Pavel",
+    "from_email": "laura.pavel@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000026",
+    "subject": "Sumă greșită pe factură",
+    "body": "Pe factură apare o primă diferită față de oferta primită pe email. Vă rog să corectați. Poliță FX-RCA-0026.",
+    "received_hours_ago": 78,
+    "expected": {
+      "category": "reclamație",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0030",
+    "from_name": "Răzvan Ungureanu",
+    "from_email": "razvan.ungureanu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000029",
+    "subject": "Nu răspunde nimeni la telefon",
+    "body": "Am sunat de trei ori la agenție și nu a răspuns nimeni. Aș vrea să fiu sunat înapoi la 0700000228.",
+    "received_hours_ago": 154,
+    "expected": {
+      "category": "reclamație",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "phone"
+    ]
+  },
+  {
+    "id": "fx-0031",
+    "from_name": "Bogdan Albu",
+    "from_email": "bogdan.albu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000002",
+    "subject": "Sesizare: informație greșită",
+    "body": "Mi s-a spus că polița acoperă și geamurile, dar la daună mi s-a refuzat. Cer clarificări. Bogdan Albu",
+    "received_hours_ago": 40,
+    "expected": {
+      "category": "reclamație",
+      "priority": "P2"
+    },
+    "pii_present": [
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0032",
+    "from_name": "Eugenia Dragomir",
+    "from_email": "eugenia.dragomir@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000005",
+    "subject": "Documente pentru poliță",
+    "body": "Atașat talonul și permisul. CNP 1970807309726, telefon 0700000204. Vă rog confirmați primirea. Eugenia Dragomir",
+    "received_hours_ago": 78,
+    "expected": {
+      "category": "documente",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "cnp",
+      "phone",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0033",
+    "from_name": "Horia Gheorghiu",
+    "from_email": "horia.gheorghiu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000008",
+    "subject": "Carte de identitate actualizată",
+    "body": "Mi-am schimbat actul de identitate, CNP 1950502231066. Vă rog actualizați datele de pe poliță FX-RCA-0008.",
+    "received_hours_ago": 124,
+    "expected": {
+      "category": "documente",
+      "priority": "P4"
+    },
+    "pii_present": [
+      "cnp",
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0034",
+    "from_name": "Maria Luca",
+    "from_email": "maria.luca@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000011",
+    "subject": "Lipsește talonul din dosar",
+    "body": "Ați cerut talonul pentru dosarul de daună. Îl atașez, mașina TM 20 TST. Maria Luca",
+    "received_hours_ago": 169,
+    "expected": {
+      "category": "documente",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "plate",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0035",
+    "from_name": "Paula Olteanu",
+    "from_email": "paula.olteanu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000014",
+    "subject": "Procură pentru ridicarea despăgubirii",
+    "body": "Trimit procura notarială pentru soția mea, care ridică despăgubirea în numele meu. Paula Olteanu, 0700000213",
+    "received_hours_ago": 207,
+    "expected": {
+      "category": "documente",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "phone",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0036",
+    "from_name": "Ștefan Constantin",
+    "from_email": "stefan.constantin@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000017",
+    "subject": "Documente pentru poliță",
+    "body": "Atașat talonul și permisul. CNP 1730405182153, telefon 0700000216. Vă rog confirmați primirea. Ștefan Constantin",
+    "received_hours_ago": 122,
+    "expected": {
+      "category": "documente",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "cnp",
+      "phone",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0037",
+    "from_name": "Alexandra Filip",
+    "from_email": "alexandra.filip@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000020",
+    "subject": "Carte de identitate actualizată",
+    "body": "Mi-am schimbat actul de identitate, CNP 1761012231596. Vă rog actualizați datele de pe poliță FX-RCA-0020.",
+    "received_hours_ago": 230,
+    "expected": {
+      "category": "documente",
+      "priority": "P4"
+    },
+    "pii_present": [
+      "cnp",
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0038",
+    "from_name": "Emil Manea",
+    "from_email": "emil.manea@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000023",
+    "subject": "Lipsește talonul din dosar",
+    "body": "Ați cerut talonul pentru dosarul de daună. Îl atașez, mașina DJ 32 TST. Emil Manea",
+    "received_hours_ago": 130,
+    "expected": {
+      "category": "documente",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "plate",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0039",
+    "from_name": "Laura Pavel",
+    "from_email": "laura.pavel@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000026",
+    "subject": "Schimbare date de contact",
+    "body": "Noul meu număr de telefon este 0700000225. Adresa de email rămâne aceeași. Laura Pavel",
+    "received_hours_ago": 215,
+    "expected": {
+      "category": "administrativ",
+      "priority": "P4"
+    },
+    "pii_present": [
+      "phone",
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0040",
+    "from_name": "Răzvan Ungureanu",
+    "from_email": "razvan.ungureanu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000029",
+    "subject": "Cerere factură",
+    "body": "Vă rog să-mi trimiteți factura pentru polița FX-RCA-0029, am nevoie de ea la firmă.",
+    "received_hours_ago": 233,
+    "expected": {
+      "category": "administrativ",
+      "priority": "P4"
+    },
+    "pii_present": [
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0041",
+    "from_name": "Bogdan Albu",
+    "from_email": "bogdan.albu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000002",
+    "subject": "Program de sărbători",
+    "body": "Care e programul agenției în perioada sărbătorilor? Vreau să trec pe la voi cu documentele.",
+    "received_hours_ago": 87,
+    "expected": {
+      "category": "administrativ",
+      "priority": "P4"
+    },
+    "pii_present": []
+  },
+  {
+    "id": "fx-0042",
+    "from_name": "Eugenia Dragomir",
+    "from_email": "eugenia.dragomir@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000005",
+    "subject": "Reziliere poliță",
+    "body": "Am vândut mașina BV 14 TST. Cum procedez cu rezilierea poliței FX-RCA-0005 și cu restituirea primei?",
+    "received_hours_ago": 52,
+    "expected": {
+      "category": "administrativ",
+      "priority": "P3"
+    },
+    "pii_present": [
+      "plate",
+      "policy_no"
+    ]
+  },
+  {
+    "id": "fx-0043",
+    "from_name": "Horia Gheorghiu",
+    "from_email": "horia.gheorghiu@example.test",
+    "client_id": "21000000-0000-4000-8000-000000000008",
+    "subject": "Adeverință de client",
+    "body": "Am nevoie de o adeverință că sunt clientul vostru, pentru bancă. Horia Gheorghiu",
+    "received_hours_ago": 187,
+    "expected": {
+      "category": "administrativ",
+      "priority": "P4"
+    },
+    "pii_present": [
+      "name"
+    ]
+  },
+  {
+    "id": "fx-0044",
+    "from_name": "Promoții (fictiv)",
+    "from_email": "office@promo-1.example.test",
+    "client_id": null,
+    "subject": "Câștigă un voucher de 500 lei!",
+    "body": "Felicitări! Ai fost selectat pentru un voucher. Apasă pe link și completează datele cardului ca să-l primești.",
+    "received_hours_ago": 106,
+    "expected": {
+      "category": "spam-newsletter",
+      "priority": "P4"
+    },
+    "pii_present": []
+  },
+  {
+    "id": "fx-0045",
+    "from_name": "Promoții (fictiv)",
+    "from_email": "office@promo-2.example.test",
+    "client_id": null,
+    "subject": "Newsletter noiembrie: noutăți în asigurări",
+    "body": "Ce s-a schimbat în piața asigurărilor luna aceasta. Dezabonare: răspunde cu STOP.",
+    "received_hours_ago": 215,
+    "expected": {
+      "category": "spam-newsletter",
+      "priority": "P4"
+    },
+    "pii_present": []
+  },
+  {
+    "id": "fx-0046",
+    "from_name": "Promoții (fictiv)",
+    "from_email": "office@promo-3.example.test",
+    "client_id": null,
+    "subject": "Credit rapid, fără acte",
+    "body": "Împrumut în 10 minute, doar cu buletinul. Aprobare 100%. Oferta expiră azi!",
+    "received_hours_ago": 94,
+    "expected": {
+      "category": "spam-newsletter",
+      "priority": "P4"
+    },
+    "pii_present": []
+  },
+  {
+    "id": "fx-0047",
+    "from_name": "Promoții (fictiv)",
+    "from_email": "office@promo-1.example.test",
+    "client_id": null,
+    "subject": "Reduceri la anvelope de iarnă",
+    "body": "Ultimele zile: -30% la anvelope de iarnă. Montaj gratuit în Iași.",
+    "received_hours_ago": 210,
+    "expected": {
+      "category": "spam-newsletter",
+      "priority": "P4"
+    },
+    "pii_present": []
+  },
+  {
+    "id": "fx-0048",
+    "from_name": "Promoții (fictiv)",
+    "from_email": "office@promo-2.example.test",
+    "client_id": null,
+    "subject": "Câștigă un voucher de 500 lei!",
+    "body": "Felicitări! Ai fost selectat pentru un voucher. Apasă pe link și completează datele cardului ca să-l primești.",
+    "received_hours_ago": 58,
+    "expected": {
+      "category": "spam-newsletter",
+      "priority": "P4"
+    },
+    "pii_present": []
+  },
+  {
+    "id": "fx-0049",
+    "from_name": "Promoții (fictiv)",
+    "from_email": "office@promo-3.example.test",
+    "client_id": null,
+    "subject": "Newsletter noiembrie: noutăți în asigurări",
+    "body": "Ce s-a schimbat în piața asigurărilor luna aceasta. Dezabonare: răspunde cu STOP.",
+    "received_hours_ago": 119,
+    "expected": {
+      "category": "spam-newsletter",
+      "priority": "P4"
+    },
+    "pii_present": []
+  },
+  {
+    "id": "fx-0050",
+    "from_name": "Promoții (fictiv)",
+    "from_email": "office@promo-1.example.test",
+    "client_id": null,
+    "subject": "Credit rapid, fără acte",
+    "body": "Împrumut în 10 minute, doar cu buletinul. Aprobare 100%. Oferta expiră azi!",
+    "received_hours_ago": 88,
+    "expected": {
+      "category": "spam-newsletter",
+      "priority": "P4"
+    },
+    "pii_present": []
+  }
+]

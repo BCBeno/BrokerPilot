@@ -1,0 +1,358 @@
+[
+  {
+    "file": "01-registration.png",
+    "type": "registration",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000001",
+    "expected": {
+      "plate": "B 200 TST",
+      "vin": "TSTSPEC0000000001",
+      "make": "Dacia",
+      "model": "Sandero",
+      "year": "2014"
+    }
+  },
+  {
+    "file": "01-registration-rotit.png",
+    "type": "registration",
+    "variant": "rotit",
+    "client_id": "21000000-0000-4000-8000-000000000001",
+    "expected": {
+      "plate": "B 200 TST",
+      "vin": "TSTSPEC0000000001",
+      "make": "Dacia",
+      "model": "Sandero",
+      "year": "2014"
+    }
+  },
+  {
+    "file": "01-registration-slab.png",
+    "type": "registration",
+    "variant": "slab",
+    "client_id": "21000000-0000-4000-8000-000000000001",
+    "expected": {
+      "plate": "B 200 TST",
+      "vin": "TSTSPEC0000000001",
+      "make": "Dacia",
+      "model": "Sandero",
+      "year": "2014"
+    }
+  },
+  {
+    "file": "01-license.png",
+    "type": "license",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000001",
+    "expected": {
+      "fullName": "Grigore Andreea",
+      "licenseNo": "TST1000000",
+      "categories": "B",
+      "expiresOn": "2029-03-11"
+    }
+  },
+  {
+    "file": "01-policy.png",
+    "type": "policy",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000001",
+    "expected": {
+      "insurer": "Asigurător Test A",
+      "policyNo": "FX-RCA-0001",
+      "validFrom": "2026-09-29",
+      "validTo": "2027-09-29",
+      "plate": "B 200 TST"
+    }
+  },
+  {
+    "file": "01-policy-rotit.png",
+    "type": "policy",
+    "variant": "rotit",
+    "client_id": "21000000-0000-4000-8000-000000000001",
+    "expected": {
+      "insurer": "Asigurător Test A",
+      "policyNo": "FX-RCA-0001",
+      "validFrom": "2026-09-29",
+      "validTo": "2027-09-29",
+      "plate": "B 200 TST"
+    }
+  },
+  {
+    "file": "01-policy-slab.png",
+    "type": "policy",
+    "variant": "slab",
+    "client_id": "21000000-0000-4000-8000-000000000001",
+    "expected": {
+      "insurer": "Asigurător Test A",
+      "policyNo": "FX-RCA-0001",
+      "validFrom": "2026-09-29",
+      "validTo": "2027-09-29",
+      "plate": "B 200 TST"
+    }
+  },
+  {
+    "file": "02-registration.png",
+    "type": "registration",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000002",
+    "expected": {
+      "plate": "CJ 11 TST",
+      "vin": "TSTSPEC0000000002",
+      "make": "Opel",
+      "model": "Astra",
+      "year": "2009"
+    }
+  },
+  {
+    "file": "02-license.png",
+    "type": "license",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000002",
+    "expected": {
+      "fullName": "Albu Bogdan",
+      "licenseNo": "TST1000137",
+      "categories": "B",
+      "expiresOn": "2031-01-10"
+    }
+  },
+  {
+    "file": "02-policy.png",
+    "type": "policy",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000002",
+    "expected": {
+      "insurer": "Asigurător Test B",
+      "policyNo": "FX-RCA-0002",
+      "validFrom": "2025-11-15",
+      "validTo": "2026-11-15",
+      "plate": "CJ 11 TST"
+    }
+  },
+  {
+    "file": "03-registration.png",
+    "type": "registration",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000003",
+    "expected": {
+      "plate": "TM 12 TST",
+      "vin": "TSTSPEC0000000003",
+      "make": "Dacia",
+      "model": "Duster",
+      "year": "2013"
+    }
+  },
+  {
+    "file": "03-license.png",
+    "type": "license",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000003",
+    "expected": {
+      "fullName": "Nistor Cristina",
+      "licenseNo": "TST1000274",
+      "categories": "B",
+      "expiresOn": "2030-04-14"
+    }
+  },
+  {
+    "file": "03-policy.png",
+    "type": "policy",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000003",
+    "expected": {
+      "insurer": "Asigurător Test C",
+      "policyNo": "FX-RCA-0003",
+      "validFrom": "2026-07-12",
+      "validTo": "2027-07-12",
+      "plate": "TM 12 TST"
+    }
+  },
+  {
+    "file": "04-registration.png",
+    "type": "registration",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000004",
+    "expected": {
+      "plate": "IS 13 TST",
+      "vin": "TSTSPEC0000000004",
+      "make": "Ford",
+      "model": "Focus",
+      "year": "2008"
+    }
+  },
+  {
+    "file": "04-license.png",
+    "type": "license",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000004",
+    "expected": {
+      "fullName": "Neagu Dan",
+      "licenseNo": "TST1000411",
+      "categories": "B",
+      "expiresOn": "2033-06-15"
+    }
+  },
+  {
+    "file": "04-policy.png",
+    "type": "policy",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000004",
+    "expected": {
+      "insurer": "Asigurător Test D",
+      "policyNo": "FX-RCA-0004",
+      "validFrom": "2026-06-27",
+      "validTo": "2027-06-27",
+      "plate": "IS 13 TST"
+    }
+  },
+  {
+    "file": "05-registration.png",
+    "type": "registration",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000005",
+    "expected": {
+      "plate": "BV 14 TST",
+      "vin": "TSTSPEC0000000005",
+      "make": "Dacia",
+      "model": "Logan",
+      "year": "2009"
+    }
+  },
+  {
+    "file": "05-license.png",
+    "type": "license",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000005",
+    "expected": {
+      "fullName": "Dragomir Eugenia",
+      "licenseNo": "TST1000548",
+      "categories": "B",
+      "expiresOn": "2028-01-25"
+    }
+  },
+  {
+    "file": "05-policy.png",
+    "type": "policy",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000005",
+    "expected": {
+      "insurer": "Asigurător Test A",
+      "policyNo": "FX-RCA-0005",
+      "validFrom": "2026-05-21",
+      "validTo": "2026-11-17",
+      "plate": "BV 14 TST"
+    }
+  },
+  {
+    "file": "06-registration.png",
+    "type": "registration",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000006",
+    "expected": {
+      "plate": "CT 15 TST",
+      "vin": "TSTSPEC0000000006",
+      "make": "Renault",
+      "model": "Clio",
+      "year": "2012"
+    }
+  },
+  {
+    "file": "06-license.png",
+    "type": "license",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000006",
+    "expected": {
+      "fullName": "Barbu Florin",
+      "licenseNo": "TST1000685",
+      "categories": "B",
+      "expiresOn": "2033-04-27"
+    }
+  },
+  {
+    "file": "06-policy.png",
+    "type": "policy",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000006",
+    "expected": {
+      "insurer": "Asigurător Test B",
+      "policyNo": "FX-RCA-0006",
+      "validFrom": "2026-09-16",
+      "validTo": "2027-09-16",
+      "plate": "CT 15 TST"
+    }
+  },
+  {
+    "file": "07-registration.png",
+    "type": "registration",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000007",
+    "expected": {
+      "plate": "DJ 16 TST",
+      "vin": "TSTSPEC0000000007",
+      "make": "Seat",
+      "model": "Leon",
+      "year": "2023"
+    }
+  },
+  {
+    "file": "07-license.png",
+    "type": "license",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000007",
+    "expected": {
+      "fullName": "Șerban Gabriela",
+      "licenseNo": "TST1000822",
+      "categories": "B",
+      "expiresOn": "2033-01-16"
+    }
+  },
+  {
+    "file": "07-policy.png",
+    "type": "policy",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000007",
+    "expected": {
+      "insurer": "Asigurător Test C",
+      "policyNo": "FX-RCA-0007",
+      "validFrom": "2026-08-04",
+      "validTo": "2027-08-04",
+      "plate": "DJ 16 TST"
+    }
+  },
+  {
+    "file": "08-registration.png",
+    "type": "registration",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000008",
+    "expected": {
+      "plate": "SB 17 TST",
+      "vin": "TSTSPEC0000000008",
+      "make": "Skoda",
+      "model": "Fabia",
+      "year": "2014"
+    }
+  },
+  {
+    "file": "08-license.png",
+    "type": "license",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000008",
+    "expected": {
+      "fullName": "Gheorghiu Horia",
+      "licenseNo": "TST1000959",
+      "categories": "B",
+      "expiresOn": "2031-12-19"
+    }
+  },
+  {
+    "file": "08-policy.png",
+    "type": "policy",
+    "variant": "clar",
+    "client_id": "21000000-0000-4000-8000-000000000008",
+    "expected": {
+      "insurer": "Asigurător Test D",
+      "policyNo": "FX-RCA-0008",
+      "validFrom": "2025-11-21",
+      "validTo": "2026-11-21",
+      "plate": "SB 17 TST"
+    }
+  }
+]

@@ -5,12 +5,12 @@
  */
 .af-sheet,
 .af-back {
-  --a-line: #1c3b8f;
-  --a-bg: #e0e7f5;
+  --a-line: #0a3d91;
+  --a-bg: #e8edf4;
   --a-badge: #c4d0ea;
-  --b-line: #f0b323;
-  --b-bg: #fdf1de;
-  --b-badge: #fbe3b2;
+  --b-line: #ffd80c;
+  --b-bg: #fff9e8;
+  --b-badge: #ffe98a;
   --ink: #12288f;
   --rule: #1f2937;
   position: relative;
@@ -42,10 +42,10 @@
 }
 .af-head h1 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  color: #1a2a6c;
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: 0.7px;
+  color: #111;
 }
 .af-head span {
   font-size: 9px;
@@ -537,7 +537,7 @@
 
 .af-foot {
   display: grid;
-  grid-template-columns: 276px 1fr 276px;
+  grid-template-columns: 234px 1fr 234px;
 }
 .af-foot .af-col {
   border-top: 1px solid var(--a-line);
@@ -794,4 +794,122 @@
     min-height: 0;
     height: 1040px;
   }
+}
+
+/* ---------------------------------------------------------------- aliniere cu formularul oficial (anexa 7) */
+/* Caseta 2: „Țara” sub titlu, în stânga; „Locul” în dreapta, despărțit printr-o linie verticală. */
+.af-top1 .af-place {
+  display: grid;
+  grid-template-columns: 42% 1fr;
+  padding: 0;
+}
+.af-place-l,
+.af-place-r {
+  min-width: 0;
+  padding: 3px 5px 4px;
+}
+.af-place-r {
+  border-left: 1px solid var(--rule);
+}
+/* Caseta 12: literele A și B de o parte și de alta a textului. */
+.af-circ-lead {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.af-circ-lead p {
+  flex: 1;
+  margin: 0;
+}
+.af-ab {
+  font-size: 14px;
+  font-weight: 700;
+}
+/* Caseta 13: indicațiile stau sub titlu, deasupra caroiajului. */
+.af-sketch-note {
+  border-top: 0;
+  border-bottom: 1px solid #cbd0d9;
+}
+/* Caseta 10: trei siluete (motocicletă, autoturism, autoutilitară). */
+.af-art {
+  gap: 2px;
+}
+.af-truck {
+  height: 86px;
+  width: auto;
+}
+/* Textul vertical din marginea dreaptă a paginii. */
+.af-gdpr {
+  position: absolute;
+  top: 64%;
+  right: 5px;
+  z-index: 1;
+  font-size: 5.5px;
+  font-style: italic;
+  line-height: 1;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+/* ---------------------------------------------------------------- partea de jos, ca pe formularul oficial */
+/* Titlul casetei 13 în coloana de mijloc. */
+.af-sketch-title {
+  margin-top: 3px;
+}
+.af-sketch-title .af-sketch-head {
+  border: 1px solid var(--rule);
+}
+.af-sketch-title .af-n {
+  background: #fff;
+  border-top: 0;
+  border-bottom: 0;
+}
+.af-sketch-title .af-n:first-child {
+  border-left: 0;
+}
+.af-sketch-title .af-sketch-note {
+  border: 0;
+  padding: 1px 2px 0;
+  font-size: 5.8px;
+  line-height: 1.15;
+  color: #111;
+}
+/* Caroiajul schiței are cadru gros: albastru la stânga, galben la dreapta. */
+.af-sketch {
+  padding: 4px;
+  border: 0;
+  background: linear-gradient(to right, var(--a-line) 50%, var(--b-line) 50%);
+}
+.af-sketch > svg {
+  background: #fff;
+}
+/* Caseta 10: siluetele stau pe un panou alb. */
+.af-impact .af-art {
+  margin: 0 -5px;
+  padding: 2px 3px 0;
+  background: #fff;
+}
+/* Caseta 14: contur subțire și vârf de săgeată spre mijloc (albastru la A, galben la B). */
+.af-foot .af-col {
+  position: relative;
+  border: 1px solid var(--rule);
+}
+.af-foot .af-col.a::after,
+.af-foot .af-col.b::before {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  width: 11px;
+  height: 22px;
+}
+.af-foot .af-col.a::after {
+  right: -11px;
+  background: var(--a-line);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+.af-foot .af-col.b::before {
+  left: -11px;
+  background: var(--b-line);
+  clip-path: polygon(100% 0, 0 50%, 100% 100%);
 }

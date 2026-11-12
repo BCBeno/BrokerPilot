@@ -5,37 +5,39 @@ import { createRateLimiter, sniffMime } from "./upload";
 const file = { mime: "image/jpeg", dataUrl: "data:image/jpeg;base64,AAAA", filename: "document" };
 const NOW = new Date("2026-11-11T12:00:00.000Z");
 
-const licenseReply = JSON.stringify({
+// Se extrag doar actele scanabile (talon, poliță); permisul și datele de contact se scriu de mână.
+const policyReply = JSON.stringify({
   fields: {
-    fullName: { value: "POPESCU ION", confidence: 0.98 },
-    licenseNo: { value: "B1234567", confidence: 0.9 },
-    categories: { value: "B", confidence: 0.99 },
-    expiresOn: { value: "05.03.2030", confidence: 0.8 },
+    insurer: { value: "Asigurări Demo", confidence: 0.98 },
+    policyNo: { value: "RO/40/DEM/1234567", confidence: 0.9 },
+    validFrom: { value: "06.03.2029", confidence: 0.99 },
+    validTo: { value: "05.03.2030", confidence: 0.8 },
+    plate: { value: "b123abc", confidence: 0.9 },
   },
 });
 
 describe("extractDocument", () => {
   it("validează și normalizează răspunsul modelului", async () => {
-    const call: ModelCall = vi.fn(async () => ({ text: licenseReply }));
-    const result = await extractDocument("license", file, call, NOW);
+    const call: ModelCall = vi.fn(async () => ({ text: policyReply }));
+    const result = await extractDocument("policy", file, call, NOW);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.attempts).toBe(1);
-      expect(result.doc.fields.expiresOn.value).toBe("2030-03-05");
+      expect(result.doc.fields.validTo.value).toBe("2030-03-05");
     }
   });
 
   it("acceptă răspuns învelit în gard de cod", async () => {
-    const call: ModelCall = async () => ({ text: "```json\n" + licenseReply + "\n```" });
-    expect((await extractDocument("license", file, call, NOW)).ok).toBe(true);
+    const call: ModelCall = async () => ({ text: "```json\n" + policyReply + "\n```" });
+    expect((await extractDocument("policy", file, call, NOW)).ok).toBe(true);
   });
 
   it("reia o dată cu mesajul de eroare când răspunsul nu respectă schema", async () => {
     const call = vi
       .fn<ModelCall>()
-      .mockResolvedValueOnce({ text: JSON.stringify({ fields: { fullName: { value: "X", confidence: 2 } } }) })
-      .mockResolvedValueOnce({ text: licenseReply });
-    const result = await extractDocument("license", file, call, NOW);
+      .mockResolvedValueOnce({ text: JSON.stringify({ fields: { insurer: { value: "X", confidence: 2 } } }) })
+      .mockResolvedValueOnce({ text: policyReply });
+    const result = await extractDocument("policy", file, call, NOW);
     expect(result.ok && result.attempts).toBe(2);
     const secondMessages = call.mock.calls[1][0].messages;
     expect(secondMessages.at(-1)?.role).toBe("user");
@@ -44,15 +46,15 @@ describe("extractDocument", () => {
 
   it("renunță după al doilea răspuns invalid", async () => {
     const call = vi.fn<ModelCall>(async () => ({ text: "nu e json" }));
-    const result = await extractDocument("license", file, call, NOW);
+    const result = await extractDocument("policy", file, call, NOW);
     expect(result.ok).toBe(false);
     expect(call).toHaveBeenCalledTimes(2);
   });
 
   it("trimite PDF-ul ca parte „file”, iar pozele ca „image_url”", async () => {
-    const call = vi.fn<ModelCall>(async () => ({ text: licenseReply }));
+    const call = vi.fn<ModelCall>(async () => ({ text: policyReply }));
     const pdf = { mime: "application/pdf", dataUrl: "data:application/pdf;base64,AAAA", filename: "document.pdf" };
-    await extractDocument("license", pdf, call, NOW);
+    await extractDocument("policy", pdf, call, NOW);
     const content = call.mock.calls[0][0].messages[1].content as Array<{ type: string }>;
     expect(content.map((p) => p.type)).toEqual(["text", "file"]);
   });

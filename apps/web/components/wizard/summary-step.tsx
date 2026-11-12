@@ -93,6 +93,10 @@ export function SummaryStep() {
             </p>
             <p>{fieldValue(draft.documents.license, "fullName") || "Permis necompletat"}</p>
             <p className="text-muted-foreground">
+              {[fieldValue(draft.documents.license, "phone"), fieldValue(draft.documents.license, "email")].filter(Boolean).join(" · ") ||
+                "Telefon necompletat"}
+            </p>
+            <p className="text-muted-foreground">
               {fieldValue(draft.documents.policy, "insurer") || "Poliță necompletată"}
               {fieldValue(draft.documents.policy, "validTo") ? `, valabilă până la ${fieldValue(draft.documents.policy, "validTo")}` : ""}
             </p>
