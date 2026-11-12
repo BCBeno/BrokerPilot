@@ -40,10 +40,8 @@ export function jsonSchemaFor(type: DocType): object {
 }
 
 export function buildUserContent(type: DocType, file: Attachment): Array<Record<string, unknown>> {
-  const part =
-    file.mime === "application/pdf"
-      ? { type: "file", file: { filename: file.filename, file_data: file.dataUrl } }
-      : { type: "image_url", image_url: { url: file.dataUrl } };
+  // Gemini (modul compatibil OpenAI) citește și PDF-ul ca `image_url` cu `data:application/pdf`; tipul „file” îl respinge (400, testat 12 nov).
+  const part = { type: "image_url", image_url: { url: file.dataUrl } };
   return [{ type: "text", text: DOC_TYPE_INSTRUCTIONS[type] }, part];
 }
 

@@ -6,8 +6,8 @@ const row = (over: Partial<AiCallRow>): AiCallRow => ({
   at: "2026-11-12T10:00:00Z",
   workflow: "web",
   task: "extract-document@2",
-  provider: "openrouter",
-  model: "google/gemini-3.6-flash",
+  provider: "gemini",
+  model: "gemini-3.6-flash",
   input_tokens: 1000,
   output_tokens: 200,
   cost_usd: 0.004,
@@ -30,7 +30,7 @@ describe("raportul costurilor AI", () => {
     expect(r.days.map((d) => d.day)).toEqual(["2026-11-10", "2026-11-11", "2026-11-12"]);
     expect(r.days[0]).toMatchObject({ calls: 0, costUsd: 0 });
     expect(r.byTask.map((g) => [g.key, g.calls])).toEqual([["voice_call", 1], ["extract-document", 3]]);
-    const gemini = r.byModel.find((g) => g.key === "google/gemini-3.6-flash");
+    const gemini = r.byModel.find((g) => g.key === "gemini-3.6-flash");
     expect(gemini).toMatchObject({ calls: 3, tokens: 3600 });
     expect(gemini?.avgLatencyMs).toBe(2667);
     expect(r.byModel.some((g) => g.key === "vapi (apel întreg)")).toBe(true);

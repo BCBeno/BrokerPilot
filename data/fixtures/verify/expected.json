@@ -1,0 +1,44 @@
+{
+  "reference": {
+    "name": "Andreea Grigore",
+    "plate": "B 200 TST",
+    "vin": "TSTSPEC0000000001"
+  },
+  "cases": [
+    {
+      "file": "01-corecta.pdf",
+      "title": "Poliță corectă (fără probleme)",
+      "deterministic": [],
+      "note": "Nu trebuie să apară nicio problemă sigură."
+    },
+    {
+      "file": "02-expirare-2037.pdf",
+      "title": "Data de expirare în 2037 în loc de 2027",
+      "deterministic": [
+        "dates-too-long"
+      ],
+      "note": "Roșu: expirarea e la 11 ani după început; propune 29.09.2027."
+    },
+    {
+      "file": "03-nume-typo-casco-rate.pdf",
+      "title": "Nume cu typo, clauză cu typo și CASCO într-o poliță RCA, rate care nu se adună",
+      "deterministic": [
+        "name-typo (cu clientul de referință)",
+        "installments-sum"
+      ],
+      "ai": [
+        "typo în clauză („producera”, „evenimentuluii”)",
+        "CASCO într-o poliță RCA"
+      ]
+    },
+    {
+      "file": "04-identificatori-gresiti.pdf",
+      "title": "CNP cu cifră greșită, plăcuță fără format, IBAN stricat",
+      "deterministic": [
+        "cnp-control",
+        "plate-format",
+        "iban-invalid"
+      ]
+    }
+  ]
+}

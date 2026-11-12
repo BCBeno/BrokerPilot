@@ -607,6 +607,92 @@
           "name": "Telegram BrokerPilotDeskBot"
         }
       }
+    },
+    {
+      "id": "n17-created",
+      "name": "Drive: public (new files)",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        340
+      ],
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "mode": "id",
+          "value": "__KB_PUBLIC_FOLDER_ID__"
+        },
+        "event": "fileCreated",
+        "authentication": "serviceAccount",
+        "options": {}
+      },
+      "credentials": {
+        "googleApi": {
+          "id": "REPLACE_ME",
+          "name": "Google Drive BrokerPilot (service account)"
+        }
+      },
+      "notes": "Fișierele încărcate în Drive își păstrează data de modificare originală, deci `fileUpdated` nu le vede. Acest trigger prinde fișierele noi; ingestia e idempotentă pe hash."
+    },
+    {
+      "id": "n18-created",
+      "name": "Drive: internal (new files)",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        520
+      ],
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "mode": "id",
+          "value": "__KB_INTERNAL_FOLDER_ID__"
+        },
+        "event": "fileCreated",
+        "authentication": "serviceAccount",
+        "options": {}
+      },
+      "credentials": {
+        "googleApi": {
+          "id": "REPLACE_ME",
+          "name": "Google Drive BrokerPilot (service account)"
+        }
+      },
+      "notes": "Fișierele încărcate în Drive își păstrează data de modificare originală, deci `fileUpdated` nu le vede. Acest trigger prinde fișierele noi; ingestia e idempotentă pe hash."
+    },
+    {
+      "id": "n25b",
+      "name": "Keep file + hash",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1210,
+        300
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "notes": "Nodul Crypto (Hash file) nu păstrează fișierul binar; aici îl recombinăm cu hash-ul, ca „Parse pages” să primească din nou `data` (execuția 402 a picat exact aici)."
     }
   ],
   "connections": {
@@ -690,6 +776,11 @@
             "node": "Hash file",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Keep file + hash",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -698,9 +789,9 @@
       "main": [
         [
           {
-            "node": "Parse pages",
+            "node": "Keep file + hash",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -816,6 +907,39 @@
         [
           {
             "node": "Notify (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drive: public (new files)": {
+      "main": [
+        [
+          {
+            "node": "Collection public",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drive: internal (new files)": {
+      "main": [
+        [
+          {
+            "node": "Collection internal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep file + hash": {
+      "main": [
+        [
+          {
+            "node": "Parse pages",
             "type": "main",
             "index": 0
           }

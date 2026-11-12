@@ -18,3 +18,14 @@ export async function requireBroker(): Promise<{ db: SupabaseClient; broker: Bro
   if (!broker) redirect("/broker/login?e=not_broker");
   return { db, broker };
 }
+
+/** Ca `requireBroker`, dar fără redirect: pentru rutele API, care răspund cu 401 în loc să trimită la login. */
+export async function getBrokerOrNull(): Promise<{ db: SupabaseClient; broker: Broker } | null> {
+  const db = await getServerClient();
+  if (!db) return null;
+  const { data } = await db.auth.getClaims();
+  const userId = data?.claims?.sub;
+  if (!userId) return null;
+  const { data: broker } = await db.from("brokers").select("id, name, agency_id").eq("auth_user_id", userId).eq("active", true).maybeSingle();
+  return broker ? { db, broker } : null;
+}

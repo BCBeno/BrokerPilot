@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { GatewayError, assertBudget, openRouterCall } from "@/lib/ai/gateway";
+import { GatewayError, assertBudget, visionCall } from "@/lib/ai/gateway";
 import { extractDocument } from "@/lib/ai/extract";
 import { EXTRACT_PROMPT_VERSION } from "@/lib/ai/prompts";
 import { MAX_UPLOAD_BYTES, createRateLimiter, sniffMime } from "@/lib/ai/upload";
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   if (!mime) return fail(415, "Acceptăm poze (JPG, PNG, WebP) sau PDF.", "unsupported_type");
 
   try {
-    const call = openRouterCall(EXTRACT_PROMPT_VERSION);
+    const call = visionCall(EXTRACT_PROMPT_VERSION);
     await assertBudget();
     const dataUrl = `data:${mime};base64,${Buffer.from(bytes).toString("base64")}`;
     const attachment = { mime, dataUrl, filename: mime === "application/pdf" ? "document.pdf" : "document" };

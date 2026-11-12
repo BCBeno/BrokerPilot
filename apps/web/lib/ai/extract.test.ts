@@ -51,12 +51,13 @@ describe("extractDocument", () => {
     expect(call).toHaveBeenCalledTimes(2);
   });
 
-  it("trimite PDF-ul ca parte „file”, iar pozele ca „image_url”", async () => {
+  it("trimite și PDF-ul, și pozele ca „image_url” (Gemini respinge tipul „file”)", async () => {
     const call = vi.fn<ModelCall>(async () => ({ text: policyReply }));
     const pdf = { mime: "application/pdf", dataUrl: "data:application/pdf;base64,AAAA", filename: "document.pdf" };
     await extractDocument("policy", pdf, call, NOW);
-    const content = call.mock.calls[0][0].messages[1].content as Array<{ type: string }>;
-    expect(content.map((p) => p.type)).toEqual(["text", "file"]);
+    const content = call.mock.calls[0][0].messages[1].content as Array<{ type: string; image_url?: { url: string } }>;
+    expect(content.map((p) => p.type)).toEqual(["text", "image_url"]);
+    expect(content[1].image_url?.url).toBe(pdf.dataUrl);
   });
 });
 

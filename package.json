@@ -17,6 +17,7 @@
     "n8n:export": "node --env-file-if-exists=.env scripts/n8n-export.mjs",
     "data:fixtures": "node scripts/generate-fixtures.mjs",
     "data:specimens": "node scripts/generate-specimens.mjs",
+    "data:verify": "node scripts/generate-verify-fixtures.mjs",
     "data:scrape": "node scripts/scrape-sources.mjs",
     "data:apply": "node scripts/apply-fixtures.mjs",
     "smoke": "node scripts/smoke-claim.mjs",
