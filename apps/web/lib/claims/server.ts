@@ -18,8 +18,12 @@ export function sameToken(a: string | null, b: string | null): boolean {
 
 export const fail = (status: number, error: string, code: string) => NextResponse.json({ error, code }, { status });
 
+/**
+ * IP-ul clientului pentru rate limit. În producție cererile vin prin Cloudflare, care pune `cf-connecting-ip` (un client nu îl poate
+ * falsifica pe acea cale); `x-forwarded-for` rămâne doar fallback local, unde oricine îl poate scrie.
+ */
 export const clientIp = (request: Request) =>
-  request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  request.headers.get("cf-connecting-ip")?.trim() || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
 
 export const NOT_CONFIGURED = () => fail(503, "Serviciul nu e disponibil acum. Încercați din nou în câteva minute.", "not_configured");
 export const SERVER_ERROR = () => fail(500, "A apărut o eroare. Încercați din nou.", "internal");

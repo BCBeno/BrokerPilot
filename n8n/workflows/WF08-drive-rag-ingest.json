@@ -1,0 +1,830 @@
+{
+  "name": "WF08 Drive RAG Ingest",
+  "nodes": [
+    {
+      "id": "n17",
+      "name": "Drive: public",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        120
+      ],
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "mode": "id",
+          "value": "__KB_PUBLIC_FOLDER_ID__"
+        },
+        "event": "fileUpdated",
+        "authentication": "serviceAccount",
+        "options": {}
+      },
+      "credentials": {
+        "googleApi": {
+          "id": "REPLACE_ME",
+          "name": "Google Drive BrokerPilot (service account)"
+        }
+      },
+      "notes": "Un trigger per folder: schimbările din subfoldere nu declanșează nodul, deci public/ și internal/ au fiecare al lui."
+    },
+    {
+      "id": "n18",
+      "name": "Drive: internal",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "mode": "id",
+          "value": "__KB_INTERNAL_FOLDER_ID__"
+        },
+        "event": "fileUpdated",
+        "authentication": "serviceAccount",
+        "options": {}
+      },
+      "credentials": {
+        "googleApi": {
+          "id": "REPLACE_ME",
+          "name": "Google Drive BrokerPilot (service account)"
+        }
+      },
+      "notes": "Un trigger per folder: schimbările din subfoldere nu declanșează nodul, deci public/ și internal/ au fiecare al lui."
+    },
+    {
+      "id": "n19",
+      "name": "Collection public",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        120
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "col",
+              "name": "collection",
+              "value": "public",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "n20",
+      "name": "Collection internal",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "col",
+              "name": "collection",
+              "value": "internal",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "n21",
+      "name": "Supported file?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        210
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ ['application/pdf', 'text/plain', 'text/markdown', 'text/html', 'application/vnd.google-apps.document'].includes($json.mimeType) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n22",
+      "name": "Skip unsupported",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        660,
+        330
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "n23",
+      "name": "Document meta",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        150
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t",
+              "name": "title",
+              "value": "={{ $json.name.replace(/\\.[A-Za-z0-9]{2,4}$/, '').replace(/[_]+/g, ' ') }}",
+              "type": "string"
+            },
+            {
+              "id": "i",
+              "name": "insurer",
+              "value": "={{ ($json.name.match(/allianz|groupama|omniasig|generali|uniqa|euroins|asirom|grawe/i) ?? [null])[0]?.toLowerCase() ?? null }}",
+              "type": "string"
+            },
+            {
+              "id": "d",
+              "name": "docType",
+              "value": "={{ /ipid|pid/i.test($json.name) ? 'ipid' : /condi(ț|t)ii/i.test($json.name) ? 'conditii' : /faq|intrebari|întrebări/i.test($json.name) ? 'faq' : /ghid/i.test($json.name) ? 'ghid' : /lege|norma|norm/i.test($json.name) ? 'legislatie' : /procedur|checklist|comision/i.test($json.name) ? 'intern' : 'document' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "n24",
+      "name": "Download file",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        880,
+        150
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "authentication": "serviceAccount",
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "text/plain"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "googleApi": {
+          "id": "REPLACE_ME",
+          "name": "Google Drive BrokerPilot (service account)"
+        }
+      }
+    },
+    {
+      "id": "n25",
+      "name": "Hash file",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        150
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": true,
+        "binaryPropertyName": "data",
+        "dataPropertyName": "fileHash",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "n26",
+      "name": "Parse pages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        150
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "__APP_URL__/api/kb/parse",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-bp-secret",
+              "value": "={{ $env.BP_WEBHOOK_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "notes": "Why HTTP: extragerea de text pe pagini (pentru citări) se face în aplicație cu PDF.js; n8n dă doar un text unic."
+    },
+    {
+      "id": "n27",
+      "name": "Lookup hash",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        150
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=__SUPABASE_URL__/rest/v1/kb_documents?select=id&limit=1&file_hash=eq.{{ $('Hash file').item.json.fileHash }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "notes": "Why HTTP: filtru PostgREST pe hash; răspuns text ca „niciun rând” să nu oprească fluxul. Ingestia e idempotentă pe hash."
+    },
+    {
+      "id": "n28",
+      "name": "Already indexed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        150
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ JSON.parse($json.data || '[]').length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n29",
+      "name": "Skip (unchanged)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1980,
+        40
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "n30",
+      "name": "Replace old version",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        260
+      ],
+      "parameters": {
+        "method": "DELETE",
+        "url": "=__SUPABASE_URL__/rest/v1/kb_documents?drive_file_id=eq.{{ $('Document meta').item.json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {}
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "notes": "Why HTTP: DELETE filtrat în PostgREST; fragmentele dispar prin ON DELETE CASCADE. Un fișier modificat înlocuiește versiunea veche."
+    },
+    {
+      "id": "n31",
+      "name": "Insert document",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        260
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "__SUPABASE_URL__/rest/v1/kb_documents",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ title: $('Document meta').item.json.title, drive_file_id: $('Document meta').item.json.id, collection: $('Document meta').item.json.collection, file_hash: $('Hash file').item.json.fileHash, insurer: $('Document meta').item.json.insurer, doc_type: $('Document meta').item.json.docType, source_url: $('Document meta').item.json.webViewLink ?? null, license_note: 'Încărcat din Google Drive (BrokerPilot KB)' }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "notes": "Why HTTP: return=representation, ca să obținem id-ul documentului. Rămâne fără `ingested_at` până se termină ingestia."
+    },
+    {
+      "id": "n32",
+      "name": "Chunk text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: împărțire în fragmente (~3000 de caractere, suprapunere ~300) pe pagină, cu titlul secțiunii; Text Splitter din n8n există doar ca sub-nod al magazinelor vectoriale.\nconst doc = $('Insert document').first().json;\nconst pages = $('Parse pages').first().json.pages ?? [];\nconst title = $('Document meta').first().json.title;\nconst MAX = 3000, OVERLAP = 300, MIN_PAGE = 40;\nconst HEADING = /^(CAPITOLUL|SECȚIUNEA|SECTIUNEA|TITLUL|ART(?:ICOLUL|\\.)?\\s*\\d+|Art\\.\\s*\\d+|\\d+(\\.\\d+)*[.)]\\s+[A-ZĂÂÎȘȚ]|[A-ZĂÂÎȘȚ][A-ZĂÂÎȘȚ0-9 ,.:;()\\/-]{7,})/;\nconst out = [];\nlet heading = null;\nfor (const p of pages) {\n  const text = String(p.text ?? '').trim();\n  if (text.length < MIN_PAGE) continue;\n  const lines = text.split('\\n');\n  // titlul din capul paginii rămâne valabil pentru restul documentului până apare unul nou\n  for (const l of lines) { const t = l.trim(); if (t.length >= 6 && t.length <= 120 && HEADING.test(t)) { heading = t; break; } }\n  let start = 0;\n  while (start < text.length) {\n    let end = Math.min(start + MAX, text.length);\n    if (end < text.length) {\n      const cut = Math.max(text.lastIndexOf('\\n', end), text.lastIndexOf('. ', end));\n      if (cut > start + MAX * 0.5) end = cut + 1;\n    }\n    const content = text.slice(start, end).trim();\n    if (content.length >= MIN_PAGE) out.push({ json: { document_id: doc.id, content, page: p.page, heading, embedText: [title, heading, content].filter(Boolean).join('\\n') } });\n    if (end >= text.length) break;\n    start = Math.max(end - OVERLAP, start + 1);\n  }\n}\nif (!out.length) throw new Error('Documentul nu are text de indexat (scanat?)');\nreturn out;"
+      }
+    },
+    {
+      "id": "n33",
+      "name": "Embed chunk",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        260
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"models/gemini-embedding-001\", content: { parts: [{ text: $json.embedText }] }, taskType: \"RETRIEVAL_DOCUMENT\", outputDimensionality: 768 }) }}",
+        "options": {
+          "timeout": 30000,
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 700
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME",
+          "name": "Gemini API key (BrokerPilot)"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "notes": "Why HTTP: nodul Gemini nu expune outputDimensionality (768). Câte un fragment la 700 ms, sub limita gratuită."
+    },
+    {
+      "id": "n34",
+      "name": "Save chunk",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2860,
+        260
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "__SUPABASE_URL__/rest/v1/kb_chunks",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ document_id: $('Chunk text').item.json.document_id, content: $('Chunk text').item.json.content, page: $('Chunk text').item.json.page, heading: $('Chunk text').item.json.heading, embedding: $json.embedding.values }) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 10,
+              "batchInterval": 100
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "notes": "Why HTTP: inserare în kb_chunks cu coloană vector(768), pe care nodul Supabase nu o scrie corect."
+    },
+    {
+      "id": "n35",
+      "name": "All chunks saved",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        3080,
+        260
+      ],
+      "parameters": {
+        "maxItems": 1
+      }
+    },
+    {
+      "id": "n36",
+      "name": "Mark ingested",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3300,
+        260
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=__SUPABASE_URL__/rest/v1/kb_documents?id=eq.{{ $('Insert document').item.json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ingested_at: $now.toISO() }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "notes": "Why HTTP: UPDATE filtrat. Abia acum documentul intră în căutare (kb_search cere ingested_at)."
+    },
+    {
+      "id": "n37",
+      "name": "Notify (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3520,
+        260
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ String($env.TG_BROKER_CHAT_IDS ?? '').split(',')[0].trim() }}",
+        "text": "={{ '📚 KB actualizat: ' + $('Document meta').item.json.title + ' (' + $('Document meta').item.json.collection + ') — ' + $('Save chunk').all().length + ' fragmente' }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "Telegram BrokerPilotDeskBot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Drive: public": {
+      "main": [
+        [
+          {
+            "node": "Collection public",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drive: internal": {
+      "main": [
+        [
+          {
+            "node": "Collection internal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collection public": {
+      "main": [
+        [
+          {
+            "node": "Supported file?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collection internal": {
+      "main": [
+        [
+          {
+            "node": "Supported file?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supported file?": {
+      "main": [
+        [
+          {
+            "node": "Document meta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip unsupported",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document meta": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Hash file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hash file": {
+      "main": [
+        [
+          {
+            "node": "Parse pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse pages": {
+      "main": [
+        [
+          {
+            "node": "Lookup hash",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup hash": {
+      "main": [
+        [
+          {
+            "node": "Already indexed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already indexed?": {
+      "main": [
+        [
+          {
+            "node": "Skip (unchanged)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Replace old version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace old version": {
+      "main": [
+        [
+          {
+            "node": "Insert document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert document": {
+      "main": [
+        [
+          {
+            "node": "Chunk text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk text": {
+      "main": [
+        [
+          {
+            "node": "Embed chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed chunk": {
+      "main": [
+        [
+          {
+            "node": "Save chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save chunk": {
+      "main": [
+        [
+          {
+            "node": "All chunks saved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All chunks saved": {
+      "main": [
+        [
+          {
+            "node": "Mark ingested",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark ingested": {
+      "main": [
+        [
+          {
+            "node": "Notify (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "WF99"
+  }
+}

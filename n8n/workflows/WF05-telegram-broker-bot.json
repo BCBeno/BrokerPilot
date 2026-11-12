@@ -1,0 +1,666 @@
+{
+  "name": "WF05 Telegram Broker Bot",
+  "nodes": [
+    {
+      "id": "wf05-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "Telegram BrokerPilotDeskBot"
+        }
+      },
+      "webhookId": "0f5b9c52-6b1e-4d3a-9a77-5f05b0a5c105"
+    },
+    {
+      "id": "wf05-parse",
+      "name": "Parse update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Why Code: parsarea unui update Telegram (mesaj sau buton) + whitelist de chat-uri; nodurile native nu extrag comanda și argumentele.\nconst u = $input.first().json ?? {};\nconst allowed = String($env.TG_BROKER_CHAT_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean);\nconst cb = u.callback_query;\nconst msg = cb ? cb.message : u.message;\nconst chatId = String(msg?.chat?.id ?? '');\nconst out = (o) => [{ json: { chatId, callbackId: cb?.id ?? '', claimId: '', question: '', hint: '', ...o } }];\n\n// Doar chat-urile brokerilor (TG_BROKER_CHAT_IDS); restul sunt ignorate fără niciun răspuns.\nif (!chatId || !allowed.includes(chatId)) return out({ kind: 'ignore' });\n\nif (cb) {\n  const m = /^(take|ask):([0-9a-f-]{36})$/i.exec(String(cb.data ?? ''));\n  return m ? out({ kind: m[1].toLowerCase(), claimId: m[2].toLowerCase() }) : out({ kind: 'ignore' });\n}\n\nconst text = String(msg?.text ?? '').trim();\nconst c = /^\\/(\\w+)(?:@\\w+)?(?:\\s+([\\s\\S]*))?$/.exec(text);\nif (!c) return out({ kind: 'help' });\nconst cmd = c[1].toLowerCase();\nconst arg = String(c[2] ?? '').trim();\nif (cmd === 'dosare') return out({ kind: 'dosare' });\nif (cmd === 'intreaba') {\n  return arg ? out({ kind: 'intreaba', question: arg.slice(0, 600) }) : out({ kind: 'help', hint: 'Scrie întrebarea după comandă, de exemplu: /intreaba ce acoperă CASCO la furtul de oglinzi?' });\n}\nif (cmd === 'urgent' || cmd === 'digest') return out({ kind: 'help', hint: `/${cmd} nu e disponibilă încă.` });\nreturn out({ kind: 'help' });\n"
+      }
+    },
+    {
+      "id": "wf05-has-cb",
+      "name": "Button pressed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.callbackId }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wf05-ack",
+      "name": "Ack button",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        40
+      ],
+      "parameters": {
+        "resource": "callback",
+        "operation": "answerQuery",
+        "queryId": "={{ $json.callbackId }}",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "Telegram BrokerPilotDeskBot"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Oprește spinnerul de pe buton. Rezultatul vine apoi ca mesaj separat."
+    },
+    {
+      "id": "wf05-route",
+      "name": "Route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        480,
+        400
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.kind }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "take"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "take"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.kind }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "ask"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ask"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.kind }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "dosare"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "dosare"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.kind }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "intreaba"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "intreaba"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.kind }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "help"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "help"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wf05-take",
+      "name": "Take claim",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        220
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "__SUPABASE_URL__/rest/v1/rpc/broker_take_claim",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_claim_id: $json.claimId, p_chat_id: $json.chatId }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "notes": "Why HTTP: apel RPC PostgREST (broker_take_claim, atomic); nodul Supabase nu apelează funcții.",
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "wf05-compose-take",
+      "name": "Compose take",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        220
+      ],
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: textul de răspuns în română, în funcție de rezultatul funcției broker_take_claim (mai multe cazuri); niciun nod nativ nu compune textul.\nconst p = $('Parse update').first().json;\nconst r = $input.first().json ?? {};\nconst errors = {\n  not_found: '⚠️ Nu găsesc dosarul.',\n  taken: `⚠️ Dosarul ${esc(r.ref)} e deja preluat de alt broker.`,\n  closed: `ℹ️ Dosarul ${esc(r.ref)} e închis.`,\n  not_ready: `ℹ️ Dosarul ${esc(r.ref)} nu e încă trimis de clienți (lipsesc semnăturile sau datele).`,\n};\nlet text;\nif (r.error && r.ok === undefined) text = '⚠️ Nu am putut prelua dosarul acum. Încearcă din nou sau deschide-l în dashboard.';\nelse if (r.ok === false) text = errors[r.error] ?? '⚠️ Nu am putut prelua dosarul.';\nelse if (r.already) text = `ℹ️ Dosarul <b>${esc(r.ref)}</b> e deja în lucru.`;\nelse {\n  text = `✅ Ai preluat dosarul <b>${esc(r.ref)}</b>. Status: în lucru.`;\n  if (r.handoffs > 0) text += `\\nConversațiile legate de dosar au trecut la tine; AI-ul nu mai răspunde acolo.`;\n  if (!r.assigned) text += `\\n(Chatul nu e legat de un broker în baza de date, deci dosarul nu are broker asignat.)`;\n}\nreturn [{ json: { chatId: p.chatId, text } }];\n"
+      }
+    },
+    {
+      "id": "wf05-get-claim",
+      "name": "Get claim",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        360
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=__SUPABASE_URL__/rest/v1/claims?select=public_ref,status,missing_items&id=eq.{{ $json.claimId }}&limit=1",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "notes": "Why HTTP: citire filtrată PostgREST cu răspuns ca text, ca un rezultat gol să nu oprească fluxul.",
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "wf05-compose-ask",
+      "name": "Compose ask",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        360
+      ],
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: lista de lipsuri normalizată (șiruri sau {label}) + un mesaj-draft pentru client; logica pe mai multe cazuri.\nconst p = $('Parse update').first().json;\nlet rows = [];\ntry { rows = JSON.parse($input.first().json.data || '[]'); } catch { rows = []; }\nconst c = Array.isArray(rows) ? rows[0] : null;\nif (!c) return [{ json: { chatId: p.chatId, text: '⚠️ Nu găsesc dosarul.', claimId: null, missing: [] } }];\n\nconst missing = (Array.isArray(c.missing_items) ? c.missing_items : []).map((m) => (typeof m === 'string' ? m : m?.label)).filter(Boolean);\nlet text;\nif (missing.length === 0) {\n  text = `✅ La dosarul <b>${esc(c.public_ref)}</b> nu lipsește nimic.`;\n} else {\n  const list = missing.map((m) => `• ${esc(m)}`).join('\\n');\n  // Etichetele din dashboard sunt constatări („Nicio poză…”, „Lipsește semnătura…”); clientului îi trebuie o cerere, deci le transformăm în „ce ne trebuie”.\n  const asks = [\n    [/Datele șoferului (\\w)/i, (m) => `datele șoferului ${m[1]}`],\n    [/Actele șoferului (\\w)/i, (m) => `actele șoferului ${m[1]} (talon, permis, poliță)`],\n    [/Șoferul (\\w) nu a bifat circumstan/i, (m) => `circumstanțele bifate de șoferul ${m[1]}`],\n    [/Zona lovită a vehiculului (\\w)/i, (m) => `zona lovită a vehiculului ${m[1]}`],\n    [/semnătura șoferului (\\w)/i, (m) => `semnătura șoferului ${m[1]}`],\n    [/poză cu daunele vehiculului (\\w)/i, (m) => `poze cu daunele vehiculului ${m[1]}`],\n    [/schi[țt]a/i, () => 'schița accidentului'],\n  ];\n  const phrase = (label) => { for (const [re, f] of asks) { const m = re.exec(label); if (m) return f(m); } return label.charAt(0).toLowerCase() + label.slice(1); };\n  const items = missing.map(phrase);\n  const joined = items.length > 1 ? `${items.slice(0, -1).join(', ')} și ${items[items.length - 1]}` : items[0];\n  const draft = `Bună ziua! Pentru dosarul ${c.public_ref} mai avem nevoie de: ${joined}. Ne puteți ajuta cu aceste informații? Vă mulțumim!`;\n  text = `📋 <b>${esc(c.public_ref)}</b>: lipsesc\\n${list}\\n\\nMesaj pentru client (copiază și trimite):\\n<i>${esc(draft)}</i>`;\n}\nreturn [{ json: { chatId: p.chatId, text, claimId: p.claimId, ref: c.public_ref, missing } }];\n"
+      }
+    },
+    {
+      "id": "wf05-log-ask",
+      "name": "Log info request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1240,
+        460
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "__SUPABASE_URL__/rest/v1/events",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ entity_type: 'claim', entity_id: $json.claimId || null, type: 'info_requested', payload: { via: 'telegram', missing: $json.missing } }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "notes": "Why HTTP: insert în `events` (audit); nodul Supabase ar cere încă un nod doar pentru un rând.",
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "wf05-list",
+      "name": "List open claims",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        500
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "__SUPABASE_URL__/rest/v1/claims?select=public_ref,status,accident_at,broker_id&status=in.(signed,submitted,in_progress)&order=created_at.desc&limit=10",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "notes": "Why HTTP: citire filtrată PostgREST cu răspuns ca text.",
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "wf05-compose-list",
+      "name": "Compose list",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        500
+      ],
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: formatarea listei de dosare (stare în română, dată în fusul României); nicio combinație de noduri native nu o acoperă curat.\nconst p = $('Parse update').first().json;\nlet rows = [];\ntry { rows = JSON.parse($input.first().json.data || '[]'); } catch { rows = []; }\nif (!Array.isArray(rows)) rows = [];\nconst STATUS = { signed: 'semnat', submitted: 'trimis', in_progress: 'în lucru' };\nconst when = (iso) => { try { return new Date(iso).toLocaleString('ro-RO', { timeZone: 'Europe/Bucharest', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };\nconst text = rows.length === 0\n  ? 'Nu ai dosare deschise.'\n  : `<b>Dosare deschise (${rows.length})</b>\\n` + rows.map((r) => `• <b>${esc(r.public_ref)}</b> · ${esc(STATUS[r.status] ?? r.status)}${r.accident_at ? ' · ' + esc(when(r.accident_at)) : ''}${r.broker_id ? '' : ' · fără broker'}`).join('\\n') + '\\n\\nPreia un dosar cu butonul „Preiau” din mesajul lui.';\nreturn [{ json: { chatId: p.chatId, text } }];\n"
+      }
+    },
+    {
+      "id": "wf05-copilot",
+      "name": "Ask copilot (WF04)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        640
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ String($env.WEBHOOK_URL ?? '').replace(/\\/+$/, '') + '/webhook/kb-ask' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-bp-secret",
+              "value": "={{ $env.BP_WEBHOOK_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ question: $json.question, audience: 'internal' }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "notes": "Why HTTP: apelează webhook-ul WF04 (RAG) din același n8n; WF04 redactează întrebarea înainte de orice LLM.",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "wf05-compose-answer",
+      "name": "Compose answer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        640
+      ],
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: răspunsul copilotului pentru Telegram: HTML escapat, surse doar dacă lipsesc citările din text, limită de lungime.\nconst p = $('Parse update').first().json;\nconst r = $input.first().json ?? {};\nlet text;\nif (r.error || typeof r.answer !== 'string') {\n  text = '⚠️ Copilotul nu răspunde acum. Încearcă mai târziu sau folosește pagina Copilot din dashboard.';\n} else {\n  text = esc(r.answer);\n  const srcs = [...new Set((Array.isArray(r.sources) ? r.sources : []).map((s) => s.title + (s.page ? `, pag. ${s.page}` : '')))];\n  if (r.found && srcs.length && !/\\[[^\\]]+\\]/.test(r.answer)) text += `\\n\\n<i>Surse: ${esc(srcs.join('; '))}</i>`;\n}\nreturn [{ json: { chatId: p.chatId, text: text.slice(0, 3900) } }];\n"
+      }
+    },
+    {
+      "id": "wf05-compose-help",
+      "name": "Compose help",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        760,
+        780
+      ],
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: textul de ajutor cu comenzile disponibile, plus un indiciu opțional (comandă fără argument sau nefinalizată).\nconst p = $('Parse update').first().json;\nconst lines = [\n  p.hint ? esc(p.hint) + '\\n' : null,\n  '<b>BrokerPilot Desk</b>',\n  '/dosare: dosarele deschise',\n  '/intreaba &lt;întrebare&gt;: copilotul (răspunde doar din documente, cu surse)',\n  'Butoanele din mesajele despre dosare: „Preiau” și „Cere info lipsă”.',\n].filter(Boolean);\nreturn [{ json: { chatId: p.chatId, text: lines.join('\\n') } }];\n"
+      }
+    },
+    {
+      "id": "wf05-send",
+      "name": "Send message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1480,
+        400
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "HTML",
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "Telegram BrokerPilotDeskBot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse update": {
+      "main": [
+        [
+          {
+            "node": "Button pressed?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Button pressed?": {
+      "main": [
+        [
+          {
+            "node": "Ack button",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Route": {
+      "main": [
+        [
+          {
+            "node": "Take claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "List open claims",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask copilot (WF04)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compose help",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Take claim": {
+      "main": [
+        [
+          {
+            "node": "Compose take",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose take": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get claim": {
+      "main": [
+        [
+          {
+            "node": "Compose ask",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose ask": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log info request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List open claims": {
+      "main": [
+        [
+          {
+            "node": "Compose list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose list": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask copilot (WF04)": {
+      "main": [
+        [
+          {
+            "node": "Compose answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose answer": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose help": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "WF99"
+  }
+}

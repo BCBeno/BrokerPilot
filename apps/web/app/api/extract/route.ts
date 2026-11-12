@@ -5,6 +5,7 @@ import { extractDocument } from "@/lib/ai/extract";
 import { EXTRACT_PROMPT_VERSION } from "@/lib/ai/prompts";
 import { MAX_UPLOAD_BYTES, createRateLimiter, sniffMime } from "@/lib/ai/upload";
 import { SCANNABLE_TYPES } from "@/lib/amiabila/documents";
+import { clientIp } from "@/lib/claims/server";
 
 export const runtime = "nodejs";
 
@@ -19,8 +20,7 @@ const MANUAL = "Citirea automată nu e disponibilă acum. Completați manual.";
  * nu se păstrează pe server și nu apare în loguri. Răspunsul: câmpuri cu `confidence`, validate cu Zod.
  */
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (!allow(ip)) return fail(429, "Prea multe încercări. Încercați din nou peste câteva minute.", "rate_limited");
+  if (!allow(clientIp(request))) return fail(429, "Prea multe încercări. Încercați din nou peste câteva minute.", "rate_limited");
 
   let form: FormData;
   try {

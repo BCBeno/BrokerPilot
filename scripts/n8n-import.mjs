@@ -1,8 +1,10 @@
 // Importă (creează sau actualizează după nume) un workflow din n8n/workflows/ în instanța n8n și îl publică.
 // Rulare: npm run n8n:import -- WF02-vapi-tools.json
 // Necesită N8N_API_URL (fără /api/v1) și N8N_API_KEY. În JSON-ul din repo rămân placeholdere:
-//  - credentials cu id "REPLACE_ME": se iau din alt workflow deja importat care folosește același tip de credențial;
-//  - __SUPABASE_URL__ și __APP_URL__ în Code: se înlocuiesc doar în copia trimisă la n8n (din NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_APP_URL).
+//  - credentials cu id "REPLACE_ME": se iau din alt workflow deja importat care folosește aceeași credențială (după tip și nume;
+//    dacă numele nu se găsește, după tip, doar când e o singură credențială de acel tip);
+//  - __SUPABASE_URL__, __APP_URL__, __KB_PUBLIC_FOLDER_ID__, __KB_INTERNAL_FOLDER_ID__: se înlocuiesc doar în copia trimisă la n8n
+//    (din NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_APP_URL, KB_DRIVE_PUBLIC_FOLDER_ID, KB_DRIVE_INTERNAL_FOLDER_ID).
 import { readFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
 
@@ -21,7 +23,7 @@ const api = async (path, init = {}) => {
 };
 
 const src = readFileSync(resolve("n8n/workflows", basename(file)), "utf8");
-const subs = { __SUPABASE_URL__: process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, ""), __APP_URL__: process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") };
+const subs = { __SUPABASE_URL__: process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, ""), __APP_URL__: process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, ""), __KB_PUBLIC_FOLDER_ID__: process.env.KB_DRIVE_PUBLIC_FOLDER_ID, __KB_INTERNAL_FOLDER_ID__: process.env.KB_DRIVE_INTERNAL_FOLDER_ID };
 let text = src;
 for (const [k, v] of Object.entries(subs)) {
   if (text.includes(k)) {
@@ -33,12 +35,17 @@ const wf = JSON.parse(text);
 
 // credențiale: id-uri reale din workflow-urile existente
 const all = (await api("/workflows?limit=100")).data;
-const known = new Map();
-for (const w of all) for (const n of w.nodes ?? []) for (const [type, c] of Object.entries(n.credentials ?? {})) if (c.id && c.id !== "REPLACE_ME") known.set(type, c);
+const byName = new Map();
+const byType = new Map();
+for (const w of all) for (const n of w.nodes ?? []) for (const [type, c] of Object.entries(n.credentials ?? {})) if (c.id && c.id !== "REPLACE_ME") {
+  byName.set(`${type}|${c.name}`, c);
+  byType.set(type, [...(byType.get(type) ?? []).filter((x) => x.id !== c.id), c]);
+}
 for (const n of wf.nodes) for (const [type, c] of Object.entries(n.credentials ?? {})) {
   if (c.id === "REPLACE_ME") {
-    const real = known.get(type);
-    if (!real) throw new Error(`Nu găsesc o credențială „${type}” într-un workflow existent; alege-o o dată în editorul n8n.`);
+    const candidates = byType.get(type) ?? [];
+    const real = byName.get(`${type}|${c.name}`) ?? (candidates.length === 1 ? candidates[0] : undefined);
+    if (!real) throw new Error(`Nu găsesc credențiala „${c.name}” (${type}) într-un workflow existent; creeaz-o în n8n și folosește-o o dată într-un nod (de ex. într-un workflow de probă), apoi reia importul.`);
     n.credentials[type] = real;
   }
 }
