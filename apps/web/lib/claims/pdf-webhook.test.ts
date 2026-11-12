@@ -61,4 +61,23 @@ describe("buildCompletedPayload", () => {
     expect(p.parties.A.circumstances.every((c) => c.label.length > 0)).toBe(true);
     expect(p.hasSketch).toBe(specimenForm().sketch !== null);
   });
+  it("are linkul spre fișa dosarului, clientul recunoscut și concluzia din dashboard", () => {
+    const p = buildCompletedPayload({
+      claimId: "c1",
+      ref: "BP-2611-00007",
+      channel: "web",
+      occurredAt: "",
+      form: specimenForm(),
+      pdfUrl: "https://example.test/x.pdf",
+      appUrl: "https://app.example.test/",
+      photoCounts: { A: 0, B: 0 },
+      missing: [],
+      clients: { A: "Andreea Grigore (fictiv)" },
+    });
+    expect(p.brokerUrl).toBe("https://app.example.test/broker/dosare/c1");
+    expect(p.parties.A.client).toBe("Andreea Grigore");
+    expect(p.parties.B.client).toBeNull();
+    expect(p.conclusion.complete).toBe(true);
+    expect(p.conclusion.status[0]).toMatch(/^Complet/);
+  });
 });

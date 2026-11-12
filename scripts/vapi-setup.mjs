@@ -13,15 +13,23 @@ const server = (p) => ({ url: hook(p), secret: VAPI_SERVER_SECRET });
 const NAME = "Ana BrokerPilot";
 
 // `say` = frază rostită cât rulează unealta. Doar la cele care durează; la restul ar dubla ce spune oricum modelul.
-const fn = (name, description, properties, required = [], say = null) => ({
-  type: "function",
-  async: false,
-  function: { name, description, parameters: { type: "object", properties, required } },
-  server: server("vapi-tools"),
-  ...(say ? { messages: [{ type: "request-start", content: say }] } : {}),
-});
+// `late` = frază rostită doar dacă răspunsul întârzie peste 1,2 s (apelurile din 12.11: 2,6–3,6 s de tăcere la check_eligibility și start_claim).
+const fn = (name, description, properties, required = [], say = null, late = null) => {
+  const messages = [
+    ...(say ? [{ type: "request-start", content: say }] : []),
+    ...(late ? [{ type: "request-response-delayed", timingMilliseconds: 1200, content: late }] : []),
+  ];
+  return {
+    type: "function",
+    async: false,
+    function: { name, description, parameters: { type: "object", properties, required } },
+    server: server("vapi-tools"),
+    ...(messages.length ? { messages } : {}),
+  };
+};
 // Enum „da”/„nu”: un boolean cu sens inversat (răniți: da = rău) a fost încurcat de model (12.11).
-const yn = (d) => ({ type: "string", enum: ["da", "nu"], description: `${d} Răspunde exact cu ce a spus clientul: „da” sau „nu”.` });
+// Cele patru condiții (în afară de răniți) se întreabă într-o singură frază: un „da” clar la toată întrebarea le acoperă pe toate.
+const yn = (d) => ({ type: "string", enum: ["da", "nu"], description: `${d} Răspunde exact cu ce a spus clientul: „da” sau „nu”. Un „da” clar la întrebarea comună despre cele patru condiții înseamnă „da” aici.` });
 
 const tools = [
   fn("check_eligibility", "Verifică dacă accidentul poate fi rezolvat cu amiabila. Cheamă-o abia după ce ai aflat de la client toate cele cinci răspunsuri; nu completa niciunul din prezumție.", {
@@ -30,7 +38,7 @@ const tools = [
     onlyMaterialDamage: yn("Întrebare: «Sunt doar pagube materiale?»."),
     bothInsured: yn("Întrebare: «Ambele vehicule au RCA valabil?»."),
     agreed: yn("Întrebare: «Șoferii sunt de acord asupra circumstanțelor?»."),
-  }, ["injuries", "twoVehicles", "onlyMaterialDamage", "bothInsured", "agreed"]),
+  }, ["injuries", "twoVehicles", "onlyMaterialDamage", "bothInsured", "agreed"], null, "Verific imediat."),
   fn("lookup_policy", "Caută polițele clientului, doar dacă el o cere. Trimite telefonul sau plăcuța spuse de client; la apel telefonic, fără niciunul, folosește numărul de pe care sună.", {
     plate: { type: "string", description: "Plăcuța așa cum a fost spusă, ex. «Cluj 11 TST» sau B123ABC" },
     phone: { type: "string", description: "Telefonul clientului, ex. 0722123456" },
@@ -41,7 +49,7 @@ const tools = [
     damage: { type: "string", description: "Ce s-a deteriorat la mașina clientului, pe scurt (ex. bară față, aripă dreapta)" },
     impact_zone: { type: "string", enum: ["front-left", "front", "front-right", "left", "right", "rear-left", "rear", "rear-right"], description: "Zona lovită la mașina clientului: front=față, rear=spate, left=lateral stânga, right=lateral dreapta, plus combinațiile de colț" },
     summary: { type: "string", description: "Rezumat scurt al accidentului, fără nume sau numere de identificare" },
-  }, ["location", "occurred", "damage", "summary"]),
+  }, ["location", "occurred", "damage", "summary"], null, "Pregătesc dosarul, un moment."),
   fn("escalate_to_human", "Anunță un coleg om: trimite brokerului rezumatul pe Telegram și marchează conversația ca „cere om”. Cheamă-o când clientul cere un om, când sunt răniți sau e urgență (după ce ai spus 112), când e supărat sau confuz după două încercări, sau când întrebarea ține de sfat juridic sau sume. Nu o chema ca să închei apelul.", {
     reason: { type: "string", enum: ["cere_om", "urgenta", "nemultumit", "in_afara_competentei"], description: "cere_om = clientul a cerut un om; urgenta = răniți sau urgență; nemultumit = supărat sau confuz; in_afara_competentei = sfat juridic, sume" },
     summary: { type: "string", description: "Rezumat neutru și factual, 1-2 propoziții, fără nume, fără numere de identificare și fără vinovății" },
@@ -83,7 +91,8 @@ const assistant = {
   backgroundDenoisingEnabled: true,
   // Pauze mai lungi când clientul dictează sau povestește: la 0,4 s Vapi răspundea în mijlocul propoziției („Cluj 1 1. Sunt.”).
   startSpeakingPlan: {
-    waitSeconds: 0.6,
+    // 0,6 → 0,4 (implicit Vapi), 12.11: tururile durau 2,3–3,5 s. Dictarea e acoperită de regulile de mai jos, nu de waitSeconds.
+    waitSeconds: 0.4,
     transcriptionEndpointingPlan: { onPunctuationSeconds: 0.3, onNoPunctuationSeconds: 2, onNumberSeconds: 1.5 },
     customEndpointingRules: [
       { type: "assistant", regex: "(telefon|cifr|litere|plăcu|număr|referin)", regexOptions: [{ type: "ignore-case", enabled: true }], timeoutSeconds: 3 },
@@ -108,7 +117,8 @@ const assistant = {
 
 // Vapi normalizează textul pentru engleză înainte de TTS (acronyme, date, numere): „2027” → „To thousand twentyseven”, „R C A” → „rece”.
 // Lăsăm doar curățarea de markdown; numerele, datele și acronimele le pronunță vocea română.
-assistant.voice.chunkPlan = { enabled: true, formatPlan: { formattersEnabled: ["markdown", "asterisk", "stripAsterisk", "newline", "colon"] } };
+// minCharacters 30 → 15: prima frază scurtă („Am înțeles.”) pleacă mai repede spre voce.
+assistant.voice.chunkPlan = { enabled: true, minCharacters: 15, formatPlan: { formattersEnabled: ["markdown", "asterisk", "stripAsterisk", "newline", "colon"] } };
 
 const api = async (path, init = {}) => {
   const res = await fetch(`https://api.vapi.ai${path}`, { ...init, headers: { Authorization: `Bearer ${VAPI_API_KEY}`, "Content-Type": "application/json" } });

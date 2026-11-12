@@ -49,4 +49,26 @@ describe("decideLink", () => {
       ]),
     ).toBeNull();
   });
+
+  it("fără poliță și fără număr: un singur client după telefon", () => {
+    expect(decideLink([{ client_id: C1, method: "phone" }])).toEqual({ clientId: C1, method: "phone" });
+  });
+
+  it("numărul de înmatriculare are prioritate față de telefon", () => {
+    expect(
+      decideLink([
+        { client_id: C1, method: "phone" },
+        { client_id: C2, method: "plate" },
+      ]),
+    ).toEqual({ clientId: C2, method: "plate" });
+  });
+
+  it("telefon comun la doi clienți (ex. familie) nu leagă", () => {
+    expect(
+      decideLink([
+        { client_id: C1, method: "phone" },
+        { client_id: C2, method: "phone" },
+      ]),
+    ).toBeNull();
+  });
 });

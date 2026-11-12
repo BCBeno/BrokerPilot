@@ -54,7 +54,7 @@ export function expiryText(days: number, validTo: string): string {
   return `expiră ${WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]}`;
 }
 
-/** „iul. 2026”: de când e clientul în portofoliu. */
+/** „iulie 2026”: de când e clientul în portofoliu. */
 export function monthYear(iso: string): string {
-  return new Date(iso).toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", month: "long", year: "numeric" });
 }

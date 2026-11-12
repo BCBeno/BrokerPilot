@@ -45,6 +45,7 @@ const CONVERSATION_LABELS: Record<string, string> = {
 const METHOD_LABELS: Record<string, string> = {
   policy: "recunoscut automat după numărul poliței",
   plate: "recunoscut automat după numărul de înmatriculare",
+  phone: "recunoscut automat după telefon",
   broker_matched: "legat de broker",
   broker_added: "adăugat în portofoliu din dosar",
 };

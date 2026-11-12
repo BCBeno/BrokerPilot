@@ -127,7 +127,12 @@ export async function addPartyToPortfolio(claimId: string, role: "A" | "B"): Pro
     revalidatePath("/broker", "layout");
   };
 
-  const match = await db.rpc("match_party_client", { p_agency: broker.agency_id, p_policy_no: policyNo, p_plate: plate });
+  const match = await db.rpc("match_party_client", {
+    p_agency: broker.agency_id,
+    p_policy_no: policyNo,
+    p_plate: plate,
+    p_phone: party.driver?.phone || null,
+  });
   const found = match.error ? null : decideLink((match.data ?? []) as Candidate[]);
   if (found) {
     await link(found.clientId, "broker_matched");

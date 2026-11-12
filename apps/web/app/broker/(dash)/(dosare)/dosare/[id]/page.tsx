@@ -440,6 +440,7 @@ const TZ = "Europe/Bucharest";
 const LINK_METHODS: Record<string, string> = {
   policy: "recunoscut după poliță",
   plate: "recunoscut după nr. înmatriculare",
+  phone: "recunoscut după telefon",
   broker_matched: "legat de broker de clientul existent",
   broker_added: "adăugat în portofoliu de broker",
 };

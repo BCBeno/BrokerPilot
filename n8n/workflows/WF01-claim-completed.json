@@ -96,7 +96,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Why Code: validare de schemă + text de notificare în română; nicio combinație de noduri native nu le acoperă curat.\n// Aplicația trimite deja `missing` (checklist calculat și testat în app); aici doar îl afișăm.\nconst body = $('Webhook claim.completed').first().json.body ?? {};\nconst fail = (m) => { throw new Error(`Payload claim.completed invalid: ${m}`); };\n\nif (body.event !== 'claim.completed') fail('event');\nif (!/^[0-9a-f-]{36}$/i.test(body.claimId ?? '')) fail('claimId');\nif (typeof body.ref !== 'string' || !body.ref) fail('ref');\nif (!/^https:\\/\\//.test(body.pdfUrl ?? '')) fail('pdfUrl (trebuie https)');\nif (!body.parties?.A || !body.parties?.B) fail('parties');\nconst missing = Array.isArray(body.missing) ? body.missing : [];\n\nconst party = (p, role) => {\n  const car = [p.plate, p.vehicle].filter(Boolean).join(' ') || 'vehicul necunoscut';\n  const impact = p.impact ? `, lovit: ${p.impact}` : '';\n  const circ = p.circumstances?.length ? ` Circumstanțe: ${p.circumstances.map((c) => c.n).join(', ')}.` : '';\n  return `${role}: ${p.driver || 'șofer necunoscut'}, ${car} (${p.insurer || 'asigurător necunoscut'})${impact}.${circ}`;\n};\n\nconst blocking = missing.filter((m) => m.blocking);\nconst advisory = missing.filter((m) => !m.blocking);\nconst checklist = missing.length === 0\n  ? 'Dosar complet.'\n  : [...blocking.map((m) => `• ${m.label}`), ...advisory.map((m) => `◦ ${m.label}`)].join('\\n');\n\n// Rezumat determinist (fără LLM: datele personale nu pleacă spre un model cloud). Un rezumat AI se adaugă după WF00 (gateway cu redactare).\nconst summary = [\n  `Amiabilă ${body.ref}, ${body.occurredAt}, ${body.place}.`,\n  party(body.parties.A, 'A'),\n  party(body.parties.B, 'B'),\n  `Poze: A ${body.photoCounts?.A ?? 0}, B ${body.photoCounts?.B ?? 0}. Schiță: ${body.hasSketch ? 'da' : 'nu'}.`,\n].join('\\n');\n\nconst caption = `Dosar nou ${body.ref}\\n${body.place}\\n\\n${checklist}`.slice(0, 1000);\nconst chats = String($env.TG_BROKER_CHAT_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean);\nif (chats.length === 0) fail('TG_BROKER_CHAT_IDS lipsește');\n\nreturn chats.map((chatId) => ({\n  json: { chatId, claimId: body.claimId, ref: body.ref, pdfUrl: body.pdfUrl, caption, summary, missing },\n}));"
+        "jsCode": "// Why Code: validare de schemă + textul notificării în română (HTML Telegram); nicio combinație de noduri native nu le acoperă curat.\n// Aplicația trimite deja concluzia din dashboard (`conclusion`) și checklistul (`missing`), calculate și testate acolo; aici doar le așezăm.\nconst body = $('Webhook claim.completed').first().json.body ?? {};\nconst fail = (m) => { throw new Error(`Payload claim.completed invalid: ${m}`); };\n\nif (body.event !== 'claim.completed') fail('event');\nif (!/^[0-9a-f-]{36}$/i.test(body.claimId ?? '')) fail('claimId');\nif (typeof body.ref !== 'string' || !/^[A-Z0-9-]{3,40}$/.test(body.ref)) fail('ref');\nif (!/^https:\\/\\//.test(body.pdfUrl ?? '')) fail('pdfUrl (trebuie https)');\nif (!body.parties?.A || !body.parties?.B) fail('parties');\nconst missing = Array.isArray(body.missing) ? body.missing : [];\n\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst join = (parts, sep = ', ') => parts.filter(Boolean).join(sep);\n\n// Detaliile unui șofer, pe 3-4 rânduri. `circ`: 'labels' (textul oficial), 'numbers' sau 'none' (dacă mesajul iese prea lung).\nconst partyBlock = (p, role, circ) => {\n  const car = join([p.plate, p.vehicle]) || 'vehicul necunoscut';\n  const client = p.client\n    ? (p.client === p.driver ? 'client al agenției' : `client al agenției: ${p.client}`)\n    : 'nu e în portofoliu';\n  const lines = [\n    `<b>${role}</b>  ${esc(car)}`,\n    `${esc(join([p.driver || 'șofer necunoscut', p.contact]))} (${esc(client)})`,\n    esc(join([p.insurer || 'asigurător necunoscut', p.policyNo && `polița ${p.policyNo}`, p.impact && `lovit ${String(p.impact).toLocaleLowerCase('ro-RO')}`])),\n  ];\n  const list = p.circumstances ?? [];\n  if (circ !== 'none') {\n    const text = list.length === 0\n      ? 'nebifate'\n      : circ === 'labels' ? list.map((c) => `${c.n}. ${c.label}`).join('; ') : list.map((c) => c.n).join(', ');\n    lines.push(`<i>Circumstanțe: ${esc(text)}</i>`);\n  }\n  return lines.join('\\n');\n};\n\nconst c = body.conclusion;\nconst verdict = c\n  ? [...(c.status ?? []).map((s) => (c.complete ? `✅ ${esc(s)}` : esc(s))), ...(c.warnings ?? []).map((w) => `⚠️ ${esc(w)}`), ...(c.extras ? [esc(c.extras)] : [])]\n  : missing.length === 0 ? ['✅ Dosar complet.'] : missing.map((m) => `${m.blocking ? '•' : '◦'} ${esc(m.label)}`);\n\nconst url = String(body.brokerUrl ?? '');\n// Telegram refuză linkuri spre localhost; atunci linkul lipsește, dosarul e oricum în dashboard.\nconst link = /^https:\\/\\//.test(url) && !/\\/\\/(localhost|127\\.0\\.0\\.1)/.test(url) ? `<a href=\"${esc(url)}\">Deschide dosarul în BrokerPilot</a>` : '';\n\nconst compose = (circ) => join([\n  `<b>Amiabilă nouă ${esc(body.ref)}</b>\\n${esc(join([body.occurredAt, body.place]))}`,\n  partyBlock(body.parties.A, 'A', circ),\n  partyBlock(body.parties.B, 'B', circ),\n  verdict.join('\\n'),\n  join([`Poze: A ${body.photoCounts?.A ?? 0}, B ${body.photoCounts?.B ?? 0}. Schiță: ${body.hasSketch ? 'da' : 'nu'}.`, link], '\\n'),\n], '\\n\\n');\n\n// Legenda unui document are maximum 1024 de caractere (fără etichete HTML); lungimea brută e o limită sigură.\nconst caption = ['labels', 'numbers', 'none'].map(compose).find((t) => t.length <= 1024) ?? compose('none').slice(0, 1024);\n\n// Rezumat determinist salvat pe dosar (fără LLM: datele personale nu pleacă spre un model cloud). Un rezumat AI vine după WF00.\nconst party = (p, role) => {\n  const car = join([p.plate, p.vehicle], ' ') || 'vehicul necunoscut';\n  const impact = p.impact ? `, lovit: ${p.impact}` : '';\n  const circ = p.circumstances?.length ? ` Circumstanțe: ${p.circumstances.map((x) => x.n).join(', ')}.` : '';\n  return `${role}: ${p.driver || 'șofer necunoscut'}, ${car} (${p.insurer || 'asigurător necunoscut'})${impact}.${circ}`;\n};\nconst summary = [\n  `Amiabilă ${body.ref}, ${body.occurredAt}, ${body.place}.`,\n  party(body.parties.A, 'A'),\n  party(body.parties.B, 'B'),\n  `Poze: A ${body.photoCounts?.A ?? 0}, B ${body.photoCounts?.B ?? 0}. Schiță: ${body.hasSketch ? 'da' : 'nu'}.`,\n].join('\\n');\n\nconst chats = String($env.TG_BROKER_CHAT_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean);\nif (chats.length === 0) fail('TG_BROKER_CHAT_IDS lipsește');\n\nreturn chats.map((chatId) => ({\n  json: { chatId, claimId: body.claimId, ref: body.ref, pdfUrl: body.pdfUrl, fileName: `${body.ref}.pdf`, caption, summary, missing },\n}));\n"
       },
       "id": "wf01-compose",
       "name": "Validate and compose",
@@ -110,11 +110,11 @@
     {
       "parameters": {
         "operation": "sendDocument",
-        "chatId": "={{ $json.chatId }}",
-        "file": "={{ $json.pdfUrl }}",
+        "chatId": "={{ $('Validate and compose').item.json.chatId }}",
         "additionalFields": {
-          "caption": "={{ $json.caption }}",
-          "fileName": "={{ $json.ref }}.pdf"
+          "caption": "={{ $('Validate and compose').item.json.caption }}",
+          "fileName": "={{ $('Validate and compose').item.json.fileName }}",
+          "parse_mode": "HTML"
         },
         "replyMarkup": "inlineKeyboard",
         "inlineKeyboard": {
@@ -125,27 +125,29 @@
                   {
                     "text": "Preiau",
                     "additionalFields": {
-                      "callback_data": "={{ 'take:' + $json.claimId }}"
+                      "callback_data": "={{ 'take:' + $('Validate and compose').item.json.claimId }}"
                     }
                   },
                   {
                     "text": "Cere info lipsă",
                     "additionalFields": {
-                      "callback_data": "={{ 'ask:' + $json.claimId }}"
+                      "callback_data": "={{ 'ask:' + $('Validate and compose').item.json.claimId }}"
                     }
                   }
                 ]
               }
             }
           ]
-        }
+        },
+        "binaryData": true,
+        "binaryPropertyName": "data"
       },
       "id": "wf01-telegram",
       "name": "Notify broker (Telegram)",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        680,
+        920,
         -100
       ],
       "credentials": {
@@ -206,6 +208,31 @@
           "name": "Supabase BrokerPilot (service role)"
         }
       }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.pdfUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "wf01-download-pdf",
+      "name": "Download PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        -100
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     }
   ],
   "connections": {
@@ -247,7 +274,7 @@
       "main": [
         [
           {
-            "node": "Notify broker (Telegram)",
+            "node": "Download PDF",
             "type": "main",
             "index": 0
           },
@@ -264,6 +291,17 @@
         [
           {
             "node": "Save summary on claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download PDF": {
+      "main": [
+        [
+          {
+            "node": "Notify broker (Telegram)",
             "type": "main",
             "index": 0
           }

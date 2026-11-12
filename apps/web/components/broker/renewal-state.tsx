@@ -30,4 +30,4 @@ export function StateText({ item }: { item: RenewalItem }) {
 }
 
 const shortDay = (at: string) =>
-  new Date(at).toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", day: "numeric", month: "short" });
+  new Date(at).toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", day: "numeric", month: "long" });

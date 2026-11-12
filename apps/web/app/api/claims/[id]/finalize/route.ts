@@ -3,7 +3,7 @@ import { createRateLimiter } from "@/lib/ai/upload";
 import { isComplete, missingItems } from "@/lib/claims/completeness";
 import { CLAIM_BUCKET, pdfPath } from "@/lib/claims/files";
 import { loadClaimDocument } from "@/lib/claims/form-data";
-import { linkClaimParties } from "@/lib/claims/link-client";
+import { linkClaimParties, partyClients } from "@/lib/claims/link-client";
 import { PdfUnavailableError, internalBaseUrl, makeRenderKey, renderPdf } from "@/lib/claims/pdf";
 import { NOT_CONFIGURED, SERVER_ERROR, TOO_MANY, authorizeA, clientIp, fail } from "@/lib/claims/server";
 import { buildCompletedPayload, sendClaimCompleted, type WebhookResult } from "@/lib/claims/webhook";
@@ -69,9 +69,10 @@ export async function POST(request: Request, ctx: Ctx) {
   // Recunoaște clienții agenției după poliță sau număr de înmatriculare (fără LLM; nu blochează finalizarea).
   await linkClaimParties(db, id);
 
-  const [forClient, forN8n] = await Promise.all([
+  const [forClient, forN8n, clients] = await Promise.all([
     db.storage.from(CLAIM_BUCKET).createSignedUrl(path, 3600),
     db.storage.from(CLAIM_BUCKET).createSignedUrl(path, 7 * DAY),
+    partyClients(db, id),
   ]);
   if (forClient.error || forN8n.error) return SERVER_ERROR();
 
@@ -86,6 +87,7 @@ export async function POST(request: Request, ctx: Ctx) {
       appUrl: env.NEXT_PUBLIC_APP_URL,
       photoCounts: { A: doc.facts.photosA, B: doc.facts.photosB },
       missing,
+      clients,
     }),
     { base: env.N8N_WEBHOOK_BASE, secret: env.BP_WEBHOOK_SECRET },
   );
