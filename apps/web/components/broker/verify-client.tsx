@@ -9,7 +9,7 @@ export function VerifyClient({ clientId }: { clientId: string }) {
   const [error, setError] = useState<string | null>(null);
   return (
     <div role="status" className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
-      <span className="font-medium text-tone-todo">De verificat</span>
+      <span className="rounded bg-tone-todo px-1.5 py-px text-[12px] font-semibold text-tone-todo-foreground">De verificat</span>
       <span className="text-muted-foreground">Adăugat automat din dosar, cu datele introduse de client. Confirmați-le după ce sunați sau vedeți polița.</span>
       <button
         type="button"

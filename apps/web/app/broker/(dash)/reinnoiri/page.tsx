@@ -14,10 +14,6 @@ export const metadata: Metadata = { title: "Reînnoiri · BrokerPilot" };
 
 const isFilter = (v: unknown): v is RenewalFilter => RENEWAL_FILTERS.some((f) => f.id === v);
 
-/**
- * Polițele care expiră în 30 de zile și cele expirate în ultimele 30, cele mai urgente sus.
- * „Am contactat” / „Reamintește-mi” scriu în `events`; o poliță reînnoită (poliță nouă de același tip) iese din „De contactat”.
- */
 export default async function RenewalsPage({ searchParams }: { searchParams: Promise<{ f?: string }> }) {
   const { f } = await searchParams;
   const filter: RenewalFilter = isFilter(f) ? f : "todo";
@@ -118,7 +114,7 @@ function RenewalRow({ item }: { item: RenewalItem }) {
         <Link href={`/broker/clienti/${p.client_id}`} className="font-medium hover:underline">
           {displayName(p.clients?.full_name) || "Client"}
         </Link>
-        {p.clients?.needs_review && <span className="ml-1.5 text-[12px] font-medium text-tone-todo">de verificat</span>}
+        {p.clients?.needs_review && <span className="ml-1.5 rounded bg-tone-todo px-1.5 py-px text-[11px] font-semibold text-tone-todo-foreground">de verificat</span>}
         {p.clients?.phone && (
           <a href={`tel:${p.clients.phone.replace(/\s/g, "")}`} className="block text-[12px] whitespace-nowrap text-muted-foreground tabular-nums hover:underline">
             {phoneDisplay(p.clients.phone)}

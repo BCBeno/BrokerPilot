@@ -9,7 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { BROADCAST_B_SUBMITTED, submissionProblem } from "@/lib/amiabila/claim";
 import { CIRCUMSTANCES, DISCLAIMER, IMPACT_LABELS } from "@/lib/amiabila/content";
 import { fieldValue } from "@/lib/amiabila/documents";
-import { updateDraft } from "@/lib/amiabila/draft-store";
 import { signalClaim } from "@/lib/claims/realtime";
 import { StepFrame } from "./step-frame";
 import { useWizard } from "./wizard-context";
@@ -21,7 +20,7 @@ const editLink =
 
 /** Verificarea finală a lui B și trimiterea către dosar. Se poate retrimite cât timp linkul e valabil. */
 export function BSummaryStep() {
-  const { draft, basePath } = useWizard();
+  const { draft, basePath, update } = useWizard();
   const { token } = useParams<{ token: string }>();
   const [phase, setPhase] = useState<Phase>({ state: "idle" });
   const { documents, circumstances } = draft;
@@ -136,7 +135,7 @@ export function BSummaryStep() {
         <Checkbox
           className="mt-0.5"
           checked={draft.contactConsent}
-          onCheckedChange={(v) => updateDraft((d) => ({ ...d, contactConsent: v === true }))}
+          onCheckedChange={(v) => update((d) => ({ ...d, contactConsent: v === true }))}
         />
         <span>
           Sunt de acord ca brokerul să îmi păstreze datele de contact și să mă contacteze despre asigurările mele.

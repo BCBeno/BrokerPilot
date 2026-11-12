@@ -121,9 +121,11 @@ export function ClientsList({ rows }: { rows: ClientListRow[] }) {
                 )}
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="truncate text-[13px] font-semibold">
-                    {r.name}
-                    {r.needsReview && <span className="ml-1.5 text-[12px] font-medium text-tone-todo">de verificat</span>}
+                  <span className="flex min-w-0 items-baseline gap-1.5">
+                    <span className="truncate text-[13px] font-semibold">{r.name}</span>
+                    {r.needsReview && (
+                      <span className="shrink-0 rounded bg-tone-todo px-1.5 py-px text-[11px] font-semibold text-tone-todo-foreground">de verificat</span>
+                    )}
                   </span>
                   {r.dueDays !== null && (
                     <DueText tone={expiryBadge(r.dueDays).tone} className="text-[12px]">

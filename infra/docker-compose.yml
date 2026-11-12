@@ -24,3 +24,13 @@ services:
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
+
+  # Actualizare automată: la fiecare minut verifică dacă imaginea din GHCR s-a schimbat; dacă da, o trage și repornește `web`.
+  watchtower:
+    image: nickfedor/watchtower:latest
+    environment:
+      WATCHTOWER_POLL_INTERVAL: "60"
+      WATCHTOWER_CLEANUP: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
