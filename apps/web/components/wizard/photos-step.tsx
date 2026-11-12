@@ -76,6 +76,7 @@ export function PhotosStep() {
       heading="Poze cu daunele"
       lead={`Fotografiați vehiculul ${role}. Pozele rămân în dosar ca dovadă.`}
       continueLabel={photos.length === 0 ? "Continuă fără poze" : "Continuă"}
+      quietAction={photos.length === 0}
     >
       {!partyToken ? (
         <div role="alert" className="rounded-lg border border-warning-foreground/30 bg-warning p-4 text-[17px]">

@@ -107,7 +107,7 @@ export function NumberedCheck({
         <span className="sr-only">{n}. </span>
         {label}
       </span>
-      <Checkbox checked={checked} onCheckedChange={onChange} className="size-6 rounded-md border-2" />
+      <Checkbox checked={checked} onCheckedChange={onChange} className="size-6 rounded-[5px] border-2" />
     </label>
   );
 }

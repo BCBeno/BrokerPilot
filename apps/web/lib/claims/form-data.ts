@@ -84,7 +84,9 @@ export async function loadClaimDocument(db: SupabaseClient, claimId: string): Pr
     circumstances: circumstancesA.success ? circumstancesA.data : EMPTY_DRAFT.circumstances,
     sketch,
   };
-  const form = buildForm(draft, partyB);
+  // Pe formular apar actele lui B și dacă circumstanțele lui lipsesc (checklistul le cere separat, prin `facts.partyB`).
+  const formB = partyB ?? (docsB ? { documents: docsB, circumstances: EMPTY_DRAFT.circumstances } : null);
+  const form = buildForm(draft, formB);
 
   const signature = async (row: PartyRow | undefined) => {
     const bytes = row?.signature_path ? await readBytes(db, row.signature_path) : null;

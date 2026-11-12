@@ -20,15 +20,18 @@ export function EligibilityStep() {
   const e = draft.eligibility;
   const result = evaluateEligibility(e);
 
+  // Răniții s-au întrebat deja la Siguranță; nu repetăm întrebarea dacă răspunsul de acolo o acoperă.
+  const keys = ELIGIBILITY_KEYS.filter((k) => !(k === "onlyMaterialDamage" && draft.injured === false && e[k] === true));
   // Întrebările apar pe rând: toate cele răspunse cu „da” și prima rămasă (fără răspuns sau cu „nu”).
-  const stop = ELIGIBILITY_KEYS.findIndex((k) => e[k] !== true);
-  const shown = stop === -1 ? ELIGIBILITY_KEYS : ELIGIBILITY_KEYS.slice(0, stop + 1);
+  const stop = keys.findIndex((k) => e[k] !== true);
+  const shown = stop === -1 ? keys : keys.slice(0, stop + 1);
+  const count = ["", "O întrebare", "Două întrebări", "Trei întrebări", "Patru întrebări"][keys.length];
 
   return (
     <StepFrame
       slug="eligibilitate"
       heading="Se poate completa amiabila?"
-      lead="Patru întrebări despre accident. Durează un minut."
+      lead={`${count} despre accident. Durează un minut.`}
       canContinue={result.status === "eligible"}
       disabledHint={
         result.status === "blocked" ? "Aici nu putem continua amiabila." : "Răspundeți la întrebări ca să continuați."

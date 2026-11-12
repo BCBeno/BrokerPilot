@@ -9,11 +9,13 @@ import { useWizard } from "./wizard-context";
 
 /** Mașina văzută de sus, cu fața în sus. */
 function CarTopDown({ role }: { role: "A" | "B" }) {
+  // Geamurile se văd pe ambele culori: deschise pe A (albastru), închise pe B (galben).
+  const glass = role === "A" ? "fill-white/85" : "fill-primary/80";
   return (
     <svg viewBox="0 0 60 100" className="mx-auto h-28 w-auto" role="img" aria-label="Mașina dumneavoastră, văzută de sus">
       <rect x="6" y="4" width="48" height="92" rx="16" className={role === "A" ? "fill-driver-a" : "fill-driver-b"} />
-      <path d="M14 30 Q30 22 46 30 L44 44 Q30 40 16 44 Z" className="fill-primary/80" />
-      <path d="M16 70 Q30 74 44 70 L46 82 Q30 88 14 82 Z" className="fill-primary/80" />
+      <path d="M14 30 Q30 22 46 30 L44 44 Q30 40 16 44 Z" className={glass} />
+      <path d="M16 70 Q30 74 44 70 L46 82 Q30 88 14 82 Z" className={glass} />
       <rect x="6" y="4" width="48" height="92" rx="16" fill="none" className="stroke-primary" strokeWidth="2" />
     </svg>
   );

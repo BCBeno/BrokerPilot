@@ -39,7 +39,7 @@ export function SafetyStep() {
         <Button
           variant="ghost"
           className="h-12 w-full text-base"
-          onClick={() => updateDraft((d) => ({ ...d, injured: null }))}
+          onClick={() => updateDraft((d) => ({ ...d, injured: null, eligibility: { ...d.eligibility, onlyMaterialDamage: null } }))}
         >
           Am greșit, nu e nimeni rănit
         </Button>
@@ -60,7 +60,10 @@ export function SafetyStep() {
         icon={Ambulance}
         question="Este cineva rănit?"
         value={draft.injured}
-        onChange={(injured) => updateDraft((d) => ({ ...d, injured }))}
+        // Același răspuns valorează și pentru întrebarea „doar pagube materiale” de la Verificare, ca să nu o punem de două ori.
+        onChange={(injured) =>
+          updateDraft((d) => ({ ...d, injured, eligibility: { ...d.eligibility, onlyMaterialDamage: injured === null ? null : !injured } }))
+        }
         yesLabel="Da, cineva e rănit"
         noLabel="Nu, nimeni nu e rănit"
       />

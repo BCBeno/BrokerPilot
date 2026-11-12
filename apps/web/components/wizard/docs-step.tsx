@@ -111,6 +111,9 @@ function DocCard({ type, consent }: { type: DocType; consent: boolean }) {
               Alege fișier
             </Button>
           </div>
+          {!consent ? (
+            <p className="text-[15px] text-muted-foreground">Pentru poză, bifați acordul de sus. Fără acord, completați manual.</p>
+          ) : null}
           {busy.state === "reading" ? (
             <p role="status" className="text-[15px] text-muted-foreground">
               Citim actul… durează câteva secunde.
@@ -149,34 +152,45 @@ function Review({
 
   return (
     <div className="space-y-3">
-      {needsCheck ? (
+      {needsCheck && scannable ? (
         <p className="text-[15px] text-muted-foreground">
-          {scannable
-            ? "Câmpurile galbene sunt nesigure sau goale. Verificați-le cu actul în față."
-            : "Completați câmpurile galbene. Data nașterii și e-mailul sunt opționale."}
+          Câmpurile galbene sunt nesigure. Verificați-le cu actul în față și completați ce lipsește.
         </p>
       ) : null}
       <div className={cn(listGroup)}>
         {DOC_META[type].fields.map((def) => {
           const field = doc.fields[def.key];
           const low = fieldNeedsCheck(def, field);
+          // Un câmp gol nu e „nesigur”: îl marcăm neutru („De completat”); galben doar pe ce a citit AI-ul cu îndoială.
+          const empty = !field?.value?.trim();
+          const doubtful = low && !empty;
           return (
-            <div key={`${def.key}:${field?.value ?? ""}`} className={cn("space-y-1.5 px-4 py-3", low && "bg-warning")}>
+            <div key={`${def.key}:${field?.value ?? ""}`} className={cn("space-y-1.5 px-4 py-3", doubtful && "bg-warning")}>
               <label htmlFor={`${type}-${def.key}`} className="flex items-center justify-between gap-2 text-[15px] text-muted-foreground">
                 {def.label}
-                {low ? (
+                {doubtful ? (
                   <span className="inline-flex items-center gap-1 font-medium text-warning-foreground">
                     <TriangleAlert className="size-4" aria-hidden />
                     Verificați
                   </span>
+                ) : low ? (
+                  <span className="text-[15px]">De completat</span>
                 ) : null}
               </label>
               <Input
                 id={`${type}-${def.key}`}
                 defaultValue={field?.value ?? ""}
-                placeholder={def.placeholder}
+                placeholder={def.placeholder ?? (def.kind === "date" ? "ZZ.LL.AAAA" : undefined)}
                 type={def.kind === "email" ? "email" : def.kind === "phone" ? "tel" : "text"}
-                inputMode={def.kind === "email" ? "email" : def.kind === "phone" ? "tel" : undefined}
+                inputMode={
+                  def.kind === "email"
+                    ? "email"
+                    : def.kind === "phone"
+                      ? "tel"
+                      : def.kind === "year"
+                        ? "numeric"
+                        : undefined
+                }
                 className="h-11 rounded-lg bg-card px-3 text-base md:text-base"
                 maxLength={200}
                 autoComplete="off"
@@ -219,7 +233,7 @@ export function DocsStep() {
     <StepFrame
       slug="acte"
       heading="Actele dumneavoastră"
-      lead="Fotografiați talonul și polița, iar noi citim datele. Permisul și datele de contact le completați dumneavoastră. Verificați totul la final."
+      lead="Fotografiați talonul și polița, iar noi citim datele. Permisul îl completați de mână."
       canContinue={canContinue("acte", draft, new Date())}
       disabledHint="Verificați cele trei acte ca să continuați."
     >
@@ -230,12 +244,13 @@ export function DocsStep() {
           onCheckedChange={(v) => update((d) => ({ ...d, documentsConsent: v === true }))}
         />
         <span>
-          Sunt de acord ca pozele talonului și poliței să fie citite de un serviciu AI extern. Pozele nu se păstrează
-          și sunt folosite doar pentru citire. Permisul nu se fotografiază. Fără acord, completați datele manual.
+          Sunt de acord ca pozele talonului și poliței să fie citite de un serviciu AI extern.
+          <span className="mt-1 block text-muted-foreground">Pozele nu se păstrează. Permisul nu se fotografiază.</span>
         </span>
       </label>
 
-      {DOC_TYPES.map((t) => (
+      {/* Întâi actele care se fotografiază, apoi cel completat de mână. */}
+      {[...DOC_TYPES].sort((a, b) => Number(DOC_META[b].scannable) - Number(DOC_META[a].scannable)).map((t) => (
         <DocCard key={t} type={t} consent={documentsConsent} />
       ))}
 

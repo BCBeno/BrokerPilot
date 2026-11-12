@@ -18,6 +18,7 @@
     "data:scrape": "node scripts/scrape-sources.mjs",
     "data:apply": "node scripts/apply-fixtures.mjs",
     "smoke": "node scripts/smoke-claim.mjs",
+    "broker:create": "node scripts/create-broker-user.mjs",
     "compose:config": "docker compose -f infra/docker-compose.yml config -q"
   }
 }

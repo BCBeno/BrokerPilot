@@ -78,6 +78,10 @@ type StepFrameProps = {
   disabledHint?: string;
   /** Notă sub foaia albă (ex.: disclaimer), ca să nu concureze cu decizia. */
   footnote?: React.ReactNode;
+  /** Destinația butonului când nu e pasul următor din listă (ex.: rezumat → semnătură). */
+  nextHref?: string;
+  /** Butonul principal ca acțiune secundară (contur), când pasul se poate sări (ex.: „Continuă fără schiță”). */
+  quietAction?: boolean;
 };
 
 export function StepFrame({
@@ -90,13 +94,16 @@ export function StepFrame({
   onContinue,
   disabledHint,
   footnote,
+  nextHref,
+  quietAction = false,
 }: StepFrameProps) {
   const router = useRouter();
   const hydrated = useHydrated();
   const { steps, basePath } = useWizard();
   const prev = prevSlug(slug, steps);
   const next = nextSlug(slug, steps);
-  const hasAction = continueLabel !== null && next !== null;
+  const target = nextHref ?? (next ? `${basePath}/${next}` : null);
+  const hasAction = continueLabel !== null && target !== null;
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -134,13 +141,13 @@ export function StepFrame({
               </p>
             ) : null}
             <Button
-              variant="cta"
+              variant={quietAction ? "outline" : "cta"}
               size="xl"
-              className="w-full"
+              className={cn("w-full", quietAction && "border-input bg-card")}
               disabled={!canContinue}
               onClick={() => {
                 onContinue?.();
-                router.push(`${basePath}/${next}`);
+                if (target) router.push(target);
               }}
             >
               {continueLabel}

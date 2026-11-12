@@ -156,7 +156,7 @@ export function PartnerStep() {
       lead="Celălalt șofer își completează actele și circumstanțele pe telefonul lui. Voi continuați în paralel."
       canContinue={canContinue("sofer-b", draft, new Date())}
       disabledHint="Generați codul pentru șoferul B ca să continuați."
-      continueLabel={submitted ? "Continuă" : "Continuă, B completează în paralel"}
+      continueLabel="Continuă"
     >
       {!claim ? (
         <div className="space-y-3">

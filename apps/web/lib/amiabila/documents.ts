@@ -40,7 +40,7 @@ export const DOC_META: Record<DocType, { label: string; hint: string; scannable:
       { key: "licenseNo", label: "Număr permis", kind: "text" },
       { key: "categories", label: "Categorii", kind: "text", placeholder: "ex. B" },
       { key: "expiresOn", label: "Valabil până la", kind: "date" },
-      { key: "birthDate", label: "Data nașterii", kind: "date", placeholder: "ZZ.LL.AAAA", optional: true },
+      { key: "birthDate", label: "Data nașterii (opțional)", kind: "date", optional: true },
       { key: "address", label: "Adresa dumneavoastră", kind: "text", placeholder: "Strada, număr, localitate, județ" },
       { key: "phone", label: "Telefon", kind: "phone", placeholder: "ex. 0722 123 456" },
       { key: "email", label: "E-mail (opțional)", kind: "email", placeholder: "ex. nume@exemplu.ro", optional: true },

@@ -2,23 +2,53 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
-import { CarFront, FileText, ListChecks, MapPin, PenLine, Pencil, RotateCcw, Route, type LucideIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  CarFront,
+  FileText,
+  ListChecks,
+  MapPin,
+  Pencil,
+  RotateCcw,
+  Route,
+  TriangleAlert,
+  UserPlus,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CIRCUMSTANCES, DISCLAIMER, IMPACT_LABELS } from "@/lib/amiabila/content";
+import { canContinue, type Draft, type StepSlug } from "@/lib/amiabila/draft";
 import { resetDraft, useDraft } from "@/lib/amiabila/draft-store";
 import { fieldValue } from "@/lib/amiabila/documents";
+import { cn } from "@/lib/utils";
 import { StepFrame } from "./step-frame";
+
+/** Pașii fără de care nu se poate semna și ce îi spunem șoferului. */
+const REQUIRED: { slug: StepSlug; missing: string }[] = [
+  { slug: "loc-timp", missing: "Lipsește adresa sau ora accidentului." },
+  { slug: "acte", missing: "Actele nu sunt verificate." },
+  { slug: "sofer-b", missing: "Șoferul B nu a fost invitat." },
+  { slug: "circumstante", missing: "Nu ați bifat nicio circumstanță." },
+  { slug: "impact", missing: "Nu ați ales zona lovită." },
+];
+
+function missingSteps(draft: Draft): Map<StepSlug, string> {
+  const now = new Date();
+  return new Map(REQUIRED.filter((r) => !canContinue(r.slug, draft, now)).map((r) => [r.slug, r.missing]));
+}
 
 function Section({
   icon: Icon,
   title,
   href,
+  missing,
   children,
 }: {
   icon: LucideIcon;
   title: string;
   href: string;
+  /** Textul afișat când secțiunea blochează semnătura. */
+  missing?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -33,10 +63,23 @@ function Section({
           className="-mr-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-[15px] font-medium text-primary underline-offset-4 hover:underline"
         >
           <Pencil className="size-4" aria-hidden />
-          Modifică
+          {missing ? "Completează" : "Modifică"}
         </Link>
       </div>
-      <div className="space-y-1 rounded-lg border bg-card p-4 text-[17px]">{children}</div>
+      <div
+        className={cn(
+          "space-y-1 rounded-lg border p-4 text-[17px]",
+          missing ? "border-warning-foreground/30 bg-warning" : "bg-card",
+        )}
+      >
+        {missing ? (
+          <p className="flex items-start gap-2 font-medium text-warning-foreground">
+            <TriangleAlert className="mt-1 size-4 shrink-0" aria-hidden />
+            {missing}
+          </p>
+        ) : null}
+        {children}
+      </div>
     </section>
   );
 }
@@ -51,6 +94,8 @@ export function SummaryStep() {
   const router = useRouter();
   const { place, circumstances } = draft;
   const checked = CIRCUMSTANCES.filter((c) => circumstances.checked.includes(c.n));
+  const missing = missingSteps(draft);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // Dacă dosarul există pe server (pasul „Șofer B”), îl actualizăm cu actele, circumstanțele și schița lui A; finalizarea se face la pasul „Semnătura”.
   const synced = useRef("");
@@ -74,15 +119,24 @@ export function SummaryStep() {
       slug="rezumat"
       heading="Verificați datele"
       lead="Atingeți Modifică la orice secțiune. Apoi urmează semnăturile."
-      continueLabel={null}
+      continueLabel="Treceți la semnătură"
+      nextHref="/amiabila/semnatura"
+      canContinue={missing.size === 0}
+      disabledHint={missing.size === 1 ? "Mai e o secțiune de completat." : `Mai sunt ${missing.size} secțiuni de completat.`}
       footnote={DISCLAIMER}
     >
-      <Section icon={MapPin} title="Loc și timp" href="/amiabila/loc-timp">
+      {missing.has("sofer-b") ? (
+        <Section icon={UserPlus} title="Șofer B" href="/amiabila/sofer-b" missing={missing.get("sofer-b")}>
+          <p className="text-muted-foreground">Semnăturile se adună în dosarul creat la acest pas.</p>
+        </Section>
+      ) : null}
+
+      <Section icon={MapPin} title="Loc și timp" href="/amiabila/loc-timp" missing={missing.get("loc-timp")}>
         <p>{place.address || "Adresa nu e completată"}</p>
         <p className="text-muted-foreground">{formatWhen(place.occurredAt)}</p>
       </Section>
 
-      <Section icon={FileText} title="Acte" href="/amiabila/acte">
+      <Section icon={FileText} title="Acte" href="/amiabila/acte" missing={missing.get("acte")}>
         {draft.documents.registration || draft.documents.license || draft.documents.policy ? (
           <>
             <p>
@@ -106,7 +160,7 @@ export function SummaryStep() {
         )}
       </Section>
 
-      <Section icon={ListChecks} title="Circumstanțe" href="/amiabila/circumstante">
+      <Section icon={ListChecks} title="Circumstanțe" href="/amiabila/circumstante" missing={missing.get("circumstante")}>
         {checked.length === 0 ? (
           <p className="text-muted-foreground">Nimic bifat</p>
         ) : (
@@ -120,7 +174,7 @@ export function SummaryStep() {
         )}
       </Section>
 
-      <Section icon={CarFront} title="Impact și daune" href="/amiabila/impact">
+      <Section icon={CarFront} title="Impact și daune" href="/amiabila/impact" missing={missing.get("impact")}>
         <p>{circumstances.impact ? IMPACT_LABELS[circumstances.impact] : "Zona nu e aleasă"}</p>
         {circumstances.damage ? <p>{circumstances.damage}</p> : null}
         {circumstances.notes ? <p className="text-muted-foreground">{circumstances.notes}</p> : null}
@@ -139,22 +193,37 @@ export function SummaryStep() {
         Vezi formularul completat
       </Button>
 
-      <Button variant="cta" size="xl" className="w-full" nativeButton={false} render={<Link href="/amiabila/semnatura" />}>
-        <PenLine aria-hidden />
-        Treceți la semnătură
-      </Button>
-
-      <Button
-        variant="ghost"
-        className="h-12 w-full text-base"
-        onClick={() => {
-          resetDraft();
-          router.push("/amiabila/siguranta");
-        }}
-      >
-        <RotateCcw aria-hidden />
-        Șterge și începe din nou
-      </Button>
+      {confirmReset ? (
+        <div role="alertdialog" aria-labelledby="reset-title" className="space-y-3 rounded-lg border border-destructive/30 bg-card p-4">
+          <p id="reset-title" className="text-[17px] font-semibold">
+            Ștergeți toate datele?
+          </p>
+          <p className="text-[15px] text-muted-foreground">
+            Se pierd actele, circumstanțele, schița și legătura cu dosarul. Șoferul B nu mai poate continua pe linkul primit.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" size="xl" className="bg-card px-3" autoFocus onClick={() => setConfirmReset(false)}>
+              Păstrează datele
+            </Button>
+            <Button
+              variant="destructive"
+              size="xl"
+              className="px-3"
+              onClick={() => {
+                resetDraft();
+                router.push("/amiabila/siguranta");
+              }}
+            >
+              Șterge datele
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button variant="ghost" className="mt-4 h-12 w-full text-base text-muted-foreground" onClick={() => setConfirmReset(true)}>
+          <RotateCcw aria-hidden />
+          Șterge și începe din nou
+        </Button>
+      )}
     </StepFrame>
   );
 }

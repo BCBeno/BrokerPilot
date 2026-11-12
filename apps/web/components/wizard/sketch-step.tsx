@@ -533,6 +533,7 @@ export function SketchStep() {
       heading="Cum s-a întâmplat?"
       lead="Faceți schița accidentului. Alegeți cum vă e mai ușor."
       continueLabel={isSketchEmpty(saved) ? "Continuă fără schiță" : "Continuă"}
+      quietAction={isSketchEmpty(saved)}
     >
       <fieldset>
         <legend className="sr-only">Cum faceți schița</legend>
@@ -582,7 +583,7 @@ export function SketchStep() {
           value={draft.circumstances.notes}
           onChange={(e) => updateDraft((d) => ({ ...d, circumstances: { ...d.circumstances, notes: e.target.value } }))}
         />
-        <p className="text-[15px] text-muted-foreground">Același câmp ca la Impact. Apare pe formular, la caseta 14.</p>
+        <p className="text-[15px] text-muted-foreground">Apare pe formular, la Observații.</p>
       </div>
     </StepFrame>
   );
