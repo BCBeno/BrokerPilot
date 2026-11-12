@@ -5,12 +5,14 @@ import type { ReactNode } from "react";
 import { z } from "zod";
 import { SketchView } from "@/components/amiabila-form/sketch-view";
 import { AddToPortfolio } from "@/components/broker/add-to-portfolio";
+import { ClaimCalls } from "@/components/broker/claim-calls";
 import { Plate } from "@/components/broker/plate";
 import { DueText, RoleTag, StatusPill } from "@/components/broker/status-pill";
 import { Button } from "@/components/ui/button";
 import { FORM_CIRCUMSTANCES, IMPACT_LABELS } from "@/lib/amiabila/content";
 import type { Party } from "@/lib/amiabila/form";
 import { CHANNEL_LABELS, STATUS_LABELS, type ClaimStatus } from "@/lib/broker/claims";
+import { CALL_LINK_METHODS, rankCandidateCalls, type CallRow } from "@/lib/broker/calls";
 import { summarizeClaim, type ClaimSummary } from "@/lib/broker/claim-summary";
 import { crossChecks, type CheckField, type CrossCheck } from "@/lib/broker/compare";
 import { displayName, expiryText, insurerName, licenseCategory, phoneDisplay, vehicleName } from "@/lib/broker/format";
@@ -42,13 +44,18 @@ export default async function ClaimDetail({ params }: { params: Promise<{ id: st
   if (!id.success) notFound();
   const { db, broker } = await requireBroker();
 
-  const [doc, metaRes, filesRes, eventsRes, partiesRes] = await Promise.all([
+  const callCols = "id, created_at, summary, transcript";
+  const [doc, metaRes, filesRes, eventsRes, partiesRes, linkedCallsRes, openCallsRes] = await Promise.all([
     loadClaimDocument(db, id.data),
     db.from("claims").select("status, broker_id, created_at, updated_at, ai_summary, pdf_path, brokers(name)").eq("id", id.data).maybeSingle(),
     db.from("claim_files").select("kind, party_role, created_at").eq("claim_id", id.data).order("created_at"),
     db.from("events").select("type, payload, at").eq("entity_type", "claim").eq("entity_id", id.data).order("at"),
     db.from("claim_parties").select("role, client_id, driver, clients(full_name)").eq("claim_id", id.data),
+    // Apelurile vocale: cele legate de dosar și cele încă nelegate (cu rezumat, adică încheiate), pe care brokerul le poate atașa.
+    db.from("conversations").select(callCols).eq("channel", "voice").eq("claim_id", id.data).order("created_at"),
+    db.from("conversations").select(callCols).eq("channel", "voice").is("claim_id", null).is("claim_ignored_at", null).not("summary", "is", null).order("created_at", { ascending: false }).limit(30),
   ]);
+  const linkedCalls = (linkedCallsRes.data ?? []) as unknown as CallRow[];
   type PartyLink = { role: "A" | "B"; client_id: string | null; driver: { fullName?: string } | null; clients: { full_name: string } | null };
   const partyLinks = (partiesRes.data ?? []) as unknown as PartyLink[];
   const clientsByRole = new Map(
@@ -75,6 +82,7 @@ export default async function ClaimDetail({ params }: { params: Promise<{ id: st
   const canTake = !meta.broker_id && (meta.status === "signed" || meta.status === "submitted");
   const timeline = buildTimeline(meta, filesRes.data ?? [], eventsRes.data ?? []);
   const summary = summarizeClaim(missing, checks);
+  const candidateCalls = rankCandidateCalls((openCallsRes.data ?? []) as unknown as CallRow[], doc.ref, form.place);
   const owner = meta.brokers?.name ? `preluat de ${displayName(meta.brokers.name)}` : canTake ? null : "nepreluat";
 
   return (
@@ -152,6 +160,8 @@ export default async function ClaimDetail({ params }: { params: Promise<{ id: st
             );
           }}
         />
+
+        <ClaimCalls claimId={id.data} linked={linkedCalls} candidates={candidateCalls} />
 
         {(doc.photos.length > 0 || form.sketch) && (
           <section aria-labelledby="media" className="border-b border-border py-3.5">
@@ -449,7 +459,9 @@ const LINK_METHODS: Record<string, string> = {
 const eventLabel = (e: { type: string; payload: { role?: string; method?: string } | null }) =>
   e.type === "client_linked"
     ? `Client${e.payload?.role ? ` ${e.payload.role}` : ""}: ${LINK_METHODS[e.payload?.method ?? ""] ?? "legat"}`
-    : e.type;
+    : e.type === "voice_call_linked"
+      ? `Apel telefonic ${CALL_LINK_METHODS[e.payload?.method ?? ""] ?? "legat de dosar"}`
+      : e.type;
 
 /** Istoricul pe zile; rândurile identice consecutive (ex. mai multe poze) se adună: „Poză cu daunele (A) ×3”. */
 function buildTimeline(

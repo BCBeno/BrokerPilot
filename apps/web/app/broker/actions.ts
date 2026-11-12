@@ -61,7 +61,42 @@ export async function verifyClient(clientId: string) {
   revalidatePath("/broker", "layout");
 }
 
-const snoozeSchema = z.union([z.literal(1), z.literal(3), z.literal(7)]);
+/**
+ * „Atașează” un apel vocal la dosar. Funcția SQL `attach_voice_call` verifică singură că apelul și dosarul sunt ale
+ * agenției brokerului și că apelul nu era deja legat, apoi scrie interacțiunea și evenimentul din istoric.
+ */
+export async function attachCall(claimId: string, conversationId: string) {
+  const claim = z.uuid().parse(claimId);
+  const conversation = z.uuid().parse(conversationId);
+  const { db } = await requireBroker();
+  const { data, error } = await db.rpc("attach_voice_call", { p_conversation_id: conversation, p_claim_id: claim });
+  if (error || data !== true) throw new Error("Nu am putut atașa apelul. Poate e deja legat de un dosar.");
+  revalidatePath("/broker", "layout");
+}
+
+/** „Atașează la dosar” din pagina Apeluri: același lucru, cu dosarul ales din listă (câmpurile `claim` și `call`). */
+export async function attachCallFromList(form: FormData) {
+  const claim = z.uuid().safeParse(form.get("claim"));
+  const call = z.uuid().safeParse(form.get("call"));
+  if (!claim.success || !call.success) throw new Error("Alegeți dosarul.");
+  await attachCall(claim.data, call.data);
+}
+
+/** „Ignoră”: apelul nu ține de niciun dosar și nu mai e propus. Rămâne în baza de date. */
+export async function ignoreCall(conversationId: string) {
+  const conversation = z.uuid().parse(conversationId);
+  const { db } = await requireBroker();
+  const { error } = await db
+    .from("conversations")
+    .update({ claim_ignored_at: new Date().toISOString() })
+    .eq("id", conversation)
+    .eq("channel", "voice")
+    .is("claim_id", null);
+  if (error) throw new Error("Nu am putut salva. Încercați din nou.");
+  revalidatePath("/broker", "layout");
+}
+
+const snoozeSchema =z.union([z.literal(1), z.literal(3), z.literal(7)]);
 
 /**
  * Reînnoiri: „Am contactat” și „Reamintește-mi” sunt rânduri în `events` (entity_type 'policy').

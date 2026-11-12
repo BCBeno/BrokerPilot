@@ -56,7 +56,7 @@ const tools = [
     callback_phone: { type: "string", description: "Numărul la care să-l sune colegul, dacă clientul l-a dat. La apel telefonic poate lipsi." },
   }, ["reason", "summary"], "Un moment, anunț un coleg."),
   fn("claim_status", "Spune starea generală a unui dosar după referință.", {
-    claim_ref: { type: "string", description: "Referința dosarului, ex. BP-2611-00004" },
+    claim_ref: { type: "string", description: "Referința dosarului: cele 9 cifre auzite, ex. 2611 00004 (prefixul BP nu contează, îl adaugă sistemul)" },
   }, ["claim_ref"]),
 ];
 // Un apel din browser nu poate suna un număr de telefon (testat 12.11: „error-transfer-failed”), deci transferul real e doar la cerere,

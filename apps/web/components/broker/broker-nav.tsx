@@ -8,6 +8,7 @@ const ITEMS = [
   { href: "/broker", label: "Dosare", match: (p: string) => p === "/broker" || p.startsWith("/broker/dosare") },
   { href: "/broker/clienti", label: "Clienți", match: (p: string) => p.startsWith("/broker/clienti") },
   { href: "/broker/reinnoiri", label: "Reînnoiri", match: (p: string) => p.startsWith("/broker/reinnoiri") },
+  { href: "/broker/apeluri", label: "Apeluri", match: (p: string) => p.startsWith("/broker/apeluri") },
   { href: "/broker/costuri", label: "Costuri AI", match: (p: string) => p.startsWith("/broker/costuri") },
 ];
 
