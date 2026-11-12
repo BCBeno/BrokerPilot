@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { addDays, todayRo } from "@/lib/broker/renewals";
 import { requireBroker } from "@/lib/broker/session";
 import { getServerClient } from "@/lib/supabase/server";
 
@@ -49,4 +50,27 @@ export async function closeClaim(claimId: string) {
   const { error } = await db.from("claims").update({ status: "closed" }).eq("id", id).eq("broker_id", broker.id);
   if (error) throw new Error("Nu am putut închide dosarul.");
   revalidatePath("/broker", "layout");
+}
+
+const snoozeSchema = z.union([z.literal(1), z.literal(3), z.literal(7)]);
+
+/**
+ * Reînnoiri: „Am contactat” și „Reamintește-mi” sunt rânduri în `events` (entity_type 'policy').
+ * RLS (`events_insert_renewal`) permite doar aceste tipuri, în numele brokerului logat, pe polițe din agenția lui.
+ */
+async function recordRenewal(policyId: string, type: "renewal_contacted" | "renewal_snoozed", extra: Record<string, string> = {}) {
+  const id = z.uuid().parse(policyId);
+  const { db, broker } = await requireBroker();
+  const { error } = await db.from("events").insert({ entity_type: "policy", entity_id: id, type, payload: { broker_id: broker.id, ...extra } });
+  if (error) throw new Error("Nu am putut salva acțiunea. Încercați din nou.");
+  revalidatePath("/broker", "layout");
+}
+
+export async function markRenewalContacted(policyId: string) {
+  await recordRenewal(policyId, "renewal_contacted");
+}
+
+export async function snoozeRenewal(policyId: string, days: number) {
+  const n = snoozeSchema.parse(days);
+  await recordRenewal(policyId, "renewal_snoozed", { until: addDays(todayRo(), n) });
 }

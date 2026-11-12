@@ -15,7 +15,7 @@ import { missingItems, type MissingItem } from "@/lib/claims/completeness";
 import { CLAIM_BUCKET } from "@/lib/claims/files";
 import { loadClaimDocument } from "@/lib/claims/form-data";
 import { cn } from "@/lib/utils";
-import { closeClaim, takeClaim } from "../../../actions";
+import { closeClaim, takeClaim } from "@/app/broker/actions";
 
 type Meta = {
   status: ClaimStatus;
@@ -37,12 +37,18 @@ export default async function ClaimDetail({ params }: { params: Promise<{ id: st
   if (!id.success) notFound();
   const { db, broker } = await requireBroker();
 
-  const [doc, metaRes, filesRes, eventsRes] = await Promise.all([
+  const [doc, metaRes, filesRes, eventsRes, partiesRes] = await Promise.all([
     loadClaimDocument(db, id.data),
     db.from("claims").select("status, broker_id, created_at, updated_at, ai_summary, pdf_path, brokers(name)").eq("id", id.data).maybeSingle(),
     db.from("claim_files").select("kind, party_role, created_at").eq("claim_id", id.data).order("created_at"),
-    db.from("events").select("type, at").eq("entity_type", "claim").eq("entity_id", id.data).order("at"),
+    db.from("events").select("type, payload, at").eq("entity_type", "claim").eq("entity_id", id.data).order("at"),
+    db.from("claim_parties").select("role, client_id, clients(full_name)").eq("claim_id", id.data),
   ]);
+  const clientsByRole = new Map(
+    ((partiesRes.data ?? []) as unknown as { role: "A" | "B"; client_id: string | null; clients: { full_name: string } | null }[])
+      .filter((p) => p.client_id && p.clients)
+      .map((p) => [p.role, { id: p.client_id as string, name: p.clients!.full_name }]),
+  );
   const meta = metaRes.data as unknown as Meta | null;
   if (!doc || !meta) notFound();
 
@@ -98,6 +104,23 @@ export default async function ClaimDetail({ params }: { params: Promise<{ id: st
           {when || "Locul și ora nu sunt completate"}
           <span aria-hidden> · </span>
           {meta.brokers?.name ? `preluat de ${meta.brokers.name}` : "nepreluat"}
+        </p>
+        <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+          {(["A", "B"] as const).map((role) => {
+            const c = clientsByRole.get(role);
+            return (
+              <span key={role} className="inline-flex items-center gap-1.5">
+                <RoleTag role={role} />
+                {c ? (
+                  <Link href={`/broker/clienti/${c.id}`} className="font-medium hover:underline">
+                    {c.name} · fișa clientului
+                  </Link>
+                ) : (
+                  <span className="text-muted-foreground">nu e client al agenției</span>
+                )}
+              </span>
+            );
+          })}
         </p>
       </header>
 
@@ -345,16 +368,21 @@ const FILE_LABELS: Record<string, string> = {
 
 const TZ = "Europe/Bucharest";
 
+const eventLabel = (e: { type: string; payload: { role?: string; method?: string } | null }) =>
+  e.type === "client_linked"
+    ? `Client recunoscut${e.payload?.role ? ` · ${e.payload.role}` : ""} (${e.payload?.method === "policy" ? "după poliță" : "după nr. înmatriculare"})`
+    : e.type;
+
 /** Istoricul pe zile; rândurile identice consecutive (ex. mai multe poze) se adună: „Poză daune · A (×3)”. */
 function buildTimeline(
   meta: Meta,
   files: { kind: string; party_role: string | null; created_at: string }[],
-  events: { type: string; at: string }[],
+  events: { type: string; payload: { role?: string; method?: string } | null; at: string }[],
 ) {
   const raw = [
     { at: meta.created_at, label: "Dosar creat" },
     ...files.map((f) => ({ at: f.created_at, label: `${FILE_LABELS[f.kind] ?? f.kind}${f.party_role ? ` · ${f.party_role}` : ""}` })),
-    ...events.map((e) => ({ at: e.at, label: e.type })),
+    ...events.map((e) => ({ at: e.at, label: eventLabel(e) })),
   ];
   if (meta.updated_at !== meta.created_at) raw.push({ at: meta.updated_at, label: `Ultima schimbare: ${STATUS_LABELS[meta.status]}` });
   raw.sort((x, y) => new Date(x.at).getTime() - new Date(y.at).getTime());

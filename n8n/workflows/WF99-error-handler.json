@@ -1,0 +1,64 @@
+{
+  "name": "WF99 Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "wf99-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Why Code: textul alertei + un item per chat de broker (TG_BROKER_CHAT_IDS, separate prin virgulă).\n// Datele vin de la Error Trigger: execution (id, url, error, lastNodeExecuted, mode) sau trigger.error dacă a căzut triggerul.\nconst d = $input.first().json ?? {};\nconst wf = d.workflow ?? {};\nconst ex = d.execution ?? {};\nconst err = ex.error ?? d.trigger?.error ?? {};\nconst clip = (s, n) => { const t = String(s ?? '').replace(/\\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };\n\nconst lines = [\n  '⚠️ Eroare în n8n',\n  `Workflow: ${clip(wf.name || wf.id || 'necunoscut', 80)}`,\n  `Nod: ${clip(ex.lastNodeExecuted || err.node?.name || 'necunoscut', 80)}`,\n  `Eroare: ${clip(err.message || err.description || 'fără mesaj', 300)}`,\n  ex.mode ? `Mod: ${ex.mode}${ex.retryOf ? ` (reîncercare a ${ex.retryOf})` : ''}` : null,\n  ex.url ? `Execuția: ${ex.url}` : (ex.id ? `Execuția #${ex.id}` : 'Execuția nu a pornit (a căzut triggerul).'),\n].filter(Boolean);\n\nconst chats = String($env.TG_BROKER_CHAT_IDS ?? '').split(',').map((x) => x.trim()).filter(Boolean);\nif (!chats.length) throw new Error('TG_BROKER_CHAT_IDS lipsește din mediul n8n: alerta nu are destinatar.');\nreturn chats.map((chatId) => ({ json: { chatId, text: lines.join('\\n') } }));\n"
+      },
+      "id": "wf99-compose",
+      "name": "Compose alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "wf99-telegram",
+      "name": "Alert brokers (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [480, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "Telegram BrokerPilotDeskBot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [[{ "node": "Compose alert", "type": "main", "index": 0 }]]
+    },
+    "Compose alert": {
+      "main": [[{ "node": "Alert brokers (Telegram)", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

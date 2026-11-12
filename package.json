@@ -12,6 +12,8 @@
     "test": "npm run test -w apps/web",
     "build": "npm run build -w apps/web",
     "validate:n8n": "node scripts/validate-n8n-json.mjs",
+    "vapi:setup": "node --env-file-if-exists=.env scripts/vapi-setup.mjs",
+    "n8n:import": "node --env-file-if-exists=.env scripts/n8n-import.mjs",
     "n8n:export": "node --env-file-if-exists=.env scripts/n8n-export.mjs",
     "data:fixtures": "node scripts/generate-fixtures.mjs",
     "data:specimens": "node scripts/generate-specimens.mjs",

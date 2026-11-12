@@ -82,6 +82,8 @@ async function cleanup(id) {
     method: "DELETE", headers: h,
     body: JSON.stringify({ prefixes: ["signature-A.png", "signature-B.png", "constatare.pdf", "sketch.json"].map((f) => `claims/${id}/${f}`) }),
   });
+  // `events` nu are cheie străină spre dosar: rândurile „client_linked” se șterg separat.
+  await fetch(`${SB}/rest/v1/events?entity_type=eq.claim&entity_id=eq.${id}`, { method: "DELETE", headers: h });
   const del = await fetch(`${SB}/rest/v1/claims?id=eq.${id}`, { method: "DELETE", headers: h });
   console.log(`Dosar de test șters (HTTP ${del.status}).`);
 }
@@ -109,6 +111,12 @@ try {
   await call("B semnează", "PUT", "/api/party/signature", { token: created.joinToken, body: { signature: sig } });
   const fin = await call("A finalizează (PDF + n8n)", "POST", `/api/claims/${claimId}/finalize`, { token: created.aToken });
   console.log(`   webhook: ${fin.webhook}, PDF: ${fin.pdfUrl ? "generat" : "lipsește"}`);
+  // Legarea daună → client (S6b): A și B din fixtures sunt clienți ai agenției, deci ambii trebuie recunoscuți.
+  const parties = await (await fetch(`${SB}/rest/v1/claim_parties?select=role,client_id&claim_id=eq.${claimId}&order=role`, { headers: { apikey: SB_KEY } })).json();
+  for (const p of parties) {
+    const want = (p.role === "A" ? A : B).client_id;
+    console.log(`   ${p.client_id === want ? "✓" : "✗"} ${p.role} legat de client: ${p.client_id ?? "nu"}`);
+  }
 
   await new Promise((r) => setTimeout(r, 15_000)); // n8n: Telegram + rezumat
   const ex = await (await fetch(`${N8N_API}/executions?workflowId=${WF01}&limit=1`, { headers: { "X-N8N-API-KEY": N8N_KEY } })).json();

@@ -1,0 +1,258 @@
+{
+  "name": "WF03 Vapi End-of-Call",
+  "nodes": [
+    {
+      "id": "wh",
+      "name": "Webhook vapi-end-of-call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "3b9e6f10-2d4a-4c5e-8f21-6a7d0e9c4b03",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vapi-end-of-call",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "sec",
+      "name": "Secret valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "leftValue": "={{ $env.VAPI_SERVER_SECRET }}",
+              "rightValue": ""
+            },
+            {
+              "id": "c2",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.headers['x-vapi-secret'] }}",
+              "rightValue": "={{ $env.VAPI_SERVER_SECRET }}"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "r401",
+      "name": "Respond 401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        480,
+        360
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { error: \"unauthorized\" } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "r200",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        480,
+        120
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "parse",
+      "name": "Parse report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        120
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: extrage din raportul Vapi doar câmpurile de salvat și construiește cele două rânduri; niciun nod nativ nu parcurge structura variabilă a raportului.\nconst SB = '__SUPABASE_URL__';\nconst msg = $('Webhook vapi-end-of-call').first().json.body?.message ?? {};\nif (msg.type !== 'end-of-call-report') return []; // alte evenimente: ignorate\nconst callId = msg.call?.id;\nif (!callId) throw new Error('Raport Vapi fără call.id');\nconst messages = (msg.artifact?.messages ?? msg.messages ?? [])\n  .filter((m) => ['user', 'assistant', 'bot'].includes(m.role))\n  .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', text: String(m.message ?? m.content ?? ''), t: m.secondsFromStart ?? null }));\nconst cost = Number(msg.cost ?? msg.call?.cost ?? 0) || 0;\nconst secs = Number(msg.durationSeconds ?? 0) || 0;\nconst conversation = {\n  channel: 'voice',\n  external_id: callId,\n  summary: String(msg.summary ?? msg.analysis?.summary ?? '').slice(0, 4000) || null,\n  transcript: { text: String(msg.transcript ?? msg.artifact?.transcript ?? '').slice(0, 60000), messages: messages.slice(0, 400), endedReason: msg.endedReason ?? null, durationSeconds: secs, costUsd: cost },\n};\nconst aiCall = { workflow: 'WF03', task: 'voice_call', provider: 'vapi', model: null, cost_usd: cost, latency_ms: Math.round(secs * 1000), success: !String(msg.endedReason ?? '').includes('error'), error: String(msg.endedReason ?? '').includes('error') ? String(msg.endedReason) : null, redacted: false };\nreturn [{ json: { conversationUrl: SB + '/rest/v1/conversations?on_conflict=channel,external_id', aiCallUrl: SB + '/rest/v1/ai_calls', conversation, aiCall } }];"
+      },
+      "notes": "Why Code: structură variabilă a raportului Vapi."
+    },
+    {
+      "id": "h1",
+      "name": "Save conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Parse report').item.json.conversationUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Parse report').item.json.conversation) }}",
+        "options": {}
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "notes": "Why HTTP: upsert PostgREST (on_conflict) pe care nodul Supabase nu îl expune."
+    },
+    {
+      "id": "h2",
+      "name": "Log call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Parse report').item.json.aiCallUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Parse report').item.json.aiCall) }}",
+        "options": {}
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "notes": "Why HTTP: upsert PostgREST (on_conflict) pe care nodul Supabase nu îl expune."
+    }
+  ],
+  "connections": {
+    "Webhook vapi-end-of-call": {
+      "main": [
+        [
+          {
+            "node": "Secret valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secret valid?": {
+      "main": [
+        [
+          {
+            "node": "Respond 200",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond 200": {
+      "main": [
+        [
+          {
+            "node": "Parse report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse report": {
+      "main": [
+        [
+          {
+            "node": "Save conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save conversation": {
+      "main": [
+        [
+          {
+            "node": "Log call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "WF99"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

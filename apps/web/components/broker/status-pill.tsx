@@ -1,4 +1,5 @@
 import { STATUS_LABELS, type ClaimStatus } from "@/lib/broker/claims";
+import type { Tone } from "@/lib/broker/renewals";
 import { cn } from "@/lib/utils";
 
 /** Tonuri din `globals.css` (`--tone-*`); textul spune mereu statusul (culoarea nu e singurul semnal). */
@@ -36,6 +37,30 @@ export function RoleTag({ role, className }: { role: "A" | "B"; className?: stri
       )}
     >
       {role}
+    </span>
+  );
+}
+
+const TONE_STYLE: Record<Tone, string> = {
+  neutral: "bg-tone-neutral text-tone-neutral-foreground",
+  info: "bg-tone-info text-tone-info-foreground",
+  ok: "bg-tone-ok text-tone-ok-foreground",
+  todo: "bg-tone-todo text-tone-todo-foreground",
+  work: "bg-tone-work text-tone-work-foreground",
+  danger: "bg-tone-danger text-tone-danger-foreground",
+};
+
+/** Etichetă mică cu ton (ex. „expiră în 5 zile”); textul poartă sensul, culoarea doar îl întărește. */
+export function ToneBadge({ tone, children, className }: { tone: Tone; children: React.ReactNode; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center whitespace-nowrap rounded px-1.5 py-px text-[12px] font-medium leading-[18px]",
+        TONE_STYLE[tone],
+        className,
+      )}
+    >
+      {children}
     </span>
   );
 }

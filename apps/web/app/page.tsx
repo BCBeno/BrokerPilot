@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, FileText, IdCard, ShieldCheck, type LucideIcon } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { CallButton } from "@/components/voice/call-button";
 import { EmergencyLink } from "@/components/wizard/step-frame";
 import { DISCLAIMER } from "@/lib/amiabila/content";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ export default function Home() {
           Începe
           <ArrowRight aria-hidden />
         </Link>
+        <CallButton />
         <p className="mt-6 text-[15px] text-muted-foreground">{DISCLAIMER}</p>
       </main>
     </div>
