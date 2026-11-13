@@ -303,7 +303,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "=__SUPABASE_URL__/rest/v1/kb_documents?select=id&limit=1&file_hash=eq.{{ $('Hash file').item.json.fileHash }}",
+        "url": "=__SUPABASE_URL__/rest/v1/kb_documents?select=id&limit=1&ingested_at=not.is.null&file_hash=eq.{{ $('Hash file').item.json.fileHash }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
         "options": {
@@ -321,7 +321,7 @@
           "name": "Supabase BrokerPilot (service role)"
         }
       },
-      "notes": "Why HTTP: filtru PostgREST pe hash; răspuns text ca „niciun rând” să nu oprească fluxul. Ingestia e idempotentă pe hash."
+      "notes": "Why HTTP: filtru PostgREST pe hash; răspuns text ca „niciun rând” să nu oprească fluxul. Sare doar documentele indexate complet (ingested_at setat); unul rămas pe jumătate se reia."
     },
     {
       "id": "n28",
@@ -379,7 +379,7 @@
       ],
       "parameters": {
         "method": "DELETE",
-        "url": "=__SUPABASE_URL__/rest/v1/kb_documents?drive_file_id=eq.{{ $('Document meta').item.json.id }}",
+        "url": "=__SUPABASE_URL__/rest/v1/kb_documents?or=(drive_file_id.eq.{{ $('Document meta').item.json.id }},file_hash.eq.{{ $('Hash file').item.json.fileHash }})",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
         "options": {}
@@ -390,7 +390,7 @@
           "name": "Supabase BrokerPilot (service role)"
         }
       },
-      "notes": "Why HTTP: DELETE filtrat în PostgREST; fragmentele dispar prin ON DELETE CASCADE. Un fișier modificat înlocuiește versiunea veche."
+      "notes": "Why HTTP: DELETE filtrat în PostgREST; fragmentele dispar prin ON DELETE CASCADE. Un fișier modificat înlocuiește versiunea veche; un rând neterminat cu același hash (file_hash e unic) dispare și el."
     },
     {
       "id": "n31",
@@ -471,7 +471,7 @@
           "batching": {
             "batch": {
               "batchSize": 1,
-              "batchInterval": 700
+              "batchInterval": 2500
             }
           }
         }
@@ -483,9 +483,9 @@
         }
       },
       "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 3000,
-      "notes": "Why HTTP: nodul Gemini nu expune outputDimensionality (768). Câte un fragment la 700 ms, sub limita gratuită."
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "notes": "Why HTTP: nodul Gemini nu expune outputDimensionality (768). Câte un fragment la 2,5 s (~24/min × ≤ ~900 tokeni), sub limita gratuită de 30k tokeni/min."
     },
     {
       "id": "n34",

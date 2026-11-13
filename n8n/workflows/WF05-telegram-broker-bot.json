@@ -402,7 +402,7 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "={{ String($env.WEBHOOK_URL ?? '').replace(/\\/+$/, '') + '/webhook/kb-ask' }}",
+        "url": "http://localhost:5678/webhook/kb-ask",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -419,7 +419,7 @@
           "timeout": 60000
         }
       },
-      "notes": "Why HTTP: apelează webhook-ul WF04 (RAG) din același n8n; WF04 redactează întrebarea înainte de orice LLM.",
+      "notes": "Why HTTP: apelează webhook-ul WF04 (RAG) din același n8n, direct pe localhost:5678 (fără tunel și fără WEBHOOK_URL, care nu e setată în container); WF04 redactează întrebarea înainte de orice LLM.",
       "onError": "continueRegularOutput"
     },
     {
