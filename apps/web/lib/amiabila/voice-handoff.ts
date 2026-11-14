@@ -8,6 +8,8 @@ import type { Draft, StepSlug } from "./draft";
 export type VoiceHandoff = {
   eligibility?: Partial<Record<"injuries" | (typeof ELIGIBILITY_KEYS)[number], unknown>>;
   claim?: { location?: unknown; occurred?: unknown; damage?: unknown; impact_zone?: unknown };
+  /** Id-ul apelului (Vapi `call.id`): dosarul creat din ciornă se leagă de apel, ca brokerul să vadă transcriptul în dosar. */
+  callId?: unknown;
 };
 
 const yesNo = (v: unknown): boolean | null => {
@@ -40,6 +42,9 @@ export function applyVoiceHandoff(draft: Draft, h: VoiceHandoff): Draft {
   if (damage && next.circumstances.damage === "") next.circumstances.damage = damage;
   const zone = text(c.impact_zone, 20) as ImpactZone;
   if ((IMPACT_ZONES as readonly string[]).includes(zone) && next.circumstances.impact === null) next.circumstances.impact = zone;
+  // Apelul cel mai recent câștigă: e cel din care clientul tocmai a apăsat „Continuă cu datele din apel”.
+  const callId = text(h.callId, 100);
+  if (/^[\w-]{8,100}$/.test(callId)) next.voiceCallId = callId;
   // `summary` NU intră în ciornă: „Observații” ajunge în formularul oficial, iar rezumatul vorbit poate conține o asumare de vină.
   return next;
 }

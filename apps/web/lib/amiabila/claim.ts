@@ -27,6 +27,8 @@ export const createClaimSchema = z.object({
   }),
   /** Tokenul primit după OTP-ul pe SMS („Sunteți deja client?”): serverul îl verifică și leagă partea A de client. */
   identityToken: z.string().max(200).nullish(),
+  /** Id-ul apelului Vapi din care a pornit wizardul: apelul (transcriptul) se leagă de dosarul nou. */
+  voiceCallId: z.string().trim().min(1).max(100).nullish(),
 });
 export type CreateClaim = z.infer<typeof createClaimSchema>;
 

@@ -78,6 +78,8 @@ export const draftSchema = z.object({
     .default(null),
   /** Acordul GDPR (opțional, din rezumat) ca brokerul să-l păstreze ca client și să-l contacteze. Separat de `documentsConsent`. */
   contactConsent: z.boolean().default(false),
+  /** Apelul Vapi din care a pornit ciorna („Continuă cu datele din apel”): la crearea dosarului, apelul se leagă de el. */
+  voiceCallId: z.string().max(100).nullable().default(null),
   /** Ultimul pas deschis după „siguranta”, pentru bannerul „Aveți o declarație începută”. */
   lastStep: z.string().max(20).nullable().default(null),
   /** ISO, pus de store la fiecare modificare. */
@@ -96,6 +98,7 @@ export const EMPTY_DRAFT: Draft = {
   claim: null,
   identity: null,
   contactConsent: false,
+  voiceCallId: null,
   lastStep: null,
   updatedAt: null,
 };

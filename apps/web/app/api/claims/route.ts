@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   const db = getAdminClient();
   if (!db) return NOT_CONFIGURED();
 
-  const { place, eligibility, documents, identityToken } = body.data;
+  const { place, eligibility, documents, identityToken, voiceCallId } = body.data;
   // Client verificat prin OTP: legătura e directă, nu prin potrivirea de la finalizare (spec 04, E). Token invalid = dosar anonim.
   const identity = identityToken ? identityContext() : null;
   const clientId = identity ? await verifiedClientId(identity, identityToken) : null;
@@ -62,6 +62,12 @@ export async function POST(request: Request) {
       type: "client_linked",
       payload: { role: "A", client_id: clientId, method: "verified_client" },
     });
+  }
+  // Dosar pornit dintr-un apel cu Ana: transcriptul apare în dosar. `link_voice_call` creează conversația dacă raportul de final
+  // (WF03) n-a sosit încă și nu mută un apel deja legat de alt dosar. Nu blochează crearea dosarului.
+  if (voiceCallId) {
+    const linked = await db.rpc("link_voice_call", { p_call_id: voiceCallId, p_claim_id: claim.data.id, p_method: "thread", p_score: 0.9 });
+    if (linked.error) console.error("[claims] link_voice_call", linked.error.message);
   }
 
   return NextResponse.json({ id: claim.data.id, ref: claim.data.public_ref, aToken, joinToken, joinExpiresAt });

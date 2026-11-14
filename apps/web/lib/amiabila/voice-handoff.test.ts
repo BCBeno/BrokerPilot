@@ -39,4 +39,11 @@ describe("voice handoff", () => {
     expect(d.circumstances.impact).toBeNull();
     expect(d.circumstances.damage).toBe("");
   });
+
+  it("păstrează id-ul apelului, ca dosarul să se lege de el; un id nevalid e ignorat", () => {
+    const callId = "3f2a9c1e-7b4d-4e8f-9a01-5c6d7e8f9a0b";
+    expect(applyVoiceHandoff(EMPTY_DRAFT, { callId }).voiceCallId).toBe(callId);
+    expect(applyVoiceHandoff(EMPTY_DRAFT, { callId: "x y" }).voiceCallId).toBeNull();
+    expect(applyVoiceHandoff(EMPTY_DRAFT, {}).voiceCallId).toBeNull();
+  });
 });

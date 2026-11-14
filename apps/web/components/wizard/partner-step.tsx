@@ -73,7 +73,7 @@ export function PartnerStep() {
     setBusy(true);
     setError(null);
     try {
-      const { documents, eligibility, place, identity } = draft;
+      const { documents, eligibility, place, identity, voiceCallId } = draft;
       const res = await fetch("/api/claims", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -82,6 +82,7 @@ export function PartnerStep() {
           eligibility,
           place: { ...place, occurredAt: place.occurredAt ?? new Date().toISOString() },
           identityToken: identity?.token ?? null,
+          voiceCallId,
         }),
       });
       const json: unknown = await res.json().catch(() => ({}));

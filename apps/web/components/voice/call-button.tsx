@@ -84,7 +84,8 @@ export function CallButton() {
           setLine(m.transcript);
         }
       });
-      await client.start(ASSISTANT_ID);
+      const call = await client.start(ASSISTANT_ID);
+      if (call?.id) handoff.current.callId = call.id;
     } catch (e) {
       console.error("Vapi start failed", e);
       setDetail(describe(e));

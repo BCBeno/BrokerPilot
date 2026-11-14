@@ -79,5 +79,6 @@ export function callTurns(call: Pick<CallRow, "transcript">): { who: "client" | 
 
 export const CALL_LINK_METHODS: Record<string, string> = {
   ref: "legat după codul dosarului, spus în apel",
+  thread: "dosarul a pornit din acest apel",
   broker: "legat de broker",
 };
