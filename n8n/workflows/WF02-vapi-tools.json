@@ -8,7 +8,7 @@
       "typeVersion": 2.1,
       "position": [
         0,
-        200
+        300
       ],
       "parameters": {
         "httpMethod": "POST",
@@ -24,8 +24,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        240,
-        200
+        220,
+        300
       ],
       "parameters": {
         "conditions": {
@@ -66,8 +66,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        480,
-        360
+        440,
+        500
       ],
       "parameters": {
         "respondWith": "json",
@@ -83,63 +83,201 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        480,
-        120
+        440,
+        300
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "// Why Code: validare de schemă + normalizare argumente Vapi (format variabil) + construirea cererii Supabase; niciun nod nativ nu le acoperă.\nconst SB = '__SUPABASE_URL__';\nconst APP = '__APP_URL__';\nconst msg = $('Webhook vapi-tools').first().json.body?.message ?? {};\nif (msg.type !== 'tool-calls') throw new Error('Mesaj Vapi neașteptat: ' + msg.type);\nconst list = Array.isArray(msg.toolCallList) ? msg.toolCallList : [];\nif (!list.length) throw new Error('toolCallList gol');\nconst callId = msg.call?.id ?? null;\nconst callerNumber = String(msg.call?.customer?.number ?? '').replace(/\\D/g, '');\n\nconst asObj = (v) => { if (typeof v === 'string') { try { return JSON.parse(v); } catch { return {}; } } return v ?? {}; };\nconst bool = (v) => v === true || /^(da|true|yes|1)$/i.test(String(v ?? ''));\nconst COUNTIES = { ALBA:'AB', ARAD:'AR', ARGES:'AG', BACAU:'BC', BIHOR:'BH', BISTRITA:'BN', BOTOSANI:'BT', BRAILA:'BR', BRASOV:'BV', BUZAU:'BZ', CALARASI:'CL', CARAS:'CS', CLUJ:'CJ', CONSTANTA:'CT', COVASNA:'CV', DAMBOVITA:'DB', DOLJ:'DJ', GALATI:'GL', GIURGIU:'GR', GORJ:'GJ', HARGHITA:'HR', HUNEDOARA:'HD', IALOMITA:'IL', IASI:'IS', ILFOV:'IF', MARAMURES:'MM', MEHEDINTI:'MH', MURES:'MS', NEAMT:'NT', OLT:'OT', PRAHOVA:'PH', SALAJ:'SJ', SIBIU:'SB', SUCEAVA:'SV', TELEORMAN:'TR', TIMIS:'TM', TULCEA:'TL', VALCEA:'VL', VASLUI:'VS', VRANCEA:'VN', BUCURESTI:'B' };\n// STT scrie adesea județul întreg („Cluj 11 TST”): îl transformăm în prefixul de înmatriculare.\nconst spokenPlate = (v) => String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().split(/[^A-Z0-9]+/).map((w) => COUNTIES[w] ?? w).join('').replace(/[^A-Z0-9]/g, '');\n\nreturn list.flatMap((t) => {\n  const name = t.function?.name ?? t.name ?? '';\n  const args = asObj(t.function?.arguments ?? t.arguments ?? t.parameters);\n  const base = { toolCallId: t.id, name, args, callId, db: false, appUrl: APP };\n  const fail = (error) => ({ json: { ...base, error } });\n\n  if (name === 'check_eligibility') return { json: base };\n\n  if (name === 'lookup_policy') {\n    const plate = spokenPlate(args.plate);\n    // Modelul a trimis o dată cifrele de telefon în câmpul plate (apel 12.11): dacă „plăcuța” are 9+ cifre, e telefon.\n    const plateDigits = String(args.plate ?? '').replace(/\\D/g, '');\n    const phone = String(args.phone || (plateDigits.length >= 9 ? plateDigits : '') || callerNumber).replace(/\\D/g, '').slice(-9);\n    const sel = 'type,insurer,valid_from,valid_to';\n    if (/^[A-Z]{1,2}\\d{2,3}[A-Z]{3}$/.test(plate)) {\n      const pat = plate.split('').join('*');\n      return { json: { ...base, db: true, method: 'GET', url: SB + '/rest/v1/policies?select=' + sel + ',vehicles!inner(make,model,plate)&vehicles.plate=ilike.*' + pat + '*&order=valid_to.desc&limit=8' } };\n    }\n    if (phone.length === 9) {\n      const pat = [phone.slice(0, 3), phone.slice(3, 6), phone.slice(6)].join('*');\n      return { json: { ...base, db: true, method: 'GET', url: SB + '/rest/v1/policies?select=' + sel + ',vehicles(make,model),clients!inner(phone)&clients.phone=ilike.*' + pat + '*&order=valid_to.desc&limit=8' } };\n    }\n    return fail('Nu am înțeles numărul. Cere clientului numărul de telefon, cifră cu cifră, sau plăcuța: județul, cifrele, apoi cele trei litere una câte una.');\n  }\n\n  if (name === 'start_claim') {\n    const summary = String(args.summary ?? '').slice(0, 500);\n    return { json: { ...base, db: true, method: 'POST', url: SB + '/rest/v1/events', body: { entity_type: 'voice_call', type: 'voice.claim_started', payload: { callId, summary, location: String(args.location ?? '').slice(0, 300), occurred: String(args.occurred ?? '').slice(0, 40), damage: String(args.damage ?? '').slice(0, 300), impact_zone: String(args.impact_zone ?? '').slice(0, 20) } } } };\n  }\n\n  if (name === 'claim_status') {\n    // STT confundă „B P” („bă”, „BA”), iar modelul reformatează: contează cele 9 cifre, prefixul îl punem noi.\n    const digits = String(args.claim_ref ?? '').replace(/\\D/g, '');\n    if (digits.length !== 9) return fail('Referința are 9 cifre după „B P”, de exemplu 2611 00017. Cere clientului doar cifrele, una câte una.');\n    const ref = 'BP-' + digits.slice(0, 4) + '-' + digits.slice(4);\n    return { json: { ...base, db: true, method: 'POST', url: SB + '/rest/v1/rpc/voice_claim_status', body: { p_call_id: callId, p_ref: ref }, prefer: 'count=none' } };\n  }\n\n  if (name === 'escalate_to_human') {\n    const reasons = { cere_om: 'clientul cere un om', urgenta: 'urgență / persoane rănite', nemultumit: 'client nemulțumit sau confuz', in_afara_competentei: 'întrebare în afara competenței (juridic, sume)' };\n    const reason = reasons[args.reason] ?? 'nespecificat';\n    const summary = String(args.summary ?? '').slice(0, 600);\n    const callback = String(args.callback_phone ?? '').replace(/[^0-9+]/g, '') || callerNumber;\n    const chats = String($env.TG_BROKER_CHAT_IDS ?? '').split(',').map((x) => x.trim()).filter(Boolean);\n    if (!chats.length) return fail('Nu pot anunța un coleg acum.');\n    const text = ['🔔 Un client cere un om (apel cu Ana)', 'Motiv: ' + reason, summary ? 'Rezumat: ' + summary : null, 'Telefon pentru apel înapoi: ' + (callback || 'nespecificat (apel web)')].filter(Boolean).join('\\n');\n    return chats.map((chatId) => ({ json: { ...base, db: true, escalate: true, chatId, telegramText: text, method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',\n      url: SB + '/rest/v1/conversations?on_conflict=channel,external_id',\n      body: { channel: 'voice', external_id: callId ?? ('manual-' + Date.now()), handoff_status: 'requested', summary: ('Escaladare: ' + reason + (summary ? '. ' + summary : '')).slice(0, 1000) } } }));\n  }\n\n  return fail('Unealtă necunoscută: ' + name);\n});"
+        "jsCode": "// Why Code: Vapi trimite argumentele în formate variabile; aici le validăm și le normalizăm (o unealtă = un item).\n// `route` alege ramura din Switch: numele uneltei sau „direct” (fără bază de date: eligibilitate, erori, unealtă necunoscută).\nconst msg = $('Webhook vapi-tools').first().json.body?.message ?? {};\nif (msg.type !== 'tool-calls') throw new Error('Mesaj Vapi neașteptat: ' + msg.type);\nconst list = Array.isArray(msg.toolCallList) ? msg.toolCallList : [];\nif (!list.length) throw new Error('toolCallList gol');\nconst callId = msg.call?.id ?? null;\nconst callerNumber = String(msg.call?.customer?.number ?? '').replace(/\\D/g, '');\nconst asObj = (v) => { if (typeof v === 'string') { try { return JSON.parse(v); } catch { return {}; } } return v ?? {}; };\n\n// Transcrierea vocală scrie județul întreg („Cluj 11 TST”): îl transformăm în prefixul de înmatriculare (CJ11TST).\nconst COUNTIES = { ALBA:'AB', ARAD:'AR', ARGES:'AG', BACAU:'BC', BIHOR:'BH', BISTRITA:'BN', BOTOSANI:'BT', BRAILA:'BR', BRASOV:'BV', BUZAU:'BZ', CALARASI:'CL', CARAS:'CS', CLUJ:'CJ', CONSTANTA:'CT', COVASNA:'CV', DAMBOVITA:'DB', DOLJ:'DJ', GALATI:'GL', GIURGIU:'GR', GORJ:'GJ', HARGHITA:'HR', HUNEDOARA:'HD', IALOMITA:'IL', IASI:'IS', ILFOV:'IF', MARAMURES:'MM', MEHEDINTI:'MH', MURES:'MS', NEAMT:'NT', OLT:'OT', PRAHOVA:'PH', SALAJ:'SJ', SIBIU:'SB', SUCEAVA:'SV', TELEORMAN:'TR', TIMIS:'TM', TULCEA:'TL', VALCEA:'VL', VASLUI:'VS', VRANCEA:'VN', BUCURESTI:'B' };\nconst spokenPlate = (v) => String(v ?? '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toUpperCase().split(/[^A-Z0-9]+/).map((w) => COUNTIES[w] ?? w).join('');\n\nreturn list.map((t) => {\n  const name = t.function?.name ?? t.name ?? '';\n  const args = asObj(t.function?.arguments ?? t.arguments ?? t.parameters);\n  const item = (extra) => ({ json: { toolCallId: t.id, name, args, callId, route: name, ...extra } });\n  const fail = (error) => item({ route: 'direct', error });\n\n  if (name === 'check_eligibility') return item({ route: 'direct' });\n\n  if (name === 'lookup_policy') {\n    const plate = spokenPlate(args.plate);\n    // Modelul a trimis o dată cifrele telefonului în câmpul plate: 9+ cifre înseamnă telefon.\n    const plateDigits = String(args.plate ?? '').replace(/\\D/g, '');\n    const phone = String(args.phone || (plateDigits.length >= 9 ? plateDigits : '') || callerNumber).replace(/\\D/g, '').slice(-9);\n    const validPlate = /^[A-Z]{1,2}\\d{2,3}[A-Z]{3}$/.test(plate);\n    if (!validPlate && phone.length !== 9) return fail('Nu am înțeles numărul. Cere clientului numărul de telefon, cifră cu cifră, sau plăcuța: județul, cifrele, apoi cele trei litere una câte una.');\n    return item({ body: { p_plate: validPlate ? plate : '', p_phone: phone } });\n  }\n\n  if (name === 'start_claim') {\n    const s = (v, n) => String(v ?? '').slice(0, n);\n    return item({ body: { entity_type: 'voice_call', type: 'voice.claim_started', payload: { callId, summary: s(args.summary, 500), location: s(args.location, 300), occurred: s(args.occurred, 40), damage: s(args.damage, 300), impact_zone: s(args.impact_zone, 20) } } });\n  }\n\n  if (name === 'claim_status') {\n    // Transcrierea confundă „B P”, iar modelul reformatează: contează cele 9 cifre, prefixul BP- îl punem noi.\n    const digits = String(args.claim_ref ?? '').replace(/\\D/g, '');\n    if (digits.length !== 9) return fail('Referința are 9 cifre după „B P”, de exemplu 2611 00017. Cere clientului doar cifrele, una câte una.');\n    return item({ body: { p_call_id: callId, p_ref: 'BP-' + digits.slice(0, 4) + '-' + digits.slice(4) } });\n  }\n\n  if (name === 'escalate_to_human') {\n    const reasons = { cere_om: 'clientul cere un om', urgenta: 'urgență / persoane rănite', nemultumit: 'client nemulțumit sau confuz', in_afara_competentei: 'întrebare în afara competenței (juridic, sume)' };\n    const reason = reasons[args.reason] ?? 'nespecificat';\n    const summary = String(args.summary ?? '').slice(0, 600);\n    const callback = String(args.callback_phone ?? '').replace(/[^0-9+]/g, '') || callerNumber;\n    const telegramText = ['🔔 Un client cere un om (apel cu Ana)', 'Motiv: ' + reason, summary ? 'Rezumat: ' + summary : null, 'Telefon pentru apel înapoi: ' + (callback || 'nespecificat (apel web)')].filter(Boolean).join('\\n');\n    return item({ telegramText, body: { channel: 'voice', external_id: callId ?? ('manual-' + Date.now()), handoff_status: 'requested', summary: ('Escaladare: ' + reason + (summary ? '. ' + summary : '')).slice(0, 1000) } });\n  }\n\n  return fail('Unealtă necunoscută: ' + name);\n});\n"
       },
       "notes": "Why Code: validare + normalizare argumente Vapi și construirea cererii Supabase."
     },
     {
-      "id": "db?",
-      "name": "Needs DB?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
+      "id": "tg",
+      "name": "Notify broker (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
       "position": [
-        720,
-        120
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "d1",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              },
-              "leftValue": "={{ $json.db }}",
-              "rightValue": ""
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "http",
-      "name": "Supabase REST",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        960,
-        40
+        1120,
+        480
       ],
       "onError": "continueRegularOutput",
       "parameters": {
-        "method": "={{ $json.method }}",
-        "url": "={{ $json.url }}",
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ String($env.TG_BROKER_CHAT_IDS ?? '').split(',')[0].trim() }}",
+        "text": "={{ $('Parse tool calls').item.json.telegramText }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "Telegram BrokerPilotDeskBot"
+        }
+      },
+      "notes": "Primul chat din TG_BROKER_CHAT_IDS (brokerul de gardă)."
+    },
+    {
+      "id": "fmt",
+      "name": "Format result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Why Code: textele în română pe care Ana le rostește, pentru fiecare unealtă. Toate ramurile din Switch ajung aici.\nconst p = $('Parse tool calls').item.json;\nconst out = (result) => ({ toolCallId: p.toolCallId, result: typeof result === 'string' ? result : JSON.stringify(result) });\nconst err = (error) => ({ toolCallId: p.toolCallId, error });\nconst rows = () => { const raw = $json.data; if (raw === undefined || raw === '') return []; try { const v = JSON.parse(raw); return Array.isArray(v) ? v : []; } catch { throw new Error('Răspuns Supabase invalid'); } };\nconst bool = (v) => v === true || /^(da|true|yes|1)$/i.test(String(v ?? ''));\nconst days = (d) => Math.ceil((new Date(d + 'T23:59:59') - new Date()) / 86400000);\nconst MONTHS = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];\nconst dateRo = (d) => { const [y, m, day] = d.split('-').map(Number); return day + ' ' + MONTHS[m - 1] + ' ' + y; };\nconst TYPES = { RCA: 'R C A', CASCO: 'CASCO', PAD: 'PAD', LOCUINTA: 'de locuință', VIATA: 'de viață', ALTA: 'de asigurare' };\nconst spell = (s) => String(s).split('-').map((part) => part.split('').join(' ')).join(', ');\n\nlet json;\nif (p.error) json = err(p.error);\nelse if ($json.error) json = err(p.name === 'escalate_to_human' ? 'Nu am putut anunța un coleg acum. Cere clientului să sune din nou la agenție.' : 'Nu pot citi datele acum. Propune să anunți un coleg.');\nelse if (p.name === 'check_eligibility') {\n  const a = p.args;\n  if (a.injuries === undefined || a.injuries === null || a.injuries === '') json = err('Nu ai aflat dacă există răniți. Întreabă clar „Există persoane rănite?” și cheamă din nou unealta.');\n  else if (bool(a.injuries)) json = out({ eligible: false, emergency: true, spune: 'Sunați imediat la 112. Nu continuăm cu amiabila.', urmeaza: 'Propune să anunți un coleg (escaladare, motiv urgență).' });\n  else {\n    const reasons = [];\n    if (!bool(a.twoVehicles)) reasons.push('Amiabila se completează doar când sunt implicate exact două vehicule.');\n    if (!bool(a.onlyMaterialDamage)) reasons.push('Amiabila se poate folosi doar pentru pagube materiale, fără răniți.');\n    if (!bool(a.bothInsured)) reasons.push('Ambele vehicule trebuie să aibă R C A valabil.');\n    if (!bool(a.agreed)) reasons.push('Cei doi șoferi trebuie să fie de acord asupra circumstanțelor; altfel se cheamă poliția.');\n    json = reasons.length\n      ? out({ eligible: false, spune: reasons[0] + ' Vă recomand să chemați poliția.', urmeaza: 'Propune să anunți un coleg.' })\n      : out({ eligible: true, spune: 'Se poate completa amiabila.', urmeaza: 'Întreabă locul, momentul și daunele, apoi pregătește dosarul.' });\n  }\n} else if (p.name === 'lookup_policy') {\n  const list = rows().map((r) => {\n    const d = days(r.valid_to);\n    const car = [r.make, r.model].filter(Boolean).join(' ');\n    const stare = d < 0 ? 'expirată din ' + dateRo(r.valid_to) : 'valabilă până pe ' + dateRo(r.valid_to) + (d <= 30 ? ', adică mai sunt ' + d + (d === 1 ? ' zi' : ' zile') : '');\n    return { tip: r.type, asigurator: r.insurer, valabila_pana: r.valid_to, zile_ramase: d, vehicul: car || null,\n      spune: 'Aveți o poliță ' + (TYPES[r.type] ?? r.type) + (car ? ' pentru ' + car : '') + ' la ' + r.insurer + ', ' + stare + '.' + (d <= 30 ? ' Brokerul vă poate ajuta cu reînnoirea.' : '') };\n  });\n  json = list.length\n    ? out({ spune: list.slice(0, 3).map((x) => x.spune).join(' ') + (list.length > 3 ? ' Mai aveți încă ' + (list.length - 3) + ' polițe; spuneți-mi dacă vreți detalii despre una anume.' : ''), numar_polite: list.length, polite: list })\n    : out({ spune: 'Nu am găsit nicio poliță pentru datele date.', urmeaza: 'Cere o singură dată alt telefon sau propune un coleg.' });\n} else if (p.name === 'start_claim') {\n  json = out({ started: true, spune: 'Apăsați pe ecran butonul „Continuă cu datele din apel”. Locul și daunele sunt deja completate.', urmeaza: 'Nu ai trimis niciun mesaj. Clientul mai are de adăugat actele și datele celuilalt șofer.' });\n} else if (p.name === 'escalate_to_human') {\n  json = out({ escalated: true, spune: 'Am anunțat un coleg și i-am trimis rezumatul. Nu trebuie să repetați totul.', urmeaza: 'Nu promite o oră.' });\n} else if (p.name === 'claim_status') {\n  const r = rows()[0];\n  const labels = { draft: 'este o ciornă', awaiting_b: 'așteaptă datele celuilalt șofer', signed: 'este semnat de ambii șoferi', submitted: 'a fost trimis brokerului', in_progress: 'a fost preluat de un broker și e în lucru', closed: 'este închis' };\n  json = r ? out({ spune: 'Dosarul ' + spell(r.public_ref) + ' ' + (labels[r.status] ?? r.status) + '.', referinta: r.public_ref, stare: labels[r.status] ?? r.status }) : err('Nu găsesc un dosar cu această referință.');\n}\nreturn { json };"
+      },
+      "notes": "Why Code: texte în română + minimizare PII pentru agent."
+    },
+    {
+      "id": "resp",
+      "name": "Respond results",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1580,
+        300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { results: $input.all().map(i => i.json) } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "route",
+      "name": "Which tool?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "lookup_policy"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "lookup_policy"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "start_claim"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "start_claim"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "claim_status"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "claim_status"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "escalate_to_human"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "escalate_to_human"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "direct"
+        }
+      },
+      "notes": "„direct” = fără bază de date: check_eligibility, argumente neînțelese, unealtă necunoscută."
+    },
+    {
+      "id": "pol",
+      "name": "Find policy (SQL)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "__SUPABASE_URL__/rest/v1/rpc/voice_lookup_policy",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
         "sendHeaders": true,
@@ -147,14 +285,14 @@
           "parameters": [
             {
               "name": "Prefer",
-              "value": "={{ $json.prefer ?? 'return=minimal' }}"
+              "value": "return=minimal"
             }
           ]
         },
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.body ?? {}) }}",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
         "options": {
           "response": {
             "response": {
@@ -170,111 +308,143 @@
           "name": "Supabase BrokerPilot (service role)"
         }
       },
-      "notes": "Why HTTP: nodul Supabase nu face join-uri PostgREST (policies + vehicles/clients). Răspuns ca text: 0 rânduri nu trebuie să oprească fluxul."
-    },
-    {
-      "id": "esc?",
-      "name": "Escalation?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1200,
-        40
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "e1",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              },
-              "leftValue": "={{ $('Parse tool calls').item.json.escalate === true }}",
-              "rightValue": ""
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "tg",
-      "name": "Notify broker (Telegram)",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        1440,
-        -60
-      ],
       "onError": "continueRegularOutput",
+      "notes": "Funcția SQL voice_lookup_policy: plăcuța fără spații/cratime sau ultimele 9 cifre ale telefonului. Răspuns text: 0 rânduri nu opresc fluxul."
+    },
+    {
+      "id": "start",
+      "name": "Save claim start",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        160
+      ],
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $('Parse tool calls').item.json.chatId }}",
-        "text": "={{ $('Parse tool calls').item.json.telegramText }}",
-        "additionalFields": {
-          "appendAttribution": false
+        "method": "POST",
+        "url": "__SUPABASE_URL__/rest/v1/events",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
         }
       },
       "credentials": {
-        "telegramApi": {
+        "supabaseApi": {
           "id": "REPLACE_ME",
-          "name": "Telegram BrokerPilotDeskBot"
+          "name": "Supabase BrokerPilot (service role)"
         }
-      }
-    },
-    {
-      "id": "lim",
-      "name": "Limit 1",
-      "type": "n8n-nodes-base.limit",
-      "typeVersion": 1,
-      "position": [
-        1680,
-        -60
-      ],
-      "parameters": {}
-    },
-    {
-      "id": "fmt",
-      "name": "Format result",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1920,
-        120
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "language": "javaScript",
-        "jsCode": "// Why Code: texte în română gata de rostit (4 unelte) + minimizare PII; logica nu încape într-un nod nativ.\nconst p = $('Parse tool calls').item.json;\nconst out = (result) => ({ toolCallId: p.toolCallId, result: typeof result === 'string' ? result : JSON.stringify(result) });\nconst err = (error) => ({ toolCallId: p.toolCallId, error });\nconst rows = () => { const raw = $json.data; if (raw === undefined || raw === '') return []; try { const v = JSON.parse(raw); return Array.isArray(v) ? v : []; } catch { throw new Error('Răspuns Supabase invalid'); } };\nconst bool = (v) => v === true || /^(da|true|yes|1)$/i.test(String(v ?? ''));\nconst days = (d) => Math.ceil((new Date(d + 'T23:59:59') - new Date()) / 86400000);\nconst MONTHS = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];\nconst dateRo = (d) => { const [y, m, day] = d.split('-').map(Number); return day + ' ' + MONTHS[m - 1] + ' ' + y; };\nconst TYPES = { RCA: 'R C A', CASCO: 'CASCO', PAD: 'PAD', LOCUINTA: 'de locuință', VIATA: 'de viață', ALTA: 'de asigurare' };\nconst spell = (s) => String(s).split('-').map((part) => part.split('').join(' ')).join(', ');\n\nlet json;\nif (p.error) json = err(p.error);\nelse if ($json.error) json = err('Nu pot citi datele acum. Propune să anunți un coleg.');\nelse if (p.name === 'check_eligibility') {\n  const a = p.args;\n  if (a.injuries === undefined || a.injuries === null || a.injuries === '') json = err('Nu ai aflat dacă există răniți. Întreabă clar „Există persoane rănite?” și cheamă din nou unealta.');\n  else if (bool(a.injuries)) json = out({ eligible: false, emergency: true, spune: 'Sunați imediat la 112. Nu continuăm cu amiabila.', urmeaza: 'Propune să anunți un coleg (escaladare, motiv urgență).' });\n  else {\n    const reasons = [];\n    if (!bool(a.twoVehicles)) reasons.push('Amiabila se completează doar când sunt implicate exact două vehicule.');\n    if (!bool(a.onlyMaterialDamage)) reasons.push('Amiabila se poate folosi doar pentru pagube materiale, fără răniți.');\n    if (!bool(a.bothInsured)) reasons.push('Ambele vehicule trebuie să aibă R C A valabil.');\n    if (!bool(a.agreed)) reasons.push('Cei doi șoferi trebuie să fie de acord asupra circumstanțelor; altfel se cheamă poliția.');\n    json = reasons.length\n      ? out({ eligible: false, spune: reasons[0] + ' Vă recomand să chemați poliția.', urmeaza: 'Propune să anunți un coleg.' })\n      : out({ eligible: true, spune: 'Se poate completa amiabila.', urmeaza: 'Întreabă locul, momentul și daunele, apoi pregătește dosarul.' });\n  }\n} else if (p.name === 'lookup_policy') {\n  const list = rows().map((r) => {\n    const d = days(r.valid_to);\n    const car = [r.vehicles?.make, r.vehicles?.model].filter(Boolean).join(' ');\n    const stare = d < 0 ? 'expirată din ' + dateRo(r.valid_to) : 'valabilă până pe ' + dateRo(r.valid_to) + (d <= 30 ? ', adică mai sunt ' + d + (d === 1 ? ' zi' : ' zile') : '');\n    return { tip: r.type, asigurator: r.insurer, valabila_pana: r.valid_to, zile_ramase: d, vehicul: car || null,\n      spune: 'Aveți o poliță ' + (TYPES[r.type] ?? r.type) + (car ? ' pentru ' + car : '') + ' la ' + r.insurer + ', ' + stare + '.' + (d <= 30 ? ' Brokerul vă poate ajuta cu reînnoirea.' : '') };\n  });\n  json = list.length\n    ? out({ spune: list.slice(0, 3).map((x) => x.spune).join(' ') + (list.length > 3 ? ' Mai aveți încă ' + (list.length - 3) + ' polițe; spuneți-mi dacă vreți detalii despre una anume.' : ''), numar_polite: list.length, polite: list })\n    : out({ spune: 'Nu am găsit nicio poliță pentru datele date.', urmeaza: 'Cere o singură dată alt telefon sau propune un coleg.' });\n} else if (p.name === 'start_claim') {\n  json = out({ started: true, spune: 'Apăsați pe ecran butonul „Continuă cu datele din apel”. Locul și daunele sunt deja completate.', urmeaza: 'Nu ai trimis niciun mesaj. Clientul mai are de adăugat actele și datele celuilalt șofer.' });\n} else if (p.name === 'escalate_to_human') {\n  json = out({ escalated: true, spune: 'Am anunțat un coleg și i-am trimis rezumatul. Nu trebuie să repetați totul.', urmeaza: 'Nu promite o oră.' });\n} else if (p.name === 'claim_status') {\n  const r = rows()[0];\n  const labels = { draft: 'este o ciornă', awaiting_b: 'așteaptă datele celuilalt șofer', signed: 'este semnat de ambii șoferi', submitted: 'a fost trimis brokerului', in_progress: 'a fost preluat de un broker și e în lucru', closed: 'este închis' };\n  json = r ? out({ spune: 'Dosarul ' + spell(r.public_ref) + ' ' + (labels[r.status] ?? r.status) + '.', referinta: r.public_ref, stare: labels[r.status] ?? r.status }) : err('Nu găsesc un dosar cu această referință.');\n}\nreturn { json };"
       },
-      "notes": "Why Code: texte în română + minimizare PII pentru agent."
+      "onError": "continueRegularOutput",
+      "notes": "Evenimentul voice.claim_started: wizardul îl citește la „Continuă cu datele din apel”."
     },
     {
-      "id": "resp",
-      "name": "Respond results",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
+      "id": "stat",
+      "name": "Claim status (SQL)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        2160,
-        120
+        900,
+        320
       ],
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { results: $input.all().map(i => i.json) } }}",
+        "method": "POST",
+        "url": "__SUPABASE_URL__/rest/v1/rpc/voice_claim_status",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
         "options": {
-          "responseCode": 200
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
         }
-      }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Funcția SQL voice_claim_status: starea dosarului după referință; leagă și apelul de dosar."
+    },
+    {
+      "id": "hand",
+      "name": "Mark handoff",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        480
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "__SUPABASE_URL__/rest/v1/conversations?on_conflict=channel,external_id",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Conversația apelului trece pe handoff_status = requested (upsert după call id)."
     }
   ],
   "connections": {
@@ -311,18 +481,39 @@
       "main": [
         [
           {
-            "node": "Needs DB?",
+            "node": "Which tool?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Needs DB?": {
+    "Which tool?": {
       "main": [
         [
           {
-            "node": "Supabase REST",
+            "node": "Find policy (SQL)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save claim start",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Claim status (SQL)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark handoff",
             "type": "main",
             "index": 0
           }
@@ -336,18 +527,40 @@
         ]
       ]
     },
-    "Supabase REST": {
+    "Find policy (SQL)": {
       "main": [
         [
           {
-            "node": "Escalation?",
+            "node": "Format result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Escalation?": {
+    "Save claim start": {
+      "main": [
+        [
+          {
+            "node": "Format result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim status (SQL)": {
+      "main": [
+        [
+          {
+            "node": "Format result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark handoff": {
       "main": [
         [
           {
@@ -355,28 +568,10 @@
             "type": "main",
             "index": 0
           }
-        ],
-        [
-          {
-            "node": "Format result",
-            "type": "main",
-            "index": 0
-          }
         ]
       ]
     },
     "Notify broker (Telegram)": {
-      "main": [
-        [
-          {
-            "node": "Limit 1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Limit 1": {
       "main": [
         [
           {

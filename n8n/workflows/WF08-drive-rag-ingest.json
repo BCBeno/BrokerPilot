@@ -2,83 +2,13 @@
   "name": "WF08 Drive RAG Ingest",
   "nodes": [
     {
-      "id": "n17",
-      "name": "Drive: public",
-      "type": "n8n-nodes-base.googleDriveTrigger",
-      "typeVersion": 1,
-      "position": [
-        0,
-        120
-      ],
-      "parameters": {
-        "pollTimes": {
-          "item": [
-            {
-              "mode": "everyMinute"
-            }
-          ]
-        },
-        "triggerOn": "specificFolder",
-        "folderToWatch": {
-          "__rl": true,
-          "mode": "id",
-          "value": "__KB_PUBLIC_FOLDER_ID__"
-        },
-        "event": "fileUpdated",
-        "authentication": "serviceAccount",
-        "options": {}
-      },
-      "credentials": {
-        "googleApi": {
-          "id": "REPLACE_ME",
-          "name": "Google Drive BrokerPilot (service account)"
-        }
-      },
-      "notes": "Un trigger per folder: schimbările din subfoldere nu declanșează nodul, deci public/ și internal/ au fiecare al lui."
-    },
-    {
-      "id": "n18",
-      "name": "Drive: internal",
-      "type": "n8n-nodes-base.googleDriveTrigger",
-      "typeVersion": 1,
-      "position": [
-        0,
-        300
-      ],
-      "parameters": {
-        "pollTimes": {
-          "item": [
-            {
-              "mode": "everyMinute"
-            }
-          ]
-        },
-        "triggerOn": "specificFolder",
-        "folderToWatch": {
-          "__rl": true,
-          "mode": "id",
-          "value": "__KB_INTERNAL_FOLDER_ID__"
-        },
-        "event": "fileUpdated",
-        "authentication": "serviceAccount",
-        "options": {}
-      },
-      "credentials": {
-        "googleApi": {
-          "id": "REPLACE_ME",
-          "name": "Google Drive BrokerPilot (service account)"
-        }
-      },
-      "notes": "Un trigger per folder: schimbările din subfoldere nu declanșează nodul, deci public/ și internal/ au fiecare al lui."
-    },
-    {
       "id": "n19",
       "name": "Collection public",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
         220,
-        120
+        100
       ],
       "parameters": {
         "assignments": {
@@ -126,7 +56,7 @@
       "typeVersion": 2.2,
       "position": [
         440,
-        210
+        200
       ],
       "parameters": {
         "conditions": {
@@ -139,7 +69,7 @@
           "conditions": [
             {
               "id": "c1",
-              "leftValue": "={{ ['application/pdf', 'text/plain', 'text/markdown', 'text/html', 'application/vnd.google-apps.document'].includes($json.mimeType) }}",
+              "leftValue": "={{ ['application/pdf', 'application/vnd.google-apps.document'].includes($json.mimeType) }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
@@ -151,18 +81,8 @@
           "combinator": "and"
         },
         "options": {}
-      }
-    },
-    {
-      "id": "n22",
-      "name": "Skip unsupported",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        660,
-        330
-      ],
-      "parameters": {}
+      },
+      "notes": "Doar PDF și Google Docs (exportate ca PDF), ca fiecare fragment să aibă numărul paginii pentru citare. Restul fișierelor sunt ignorate."
     },
     {
       "id": "n23",
@@ -171,7 +91,7 @@
       "typeVersion": 3.4,
       "position": [
         660,
-        150
+        200
       ],
       "parameters": {
         "assignments": {
@@ -207,7 +127,7 @@
       "typeVersion": 3,
       "position": [
         880,
-        150
+        200
       ],
       "parameters": {
         "resource": "file",
@@ -221,7 +141,7 @@
         "options": {
           "googleFileConversion": {
             "conversion": {
-              "docsToFormat": "text/plain"
+              "docsToFormat": "application/pdf"
             }
           }
         }
@@ -234,139 +154,22 @@
       }
     },
     {
-      "id": "n25",
-      "name": "Hash file",
-      "type": "n8n-nodes-base.crypto",
-      "typeVersion": 1,
+      "id": "n26x",
+      "name": "Extract text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
       "position": [
         1100,
-        150
+        200
       ],
       "parameters": {
-        "action": "hash",
-        "type": "SHA256",
-        "binaryData": true,
+        "operation": "pdf",
         "binaryPropertyName": "data",
-        "dataPropertyName": "fileHash",
-        "encoding": "hex"
-      }
-    },
-    {
-      "id": "n26",
-      "name": "Parse pages",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1320,
-        150
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "__APP_URL__/api/kb/parse",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "x-bp-secret",
-              "value": "={{ $env.BP_WEBHOOK_SECRET }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "contentType": "multipart-form-data",
-        "bodyParameters": {
-          "parameters": [
-            {
-              "parameterType": "formBinaryData",
-              "name": "file",
-              "inputDataFieldName": "data"
-            }
-          ]
-        },
         "options": {
-          "timeout": 60000
+          "joinPages": false
         }
       },
-      "retryOnFail": true,
-      "maxTries": 2,
-      "waitBetweenTries": 2000,
-      "notes": "Why HTTP: extragerea de text pe pagini (pentru citări) se face în aplicație cu PDF.js; n8n dă doar un text unic."
-    },
-    {
-      "id": "n27",
-      "name": "Lookup hash",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1540,
-        150
-      ],
-      "parameters": {
-        "method": "GET",
-        "url": "=__SUPABASE_URL__/rest/v1/kb_documents?select=id&limit=1&ingested_at=not.is.null&file_hash=eq.{{ $('Hash file').item.json.fileHash }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "supabaseApi",
-        "options": {
-          "response": {
-            "response": {
-              "responseFormat": "text",
-              "outputPropertyName": "data"
-            }
-          }
-        }
-      },
-      "credentials": {
-        "supabaseApi": {
-          "id": "REPLACE_ME",
-          "name": "Supabase BrokerPilot (service role)"
-        }
-      },
-      "notes": "Why HTTP: filtru PostgREST pe hash; răspuns text ca „niciun rând” să nu oprească fluxul. Sare doar documentele indexate complet (ingested_at setat); unul rămas pe jumătate se reia."
-    },
-    {
-      "id": "n28",
-      "name": "Already indexed?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1760,
-        150
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "c1",
-              "leftValue": "={{ JSON.parse($json.data || '[]').length > 0 }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "n29",
-      "name": "Skip (unchanged)",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        1980,
-        40
-      ],
-      "parameters": {}
+      "notes": "Textul PDF-ului pe pagini (Join Pages oprit), ca citările să aibă pagina."
     },
     {
       "id": "n30",
@@ -374,14 +177,27 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1980,
-        260
+        1320,
+        200
       ],
       "parameters": {
         "method": "DELETE",
-        "url": "=__SUPABASE_URL__/rest/v1/kb_documents?or=(drive_file_id.eq.{{ $('Document meta').item.json.id }},file_hash.eq.{{ $('Hash file').item.json.fileHash }})",
+        "url": "__SUPABASE_URL__/rest/v1/kb_documents",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "title",
+              "value": "=eq.{{ $('Document meta').item.json.title }}"
+            },
+            {
+              "name": "collection",
+              "value": "=eq.{{ $('Document meta').item.json.collection }}"
+            }
+          ]
+        },
         "options": {}
       },
       "credentials": {
@@ -390,7 +206,7 @@
           "name": "Supabase BrokerPilot (service role)"
         }
       },
-      "notes": "Why HTTP: DELETE filtrat în PostgREST; fragmentele dispar prin ON DELETE CASCADE. Un fișier modificat înlocuiește versiunea veche; un rând neterminat cu același hash (file_hash e unic) dispare și el."
+      "notes": "Why HTTP: DELETE filtrat în PostgREST. Un document cu același titlu în aceeași colecție e înlocuit; fragmentele lui dispar prin ON DELETE CASCADE."
     },
     {
       "id": "n31",
@@ -398,8 +214,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2200,
-        260
+        1540,
+        200
       ],
       "parameters": {
         "method": "POST",
@@ -417,7 +233,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ title: $('Document meta').item.json.title, drive_file_id: $('Document meta').item.json.id, collection: $('Document meta').item.json.collection, file_hash: $('Hash file').item.json.fileHash, insurer: $('Document meta').item.json.insurer, doc_type: $('Document meta').item.json.docType, source_url: $('Document meta').item.json.webViewLink ?? null, license_note: 'Încărcat din Google Drive (BrokerPilot KB)' }) }}",
+        "jsonBody": "={{ JSON.stringify({ title: $('Document meta').item.json.title, drive_file_id: $('Document meta').item.json.id, collection: $('Document meta').item.json.collection, insurer: $('Document meta').item.json.insurer, doc_type: $('Document meta').item.json.docType, source_url: $('Document meta').item.json.webViewLink ?? null, license_note: 'Încărcat din Google Drive (BrokerPilot KB)' }) }}",
         "options": {
           "response": {
             "response": {
@@ -440,13 +256,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2420,
-        260
+        1760,
+        200
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "// Why Code: împărțire în fragmente (~3000 de caractere, suprapunere ~300) pe pagină, cu titlul secțiunii; Text Splitter din n8n există doar ca sub-nod al magazinelor vectoriale.\nconst doc = $('Insert document').first().json;\nconst pages = $('Parse pages').first().json.pages ?? [];\nconst title = $('Document meta').first().json.title;\nconst MAX = 3000, OVERLAP = 300, MIN_PAGE = 40;\nconst HEADING = /^(CAPITOLUL|SECȚIUNEA|SECTIUNEA|TITLUL|ART(?:ICOLUL|\\.)?\\s*\\d+|Art\\.\\s*\\d+|\\d+(\\.\\d+)*[.)]\\s+[A-ZĂÂÎȘȚ]|[A-ZĂÂÎȘȚ][A-ZĂÂÎȘȚ0-9 ,.:;()\\/-]{7,})/;\nconst out = [];\nlet heading = null;\nfor (const p of pages) {\n  const text = String(p.text ?? '').trim();\n  if (text.length < MIN_PAGE) continue;\n  const lines = text.split('\\n');\n  // titlul din capul paginii rămâne valabil pentru restul documentului până apare unul nou\n  for (const l of lines) { const t = l.trim(); if (t.length >= 6 && t.length <= 120 && HEADING.test(t)) { heading = t; break; } }\n  let start = 0;\n  while (start < text.length) {\n    let end = Math.min(start + MAX, text.length);\n    if (end < text.length) {\n      const cut = Math.max(text.lastIndexOf('\\n', end), text.lastIndexOf('. ', end));\n      if (cut > start + MAX * 0.5) end = cut + 1;\n    }\n    const content = text.slice(start, end).trim();\n    if (content.length >= MIN_PAGE) out.push({ json: { document_id: doc.id, content, page: p.page, heading, embedText: [title, heading, content].filter(Boolean).join('\\n') } });\n    if (end >= text.length) break;\n    start = Math.max(end - OVERLAP, start + 1);\n  }\n}\nif (!out.length) throw new Error('Documentul nu are text de indexat (scanat?)');\nreturn out;"
+        "jsCode": "// Why Code: împărțire în fragmente (~3000 de caractere, suprapunere ~300) pe pagină, cu titlul secțiunii; Text Splitter din n8n există doar ca sub-nod al magazinelor vectoriale.\nconst doc = $('Insert document').first().json;\nconst raw = $('Extract text').first().json.text;\nconst title = $('Document meta').first().json.title;\n// PDF-urile românești folosesc des ş/ţ cu sedilă; întrebările folosesc ș/ț cu virgulă, deci le unificăm.\nconst clean = (t) => String(t ?? '').normalize('NFC').replace(/ş/g, 'ș').replace(/Ş/g, 'Ș').replace(/ţ/g, 'ț').replace(/Ţ/g, 'Ț')\n  .replace(/\\u00ad/g, '').replace(/[ \\t]+/g, ' ').split('\\n').map((l) => l.trim()).join('\\n').replace(/\\n{3,}/g, '\\n\\n').trim();\nconst pages = (Array.isArray(raw) ? raw : [raw]).map((t, i) => ({ page: i + 1, text: clean(t) }));\nconst MAX = 3000, OVERLAP = 300, MIN_PAGE = 40;\nconst HEADING = /^(CAPITOLUL|SECȚIUNEA|SECTIUNEA|TITLUL|ART(?:ICOLUL|\\.)?\\s*\\d+|Art\\.\\s*\\d+|\\d+(\\.\\d+)*[.)]\\s+[A-ZĂÂÎȘȚ]|[A-ZĂÂÎȘȚ][A-ZĂÂÎȘȚ0-9 ,.:;()\\/-]{7,})/;\nconst out = [];\nlet heading = null;\nfor (const p of pages) {\n  if (p.text.length < MIN_PAGE) continue;\n  // titlul din capul paginii rămâne valabil pentru restul documentului până apare unul nou\n  for (const l of p.text.split('\\n')) { if (l.length >= 6 && l.length <= 120 && HEADING.test(l)) { heading = l; break; } }\n  let start = 0;\n  while (start < p.text.length) {\n    let end = Math.min(start + MAX, p.text.length);\n    if (end < p.text.length) {\n      const cut = Math.max(p.text.lastIndexOf('\\n', end), p.text.lastIndexOf('. ', end));\n      if (cut > start + MAX * 0.5) end = cut + 1;\n    }\n    const content = p.text.slice(start, end).trim();\n    if (content.length >= MIN_PAGE) out.push({ json: { document_id: doc.id, content, page: p.page, heading, embedText: [title, heading, content].filter(Boolean).join('\\n') } });\n    if (end >= p.text.length) break;\n    start = Math.max(end - OVERLAP, start + 1);\n  }\n}\nif (!out.length) throw new Error('Documentul nu are text de indexat (PDF scanat?)');\nreturn out;\n"
       }
     },
     {
@@ -455,8 +271,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2640,
-        260
+        1980,
+        200
       ],
       "parameters": {
         "method": "POST",
@@ -493,8 +309,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2860,
-        260
+        2200,
+        200
       ],
       "parameters": {
         "method": "POST",
@@ -539,8 +355,8 @@
       "type": "n8n-nodes-base.limit",
       "typeVersion": 1,
       "position": [
-        3080,
-        260
+        2420,
+        200
       ],
       "parameters": {
         "maxItems": 1
@@ -552,8 +368,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3300,
-        260
+        2640,
+        200
       ],
       "parameters": {
         "method": "PATCH",
@@ -588,8 +404,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        3520,
-        260
+        2860,
+        200
       ],
       "parameters": {
         "resource": "message",
@@ -610,12 +426,12 @@
     },
     {
       "id": "n17-created",
-      "name": "Drive: public (new files)",
+      "name": "Drive: public",
       "type": "n8n-nodes-base.googleDriveTrigger",
       "typeVersion": 1,
       "position": [
         0,
-        340
+        100
       ],
       "parameters": {
         "pollTimes": {
@@ -641,16 +457,16 @@
           "name": "Google Drive BrokerPilot (service account)"
         }
       },
-      "notes": "Fișierele încărcate în Drive își păstrează data de modificare originală, deci `fileUpdated` nu le vede. Acest trigger prinde fișierele noi; ingestia e idempotentă pe hash."
+      "notes": "Un fișier nou în folder pornește ingestia (Drive păstrează data originală a fișierelor încărcate, deci „fileUpdated” nu le vede). O versiune nouă = fișier încărcat din nou, cu același nume."
     },
     {
       "id": "n18-created",
-      "name": "Drive: internal (new files)",
+      "name": "Drive: internal",
       "type": "n8n-nodes-base.googleDriveTrigger",
       "typeVersion": 1,
       "position": [
         0,
-        520
+        300
       ],
       "parameters": {
         "pollTimes": {
@@ -676,23 +492,7 @@
           "name": "Google Drive BrokerPilot (service account)"
         }
       },
-      "notes": "Fișierele încărcate în Drive își păstrează data de modificare originală, deci `fileUpdated` nu le vede. Acest trigger prinde fișierele noi; ingestia e idempotentă pe hash."
-    },
-    {
-      "id": "n25b",
-      "name": "Keep file + hash",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1210,
-        300
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "notes": "Nodul Crypto (Hash file) nu păstrează fișierul binar; aici îl recombinăm cu hash-ul, ca „Parse pages” să primească din nou `data` (execuția 402 a picat exact aici)."
+      "notes": "Un fișier nou în folder pornește ingestia (Drive păstrează data originală a fișierelor încărcate, deci „fileUpdated” nu le vede). O versiune nouă = fișier încărcat din nou, cu același nume."
     }
   ],
   "connections": {
@@ -749,13 +549,7 @@
             "index": 0
           }
         ],
-        [
-          {
-            "node": "Skip unsupported",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Document meta": {
@@ -773,60 +567,15 @@
       "main": [
         [
           {
-            "node": "Hash file",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Keep file + hash",
+            "node": "Extract text",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Hash file": {
+    "Extract text": {
       "main": [
-        [
-          {
-            "node": "Keep file + hash",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Parse pages": {
-      "main": [
-        [
-          {
-            "node": "Lookup hash",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Lookup hash": {
-      "main": [
-        [
-          {
-            "node": "Already indexed?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Already indexed?": {
-      "main": [
-        [
-          {
-            "node": "Skip (unchanged)",
-            "type": "main",
-            "index": 0
-          }
-        ],
         [
           {
             "node": "Replace old version",
@@ -907,39 +656,6 @@
         [
           {
             "node": "Notify (Telegram)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Drive: public (new files)": {
-      "main": [
-        [
-          {
-            "node": "Collection public",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Drive: internal (new files)": {
-      "main": [
-        [
-          {
-            "node": "Collection internal",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Keep file + hash": {
-      "main": [
-        [
-          {
-            "node": "Parse pages",
             "type": "main",
             "index": 0
           }
