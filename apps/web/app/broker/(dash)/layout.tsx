@@ -1,4 +1,5 @@
 import { BrokerNav } from "@/components/broker/broker-nav";
+import { CopilotChat } from "@/components/broker/copilot-chat";
 import { displayName } from "@/lib/broker/format";
 import { requireBroker } from "@/lib/broker/session";
 import { signOut } from "../actions";
@@ -27,6 +28,7 @@ export default async function BrokerShell({ children }: { children: React.ReactN
         </div>
       </header>
       {children}
+      <CopilotChat />
     </div>
   );
 }
