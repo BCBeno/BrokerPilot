@@ -71,6 +71,11 @@ export const draftSchema = z.object({
     })
     .nullable()
     .default(null),
+  /** Client verificat prin OTP pe SMS: tokenul (2 ore) și mașina aleasă din fișă. `null` = șofer anonim, scanează actele. */
+  identity: z
+    .object({ token: z.string().max(200), vehicleId: z.string().uuid(), plate: z.string().max(20), name: z.string().max(120).nullable() })
+    .nullable()
+    .default(null),
   /** Acordul GDPR (opțional, din rezumat) ca brokerul să-l păstreze ca client și să-l contacteze. Separat de `documentsConsent`. */
   contactConsent: z.boolean().default(false),
   /** Ultimul pas deschis după „siguranta”, pentru bannerul „Aveți o declarație începută”. */
@@ -89,6 +94,7 @@ export const EMPTY_DRAFT: Draft = {
   circumstances: { checked: [], impact: null, damage: "", notes: "" },
   sketch: null,
   claim: null,
+  identity: null,
   contactConsent: false,
   lastStep: null,
   updatedAt: null,

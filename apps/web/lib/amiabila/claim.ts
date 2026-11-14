@@ -25,6 +25,8 @@ export const createClaimSchema = z.object({
     lng: z.number().min(-180).max(180).nullable(),
     occurredAt: z.iso.datetime(),
   }),
+  /** Tokenul primit după OTP-ul pe SMS („Sunteți deja client?”): serverul îl verifică și leagă partea A de client. */
+  identityToken: z.string().max(200).nullish(),
 });
 export type CreateClaim = z.infer<typeof createClaimSchema>;
 

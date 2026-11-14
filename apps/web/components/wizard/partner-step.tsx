@@ -73,11 +73,16 @@ export function PartnerStep() {
     setBusy(true);
     setError(null);
     try {
-      const { documents, eligibility, place } = draft;
+      const { documents, eligibility, place, identity } = draft;
       const res = await fetch("/api/claims", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ documents, eligibility, place: { ...place, occurredAt: place.occurredAt ?? new Date().toISOString() } }),
+        body: JSON.stringify({
+          documents,
+          eligibility,
+          place: { ...place, occurredAt: place.occurredAt ?? new Date().toISOString() },
+          identityToken: identity?.token ?? null,
+        }),
       });
       const json: unknown = await res.json().catch(() => ({}));
       const parsed = draftSchema.shape.claim.safeParse(json);

@@ -15,6 +15,11 @@ const serverSchema = z.object({
   /** Text redactat (Groq), de ex. `openai/gpt-oss-20b`. */
   MODEL_TEXT: z.string().min(1).optional(),
   AI_DAILY_BUDGET_USD: z.coerce.number().positive().default(5),
+  /** OTP pe SMS (Twilio Verify). Fără ele, în dev codul apare în consola serverului. */
+  TWILIO_ACCOUNT_SID: z.string().min(1).optional(),
+  TWILIO_AUTH_TOKEN: z.string().min(1).optional(),
+  TWILIO_VERIFY_SERVICE_SID: z.string().min(1).optional(),
+  OTP_HASH_PEPPER: z.string().min(16).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

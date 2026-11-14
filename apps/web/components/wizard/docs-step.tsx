@@ -23,6 +23,7 @@ import {
 } from "@/lib/amiabila/documents";
 import { prepareUpload } from "@/lib/amiabila/image";
 import { cn } from "@/lib/utils";
+import { AgencyAccount } from "./agency-account";
 import { listGroup } from "./choice";
 import { StepFrame } from "./step-frame";
 import { useWizard } from "./wizard-context";
@@ -237,6 +238,8 @@ export function DocsStep() {
       canContinue={canContinue("acte", draft, new Date())}
       disabledHint="Verificați cele trei acte ca să continuați."
     >
+      <AgencyAccount />
+
       <label className="flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-4 text-[15px] leading-snug">
         <Checkbox
           className="mt-0.5"
