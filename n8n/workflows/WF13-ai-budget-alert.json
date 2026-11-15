@@ -1,0 +1,108 @@
+{
+  "name": "WF13 AI Budget Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "wf13-schedule",
+      "name": "Every hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=__SUPABASE_URL__/rest/v1/ai_calls?select=cost_usd,success&at=gte.{{ $now.toUTC().startOf('day').toISO() }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "id": "wf13-costs",
+      "name": "AI calls today",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Why Code: suma costului de azi (UTC, ca plafonul din aplicație), comparația cu pragurile și memoria „am anunțat deja azi”\n// (static data a workflow-ului), ca alerta să plece o singură dată pe zi pentru fiecare prag; niciun nod nativ nu ține starea între rulări.\nlet rows = [];\ntry { rows = JSON.parse($input.first().json.data || '[]'); } catch { rows = []; }\nif (!Array.isArray(rows)) throw new Error('Răspuns neașteptat de la ai_calls');\n\n// Același plafon ca în aplicație (AI_DAILY_BUDGET_USD, implicit 5 USD). La 100%, aplicația oprește singură citirea actelor.\nconst budget = Number($env.AI_DAILY_BUDGET_USD) > 0 ? Number($env.AI_DAILY_BUDGET_USD) : 5;\nconst spent = rows.reduce((s, r) => s + (Number(r.cost_usd) || 0), 0);\nconst failed = rows.filter((r) => r.success === false).length;\nconst share = spent / budget;\nconst level = share >= 1 ? 100 : share >= 0.8 ? 80 : 0;\nif (!level) return [];\n\nconst today = $now.toUTC().toISODate();\nconst state = $getWorkflowStaticData('global');\nif (state.day !== today) { state.day = today; state.sent = []; }\nif (state.sent.includes(level)) return [];\nstate.sent.push(level);\n\nconst usd = (v) => '$' + v.toFixed(2);\nconst text = [\n  level === 100 ? '🛑 Plafonul zilnic AI a fost atins' : '⚠️ Costul AI de azi a trecut de 80% din plafon',\n  `Azi (UTC): ${usd(spent)} din ${usd(budget)} (${Math.round(share * 100)}%), ${rows.length} apeluri, ${failed} eșuate.`,\n  level === 100 ? 'Citirea actelor din wizard e oprită până mâine; vocea nu e oprită de plafon.' : 'La 100%, citirea actelor din wizard se oprește până mâine.',\n  'Detalii: /broker/costuri',\n].join('\\n');\n\nconst chats = String($env.TG_BROKER_CHAT_IDS ?? '').split(',').map((x) => x.trim()).filter(Boolean);\nif (!chats.length) throw new Error('TG_BROKER_CHAT_IDS lipsește din mediul n8n: alerta nu are destinatar.');\nreturn chats.map((chatId) => ({ json: { chatId, text } }));\n"
+      },
+      "id": "wf13-check",
+      "name": "Over threshold?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "wf13-telegram",
+      "name": "Alert brokers (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [720, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "Telegram BrokerPilotDeskBot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every hour": {
+      "main": [[{ "node": "AI calls today", "type": "main", "index": 0 }]]
+    },
+    "AI calls today": {
+      "main": [[{ "node": "Over threshold?", "type": "main", "index": 0 }]]
+    },
+    "Over threshold?": {
+      "main": [[{ "node": "Alert brokers (Telegram)", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "WF99"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

@@ -73,6 +73,24 @@ Fiecare câmp are un scor de încredere; ce nu se poate citi devine `null`. Aici
 
 ![RAG](assets/readme/diagrama-rag.png)
 
+## Date personale (GDPR)
+
+Regula: **niciun CNP, nume, telefon, email, IBAN, VIN, serie de poliță sau număr de înmatriculare nu pleacă spre un LLM din cloud în fluxurile brokerului.**
+
+| Unde se cheamă AI-ul | Ce pleacă la model | Cum e protejat |
+|---|---|---|
+| Citirea actelor din wizard (Gemini) | poza talonului sau a poliței | singura excepție: cu acordul explicit al clientului (decizie documentată într-un ADR); permisul nu se trimite niciodată |
+| Verificatorul (Groq) | textul documentului | regulile rulează local pe valorile reale; modelul primește doar textul redactat (`<NUME_1>`, `<CNP_1>`); dacă `findLeaks()` mai găsește ceva, pasul AI e blocat |
+| Copilotul din dashboard (Groq, prin n8n) | întrebarea brokerului | redactare + numele clienților agenției; valorile se pun la loc doar în răspunsul afișat brokerului |
+| Botul de Telegram al brokerului (n8n) | întrebarea | aceeași redactare (plus numele clienților agenției), copiată în nodul Code; testul [`n8n-redact.test.ts`](apps/web/lib/verify/n8n-redact.test.ts) rulează codul exportat din n8n și îl compară cu `redact()` |
+| Asistentul vocal (Vapi) | ce spune clientul | se prezintă ca AI; nu cere CNP sau acte; locul și daunele trec prin modelul vocal (fluxul clientului) |
+| Embeddings (Gemini) | documente publice și proceduri | fără date de clienți |
+
+- Redactarea înlocuiește valorile cu token-uri numerotate, iar harta token → valoare rămâne pe server ([`redact.ts`](apps/web/lib/verify/redact.ts), cu teste). Un CNP cu cifra de control greșită e tot redactat: și o greșeală de tastare rămâne dată personală.
+- `ai_calls` păstrează doar modelul, tokenii, costul, latența și dacă textul a fost redactat, nu conținutul cererilor.
+- OTP-ul pe SMS: codul îl ține Twilio Verify; la noi rămân doar hash-ul și masca telefonului, cu 5 minute și 3 încercări, iar răspunsul e același pentru un număr necunoscut.
+- Baza de date are RLS pe toate tabelele, fișierele dosarelor sunt private (linkuri semnate), iar toate datele din demo sunt fictive.
+
 ## Stack și structură
 
 Next.js (App Router, TypeScript, Tailwind, shadcn/ui, Zod) · Supabase (Postgres, pgvector, Storage, Auth, Realtime, RLS) · n8n self-hosted în Docker · Vapi · Telegram.

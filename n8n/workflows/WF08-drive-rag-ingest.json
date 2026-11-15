@@ -262,92 +262,8 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "// Why Code: împărțire în fragmente (~3000 de caractere, suprapunere ~300) pe pagină, cu titlul secțiunii; Text Splitter din n8n există doar ca sub-nod al magazinelor vectoriale.\nconst doc = $('Insert document').first().json;\nconst raw = $('Extract text').first().json.text;\nconst title = $('Document meta').first().json.title;\n// PDF-urile românești folosesc des ş/ţ cu sedilă; întrebările folosesc ș/ț cu virgulă, deci le unificăm.\nconst clean = (t) => String(t ?? '').normalize('NFC').replace(/ş/g, 'ș').replace(/Ş/g, 'Ș').replace(/ţ/g, 'ț').replace(/Ţ/g, 'Ț')\n  .replace(/\\u00ad/g, '').replace(/[ \\t]+/g, ' ').split('\\n').map((l) => l.trim()).join('\\n').replace(/\\n{3,}/g, '\\n\\n').trim();\nconst pages = (Array.isArray(raw) ? raw : [raw]).map((t, i) => ({ page: i + 1, text: clean(t) }));\nconst MAX = 3000, OVERLAP = 300, MIN_PAGE = 40;\nconst HEADING = /^(CAPITOLUL|SECȚIUNEA|SECTIUNEA|TITLUL|ART(?:ICOLUL|\\.)?\\s*\\d+|Art\\.\\s*\\d+|\\d+(\\.\\d+)*[.)]\\s+[A-ZĂÂÎȘȚ]|[A-ZĂÂÎȘȚ][A-ZĂÂÎȘȚ0-9 ,.:;()\\/-]{7,})/;\nconst out = [];\nlet heading = null;\nfor (const p of pages) {\n  if (p.text.length < MIN_PAGE) continue;\n  // titlul din capul paginii rămâne valabil pentru restul documentului până apare unul nou\n  for (const l of p.text.split('\\n')) { if (l.length >= 6 && l.length <= 120 && HEADING.test(l)) { heading = l; break; } }\n  let start = 0;\n  while (start < p.text.length) {\n    let end = Math.min(start + MAX, p.text.length);\n    if (end < p.text.length) {\n      const cut = Math.max(p.text.lastIndexOf('\\n', end), p.text.lastIndexOf('. ', end));\n      if (cut > start + MAX * 0.5) end = cut + 1;\n    }\n    const content = p.text.slice(start, end).trim();\n    if (content.length >= MIN_PAGE) out.push({ json: { document_id: doc.id, content, page: p.page, heading, embedText: [title, heading, content].filter(Boolean).join('\\n') } });\n    if (end >= p.text.length) break;\n    start = Math.max(end - OVERLAP, start + 1);\n  }\n}\nif (!out.length) throw new Error('Documentul nu are text de indexat (PDF scanat?)');\nreturn out;\n"
+        "jsCode": "// Why Code: împărțire în fragmente (~1000 de caractere, suprapunere ~150) pe pagină, cu titlul secțiunii; Text Splitter din n8n există doar ca sub-nod al magazinelor vectoriale.\nconst doc = $('Insert document').first().json;\nconst raw = $('Extract text').first().json.text;\nconst meta = $('Document meta').first().json;\nconst title = meta.title;\n// PDF-urile românești folosesc des ş/ţ cu sedilă; întrebările folosesc ș/ț cu virgulă, deci le unificăm.\nconst clean = (t) => String(t ?? '').normalize('NFC').replace(/ş/g, 'ș').replace(/Ş/g, 'Ș').replace(/ţ/g, 'ț').replace(/Ţ/g, 'Ț')\n  .replace(/\\u00ad/g, '').replace(/[ \\t]+/g, ' ').split('\\n').map((l) => l.trim()).join('\\n').replace(/\\n{3,}/g, '\\n\\n').trim();\nconst pages = (Array.isArray(raw) ? raw : [raw]).map((t, i) => ({ page: i + 1, text: clean(t) }));\nconst MAX = 1000, OVERLAP = 150, MIN_PAGE = 40; // 3000 dădea ~3.900 de tokeni pe întrebare (ai_calls, 15 nov)\nconst HEADING = /^(CAPITOLUL|SECȚIUNEA|SECTIUNEA|TITLUL|ART(?:ICOLUL|\\.)?\\s*\\d+|Art\\.\\s*\\d+|\\d+(\\.\\d+)*[.)]\\s+[A-ZĂÂÎȘȚ]|[A-ZĂÂÎȘȚ][A-ZĂÂÎȘȚ0-9 ,.:;()\\/-]{7,})/;\nconst out = [];\nlet heading = null;\nfor (const p of pages) {\n  if (p.text.length < MIN_PAGE) continue;\n  // titlul din capul paginii rămâne valabil pentru restul documentului până apare unul nou\n  for (const l of p.text.split('\\n')) { if (l.length >= 6 && l.length <= 120 && HEADING.test(l)) { heading = l; break; } }\n  let start = 0;\n  while (start < p.text.length) {\n    let end = Math.min(start + MAX, p.text.length);\n    if (end < p.text.length) {\n      const cut = Math.max(p.text.lastIndexOf('\\n', end), p.text.lastIndexOf('. ', end));\n      if (cut > start + MAX * 0.5) end = cut + 1;\n    }\n    const content = p.text.slice(start, end).trim();\n    if (content.length >= MIN_PAGE) out.push({ json: { document_id: doc.id, title, page: p.page, heading, collection: meta.collection, insurer: meta.insurer ?? '', doc_type: meta.docType ?? '', source_url: meta.webViewLink ?? '', text: [title, heading, content].filter(Boolean).join('\\n') } });\n    if (end >= p.text.length) break;\n    start = Math.max(end - OVERLAP, start + 1);\n  }\n}\nif (!out.length) throw new Error('Documentul nu are text de indexat (PDF scanat?)');\nreturn out;\n"
       }
-    },
-    {
-      "id": "n33",
-      "name": "Embed chunk",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1980,
-        200
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: \"models/gemini-embedding-001\", content: { parts: [{ text: $json.embedText }] }, taskType: \"RETRIEVAL_DOCUMENT\", outputDimensionality: 768 }) }}",
-        "options": {
-          "timeout": 30000,
-          "batching": {
-            "batch": {
-              "batchSize": 1,
-              "batchInterval": 2500
-            }
-          }
-        }
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "REPLACE_ME",
-          "name": "Gemini API key (BrokerPilot)"
-        }
-      },
-      "retryOnFail": true,
-      "maxTries": 5,
-      "waitBetweenTries": 5000,
-      "notes": "Why HTTP: nodul Gemini nu expune outputDimensionality (768). Câte un fragment la 2,5 s (~24/min × ≤ ~900 tokeni), sub limita gratuită de 30k tokeni/min."
-    },
-    {
-      "id": "n34",
-      "name": "Save chunk",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        2200,
-        200
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "__SUPABASE_URL__/rest/v1/kb_chunks",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "supabaseApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Prefer",
-              "value": "return=minimal"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ document_id: $('Chunk text').item.json.document_id, content: $('Chunk text').item.json.content, page: $('Chunk text').item.json.page, heading: $('Chunk text').item.json.heading, embedding: $json.embedding.values }) }}",
-        "options": {
-          "batching": {
-            "batch": {
-              "batchSize": 10,
-              "batchInterval": 100
-            }
-          }
-        }
-      },
-      "credentials": {
-        "supabaseApi": {
-          "id": "REPLACE_ME",
-          "name": "Supabase BrokerPilot (service role)"
-        }
-      },
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 2000,
-      "notes": "Why HTTP: inserare în kb_chunks cu coloană vector(768), pe care nodul Supabase nu o scrie corect."
     },
     {
       "id": "n35",
@@ -411,7 +327,7 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ String($env.TG_BROKER_CHAT_IDS ?? '').split(',')[0].trim() }}",
-        "text": "={{ '📚 KB actualizat: ' + $('Document meta').item.json.title + ' (' + $('Document meta').item.json.collection + ') — ' + $('Save chunk').all().length + ' fragmente' }}",
+        "text": "={{ '📚 KB actualizat: ' + $('Document meta').item.json.title + ' (' + $('Document meta').item.json.collection + ') — ' + $('Chunk text').all().length + ' fragmente' }}",
         "additionalFields": {
           "appendAttribution": false,
           "disable_web_page_preview": true
@@ -422,7 +338,8 @@
           "id": "REPLACE_ME",
           "name": "Telegram BrokerPilotDeskBot"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "id": "n17-created",
@@ -493,6 +410,274 @@
         }
       },
       "notes": "Un fișier nou în folder pornește ingestia (Drive păstrează data originală a fișierelor încărcate, deci „fileUpdated” nu le vede). O versiune nouă = fișier încărcat din nou, cu același nume."
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kb-reingest",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Webhook kb-reingest",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -200,
+        700
+      ],
+      "webhookId": "0b6f6a52-3c1d-4e8a-9f7e-5d2c1a9b8e47"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "secret-set",
+              "leftValue": "={{ $env.BP_WEBHOOK_SECRET }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "secret-match",
+              "leftValue": "={{ $json.headers['x-bp-secret'] }}",
+              "rightValue": "={{ $env.BP_WEBHOOK_SECRET }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Secret valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        20,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "operation": "search",
+        "searchMethod": "name",
+        "queryString": "",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.body?.collection === 'internal' ? '__KB_INTERNAL_FOLDER_ID__' : '__KB_PUBLIC_FOLDER_ID__' }}"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "webViewLink"
+          ]
+        },
+        "authentication": "serviceAccount"
+      },
+      "name": "List folder files",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        240,
+        700
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "REPLACE_ME",
+          "name": "Google Drive BrokerPilot (service account)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "col",
+              "name": "collection",
+              "value": "={{ $('Webhook kb-reingest').first().json.body?.collection === 'internal' ? 'internal' : 'public' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "name": "Collection (reingest)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Each file",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "kb_vectors",
+          "mode": "list",
+          "cachedResultName": "kb_vectors"
+        },
+        "options": {
+          "queryName": "match_documents"
+        },
+        "embeddingBatchSize": 40
+      },
+      "name": "Save to KB (vectors)",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        2400,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "name": "Embeddings Gemini",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2300,
+        520
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REPLACE_ME",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.text }}",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "document_id",
+                "value": "={{ $json.document_id }}"
+              },
+              {
+                "name": "title",
+                "value": "={{ $json.title }}"
+              },
+              {
+                "name": "page",
+                "value": "={{ $json.page }}"
+              },
+              {
+                "name": "collection",
+                "value": "={{ $json.collection }}"
+              },
+              {
+                "name": "insurer",
+                "value": "={{ $json.insurer }}"
+              },
+              {
+                "name": "doc_type",
+                "value": "={{ $json.doc_type }}"
+              },
+              {
+                "name": "source_url",
+                "value": "={{ $json.source_url }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Chunk as document",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        2480,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "chunkSize": 1600,
+        "chunkOverlap": 0,
+        "options": {}
+      },
+      "name": "No re-split",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 40,
+        "options": {
+          "reset": "={{ $prevNode.name === \"Chunk text\" }}"
+        }
+      },
+      "name": "Chunk batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2200,
+        300
+      ],
+      "notes": "Gemini gratuit: ~100 de texte pe minut la embeddings (15 nov: al doilea lot de 100 a venit gol). 40 pe lot + pauză 60 s."
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "name": "Wait (Gemini limit)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2620,
+        300
+      ],
+      "webhookId": "5f1d9c2e-7a3b-4c8d-9e6f-2b1a0c3d4e5f"
     }
   ],
   "connections": {
@@ -540,16 +725,71 @@
         ]
       ]
     },
+    "Webhook kb-reingest": {
+      "main": [
+        [
+          {
+            "node": "Secret valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secret valid?": {
+      "main": [
+        [
+          {
+            "node": "List folder files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List folder files": {
+      "main": [
+        [
+          {
+            "node": "Collection (reingest)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collection (reingest)": {
+      "main": [
+        [
+          {
+            "node": "Supported file?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Supported file?": {
       "main": [
+        [
+          {
+            "node": "Each file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Each file": {
+      "main": [
+        [],
         [
           {
             "node": "Document meta",
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Document meta": {
@@ -611,29 +851,18 @@
       "main": [
         [
           {
-            "node": "Embed chunk",
+            "node": "Chunk batches",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Embed chunk": {
+    "Save to KB (vectors)": {
       "main": [
         [
           {
-            "node": "Save chunk",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Save chunk": {
-      "main": [
-        [
-          {
-            "node": "All chunks saved",
+            "node": "Wait (Gemini limit)",
             "type": "main",
             "index": 0
           }
@@ -656,6 +885,79 @@
         [
           {
             "node": "Notify (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify (Telegram)": {
+      "main": [
+        [
+          {
+            "node": "Each file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Save to KB (vectors)",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk as document": {
+      "ai_document": [
+        [
+          {
+            "node": "Save to KB (vectors)",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No re-split": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Chunk as document",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk batches": {
+      "main": [
+        [
+          {
+            "node": "All chunks saved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save to KB (vectors)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait (Gemini limit)": {
+      "main": [
+        [
+          {
+            "node": "Chunk batches",
             "type": "main",
             "index": 0
           }

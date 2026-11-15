@@ -35,7 +35,7 @@
         300
       ],
       "parameters": {
-        "jsCode": "// Why Code: parsarea unui update Telegram (mesaj sau buton) + whitelist de chat-uri; nodurile native nu extrag comanda și argumentele.\nconst u = $input.first().json ?? {};\nconst allowed = String($env.TG_BROKER_CHAT_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean);\nconst cb = u.callback_query;\nconst msg = cb ? cb.message : u.message;\nconst chatId = String(msg?.chat?.id ?? '');\nconst out = (o) => [{ json: { chatId, callbackId: cb?.id ?? '', claimId: '', question: '', hint: '', ...o } }];\n\n// Doar chat-urile brokerilor (TG_BROKER_CHAT_IDS); restul sunt ignorate fără niciun răspuns.\nif (!chatId || !allowed.includes(chatId)) return out({ kind: 'ignore' });\n\nif (cb) {\n  const m = /^(take|ask):([0-9a-f-]{36})$/i.exec(String(cb.data ?? ''));\n  return m ? out({ kind: m[1].toLowerCase(), claimId: m[2].toLowerCase() }) : out({ kind: 'ignore' });\n}\n\nconst text = String(msg?.text ?? '').trim();\nconst c = /^\\/(\\w+)(?:@\\w+)?(?:\\s+([\\s\\S]*))?$/.exec(text);\nif (!c) return out({ kind: 'help' });\nconst cmd = c[1].toLowerCase();\nconst arg = String(c[2] ?? '').trim();\nif (cmd === 'dosare') return out({ kind: 'dosare' });\nif (cmd === 'intreaba') {\n  return arg ? out({ kind: 'intreaba', question: arg.slice(0, 600) }) : out({ kind: 'help', hint: 'Scrie întrebarea după comandă, de exemplu: /intreaba ce acoperă CASCO la furtul de oglinzi?' });\n}\nreturn out({ kind: 'help' });\n"
+        "jsCode": "// Why Code: parsarea unui update Telegram (mesaj sau buton), whitelist de chat-uri și redactarea PII înainte de agent (LLM în cloud).\nconst u = $input.first().json ?? {};\nconst allowed = String($env.TG_BROKER_CHAT_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean);\nconst cb = u.callback_query;\nconst msg = cb ? cb.message : u.message;\nconst chatId = String(msg?.chat?.id ?? '');\nconst out = (o) => [{ json: { chatId, callbackId: cb?.id ?? '', claimId: '', question: '', hint: '', ...o } }];\n\n// Doar chat-urile brokerilor (TG_BROKER_CHAT_IDS); restul sunt ignorate fără niciun răspuns.\nif (!chatId || !allowed.includes(chatId)) return out({ kind: 'ignore' });\n\nif (cb) {\n  const m = /^(take|ask):([0-9a-f-]{36})$/i.exec(String(cb.data ?? ''));\n  return m ? out({ kind: m[1].toLowerCase(), claimId: m[2].toLowerCase() }) : out({ kind: 'ignore' });\n}\n\nconst norm = (s) => String(s ?? '').replace(/ş/g, 'ș').replace(/Ş/g, 'Ș').replace(/ţ/g, 'ț').replace(/Ţ/g, 'Ț').replace(/\\s+/g, ' ').trim();\n// Structură de CNP (sex, dată validă, județ), ca parseCnp() din lib/verify/ids.ts: un CNP cu cifra de control greșită (typo) tot e PII.\nconst cnpOk = (d) => {\n  if (!/^[1-9]\\d{12}$/.test(d)) return false;\n  const s = Number(d[0]), yy = Number(d.slice(1, 3)), mm = Number(d.slice(3, 5)), dd = Number(d.slice(5, 7)), county = Number(d.slice(7, 9));\n  const nowYY = new Date().getUTCFullYear() % 100;\n  const year = s <= 2 ? 1900 + yy : s <= 4 ? 1800 + yy : s <= 6 ? 2000 + yy : (yy <= nowYY ? 2000 : 1900) + yy;\n  const probe = new Date(Date.UTC(year, mm - 1, dd));\n  if (probe.getUTCFullYear() !== year || probe.getUTCMonth() !== mm - 1 || probe.getUTCDate() !== dd) return false;\n  return (county >= 1 && county <= 46) || county === 51 || county === 52 || county === 99;\n};\n// Aceleași tipare ca lib/verify/redact.ts (testul apps/web/lib/verify/n8n-redact.test.ts rulează exact funcțiile de aici).\nconst redact = (text) => {\n  let out = norm(text);\n  out = out.replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/g, '<EMAIL>');\n  out = out.replace(/(?<![A-Za-z0-9])[A-Z]{2}\\d{2}(?:[ ]?[A-Z0-9]{4}){2,7}(?:[ ]?[A-Z0-9]{1,4})?(?![A-Za-z0-9])/g, (m) => (m.replace(/\\s/g, '').length >= 15 ? '<IBAN>' : m));\n  out = out.replace(/(?<![A-Za-z0-9])[A-Z]{2,5}-(?:RCA|CASCO|PAD|LOC|VIA|ALT)-\\d{3,}(?![A-Za-z0-9])/g, '<SERIE_POLITA>');\n  out = out.replace(/(?<![A-Za-z0-9])[A-HJ-NPR-Z0-9]{17}(?![A-Za-z0-9])/g, (m) => (/[A-Z]/.test(m) && /\\d/.test(m) ? '<VIN>' : m));\n  out = out.replace(/(?<!\\d)[1-9]\\d{12}(?!\\d)/g, (m) => (cnpOk(m) ? '<CNP>' : m));\n  out = out.replace(/(?<![\\d+])(?:(?:\\+|00)40[\\s.-]?|0)[237](?:[\\s.-]?\\d){8}(?!\\d)/g, '<TELEFON>');\n  out = out.replace(/(?<![A-Za-z0-9])(?:B|AB|AR|AG|BC|BH|BN|BT|BR|BV|BZ|CL|CS|CJ|CT|CV|DB|DJ|GL|GR|GJ|HR|HD|IL|IS|IF|MM|MH|MS|NT|OT|PH|SM|SJ|SB|SV|TR|TM|TL|VL|VS|VN)[\\s-]?\\d{2,3}[\\s-]?[A-Z]{3}(?![A-Za-z0-9])/gi, '<NR_INMATRICULARE>');\n  return out;\n};\n\nconst text = String(msg?.text ?? '').trim();\nif (!text) return out({ kind: 'help' });\nconst c = /^\\/(\\w+)(?:@\\w+)?(?:\\s+([\\s\\S]*))?$/.exec(text);\nconst cmd = c ? c[1].toLowerCase() : '';\nif (cmd === 'start' || cmd === 'help' || cmd === 'ajutor') return out({ kind: 'help' });\n// comenzile vechi rămân scurtături către agent\nconst raw = cmd === 'dosare' ? 'Ce dosare deschise sunt?' : cmd === 'intreaba' ? String(c[2] ?? '') : c ? '' : text;\nif (!raw.trim()) return out({ kind: 'help', hint: 'Scrie întrebarea după comandă, de exemplu: /intreaba ce acoperă CASCO la furtul de oglinzi?' });\nreturn out({ kind: 'agent', question: redact(raw.slice(0, 600)) });\n"
       }
     },
     {
@@ -167,36 +167,13 @@
                       "type": "string",
                       "operation": "equals"
                     },
-                    "rightValue": "dosare"
+                    "rightValue": "agent"
                   }
                 ],
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "dosare"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.kind }}",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "rightValue": "intreaba"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "intreaba"
+              "outputKey": "agent"
             },
             {
               "conditions": {
@@ -346,83 +323,6 @@
       "onError": "continueRegularOutput"
     },
     {
-      "id": "wf05-list",
-      "name": "List open claims",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        760,
-        500
-      ],
-      "parameters": {
-        "method": "GET",
-        "url": "__SUPABASE_URL__/rest/v1/claims?select=public_ref,status,accident_at,broker_id&status=in.(signed,submitted,in_progress)&order=created_at.desc&limit=10",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "supabaseApi",
-        "options": {
-          "timeout": 15000,
-          "response": {
-            "response": {
-              "responseFormat": "text",
-              "outputPropertyName": "data"
-            }
-          }
-        }
-      },
-      "notes": "Why HTTP: citire filtrată PostgREST cu răspuns ca text.",
-      "credentials": {
-        "supabaseApi": {
-          "id": "REPLACE_ME",
-          "name": "Supabase BrokerPilot (service role)"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "id": "wf05-compose-list",
-      "name": "Compose list",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1000,
-        500
-      ],
-      "parameters": {
-        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: formatarea listei de dosare (stare în română, dată în fusul României); nicio combinație de noduri native nu o acoperă curat.\nconst p = $('Parse update').first().json;\nlet rows = [];\ntry { rows = JSON.parse($input.first().json.data || '[]'); } catch { rows = []; }\nif (!Array.isArray(rows)) rows = [];\nconst STATUS = { signed: 'semnat', submitted: 'trimis', in_progress: 'în lucru' };\nconst when = (iso) => { try { return new Date(iso).toLocaleString('ro-RO', { timeZone: 'Europe/Bucharest', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };\nconst text = rows.length === 0\n  ? 'Nu ai dosare deschise.'\n  : `<b>Dosare deschise (${rows.length})</b>\\n` + rows.map((r) => `• <b>${esc(r.public_ref)}</b> · ${esc(STATUS[r.status] ?? r.status)}${r.accident_at ? ' · ' + esc(when(r.accident_at)) : ''}${r.broker_id ? '' : ' · fără broker'}`).join('\\n') + '\\n\\nPreia un dosar cu butonul „Preiau” din mesajul lui.';\nreturn [{ json: { chatId: p.chatId, text } }];\n"
-      }
-    },
-    {
-      "id": "wf05-copilot",
-      "name": "Ask copilot (WF04)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        760,
-        640
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "http://localhost:5678/webhook/kb-ask",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "x-bp-secret",
-              "value": "={{ $env.BP_WEBHOOK_SECRET }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ question: $json.question, audience: 'internal' }) }}",
-        "options": {
-          "timeout": 60000
-        }
-      },
-      "notes": "Why HTTP: apelează webhook-ul WF04 (RAG) din același n8n, direct pe localhost:5678 (fără tunel și fără WEBHOOK_URL, care nu e setată în container); WF04 redactează întrebarea înainte de orice LLM.",
-      "onError": "continueRegularOutput"
-    },
-    {
       "id": "wf05-compose-answer",
       "name": "Compose answer",
       "type": "n8n-nodes-base.code",
@@ -432,7 +332,7 @@
         640
       ],
       "parameters": {
-        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: răspunsul copilotului pentru Telegram: HTML escapat, surse doar dacă lipsesc citările din text, limită de lungime.\nconst p = $('Parse update').first().json;\nconst r = $input.first().json ?? {};\nlet text;\nif (r.error || typeof r.answer !== 'string') {\n  text = '⚠️ Copilotul nu răspunde acum. Încearcă mai târziu sau folosește pagina Copilot din dashboard.';\n} else {\n  text = esc(r.answer).replace(/\\*\\*([^*\\n]+?)\\*\\*/g, '<b>$1</b>');\n  const srcs = [...new Set((Array.isArray(r.sources) ? r.sources : []).map((s) => s.title + (s.page ? `, pag. ${s.page}` : '')))];\n  if (r.found && srcs.length && !/\\[[^\\]]+\\]/.test(r.answer)) text += `\\n\\n<i>Surse: ${esc(srcs.join('; '))}</i>`;\n}\nreturn [{ json: { chatId: p.chatId, text: text.slice(0, 3900) } }];\n"
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: răspunsul agentului pentru Telegram: HTML escapat, **bold** → <b>, limită de lungime; la eroare, mesaj clar.\nconst p = $('Parse update').first().json;\nconst r = $input.first().json ?? {};\nconst answer = typeof r.output === 'string' ? r.output.trim() : '';\nconst text = answer\n  ? esc(answer).replace(/\\*\\*([^*\\n]+?)\\*\\*/g, '<b>$1</b>')\n  : '⚠️ Asistentul nu răspunde acum. Încearcă mai târziu sau folosește dashboardul.';\nreturn [{ json: { chatId: p.chatId, text: text.slice(0, 3900) } }];\n"
       }
     },
     {
@@ -445,7 +345,7 @@
         780
       ],
       "parameters": {
-        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: textul de ajutor cu comenzile disponibile, plus un indiciu opțional (comandă fără argument sau nefinalizată).\nconst p = $('Parse update').first().json;\nconst lines = [\n  p.hint ? esc(p.hint) + '\\n' : null,\n  '<b>BrokerPilot Desk</b>',\n  '/dosare: dosarele deschise',\n  '/intreaba &lt;întrebare&gt;: copilotul (răspunde doar din documente, cu surse)',\n  'Butoanele din mesajele despre dosare: „Preiau” și „Cere info lipsă”.',\n].filter(Boolean);\nreturn [{ json: { chatId: p.chatId, text: lines.join('\\n') } }];\n"
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: textul de ajutor, plus un indiciu opțional (comandă fără argument).\nconst p = $('Parse update').first().json;\nconst lines = [\n  p.hint ? esc(p.hint) + '\\n' : null,\n  '<b>BrokerPilot Desk</b> (asistent AI)',\n  'Scrie liber, de exemplu: „ce dosare am deschise?”, „ce lipsește la BP-2611-00017?”, „care e termenul de notificare la Allianz?”.',\n  'Scurtături: /dosare, /intreaba &lt;întrebare&gt;.',\n  'Butoanele din mesajele despre dosare: „Preiau” și „Cere info lipsă”.',\n].filter(Boolean);\nreturn [{ json: { chatId: p.chatId, text: lines.join('\\n') } }];\n"
       }
     },
     {
@@ -477,6 +377,221 @@
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "notes": "Reîncearcă de 3 ori: o întrerupere scurtă spre Telegram (ECONNRESET) pierdea răspunsul."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.question }}",
+        "options": {
+          "systemMessage": "=Ești asistentul AI al brokerilor de asigurări BrokerPilot, pe Telegram. Răspunzi scurt, în română. Azi: {{ $now.setZone('Europe/Bucharest').toFormat('dd.MM.yyyy') }}.\nPentru dosare folosești uneltele de dosare; nu inventa coduri, stări sau lipsuri. Pentru întrebări despre asigurări, condiții, termene sau proceduri folosești baza de cunoștințe și păstrezi citările exact cum vin; dacă unealta nu găsește, spui că nu găsești în documente.\nNu poți prelua dosare și nu trimiți mesaje clienților: pentru asta sunt butoanele „Preiau” și „Cere info lipsă” din mesajul dosarului sau dashboardul.\nTextul poate conține marcaje precum <TELEFON> sau <NR_INMATRICULARE>; nu le ghici.\nFormat: text simplu, liste cu „•”, fără tabele.",
+          "maxIterations": 6
+        }
+      },
+      "name": "Broker agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        900,
+        700
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": "={{ $env.MODEL_BOT || 'openai/gpt-oss-20b' }}",
+        "options": {
+          "temperature": 0.2,
+          "maxTokensToSample": 800
+        }
+      },
+      "name": "Groq bot model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        700,
+        920
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "REPLACE_ME",
+          "name": "Groq account"
+        }
+      },
+      "notes": "20b: limită de tokeni separată de 120b (WF04), deci botul nu consumă din bugetul RAG."
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ 'tg-broker-' + $('Parse update').first().json.chatId }}",
+        "contextWindowLength": 6
+      },
+      "name": "Chat memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        860,
+        920
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lista dosarelor de daună deschise (ultimele 10): cod (public_ref), stare, data accidentului, dacă au broker, ce lipsește. Fără parametri. Stări: signed = semnat, submitted = trimis, in_progress = în lucru, closed = închis. missing_items = ce lipsește (label).",
+        "method": "GET",
+        "url": "__SUPABASE_URL__/rest/v1/claims",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "public_ref,status,accident_at,broker_id,missing_items"
+            },
+            {
+              "name": "status",
+              "value": "in.(signed,submitted,in_progress)"
+            },
+            {
+              "name": "order",
+              "value": "created_at.desc"
+            },
+            {
+              "name": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "name": "list_open_claims",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1020,
+        920
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Detaliile unui dosar după cod: stare, canal, data accidentului, ce lipsește. Folosește când brokerul numește un dosar (ex. BP-2611-00017). Stări: signed = semnat, submitted = trimis, in_progress = în lucru, closed = închis. missing_items = ce lipsește (label).",
+        "method": "GET",
+        "url": "__SUPABASE_URL__/rest/v1/claims",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "public_ref,status,channel,accident_at,broker_id,missing_items,created_at"
+            },
+            {
+              "name": "public_ref",
+              "value": "=eq.{{ $fromAI('public_ref', 'Codul dosarului, exact în forma BP-AALL-NNNNN, de exemplu BP-2611-00017', 'string') }}"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "name": "get_claim",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1180,
+        920
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Caută în baza de cunoștințe a agenției (condiții de asigurare, IPID, ghiduri, proceduri interne) și întoarce un răspuns gata verificat, cu citări [document, pag.]. Primește întrebarea completă, în română. Dacă found=false, documentele nu conțin răspunsul.",
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/kb-ask",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-bp-secret",
+              "value": "={{ $env.BP_WEBHOOK_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ question: $fromAI('question', 'Întrebarea despre asigurări, completă, în română', 'string'), audience: 'internal' }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "search_knowledge_base",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        920
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "__SUPABASE_URL__/rest/v1/clients?select=full_name&limit=1000",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "name": "Load client names",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        700
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Why Code: numele clienților agenției din întrebare devin <NUME> înainte de agent (ca knownNames în lib/kb/copilot.ts):\n// „polița lui Popescu” nu pleacă la LLM cu numele. Potrivire pe cuvânt întreg, fără diferență de majuscule sau diacritice.\nconst p = $('Parse update').first().json;\nlet rows = [];\ntry { rows = JSON.parse($input.first().json.data || '[]'); } catch { rows = []; }\nconst parts = new Set();\nfor (const r of Array.isArray(rows) ? rows : []) {\n  for (const w of String(r?.full_name ?? '').replace(/\\s*\\(fictiv\\)\\s*$/i, '').split(/[\\s-]+/)) if (w.length >= 3) parts.add(w);\n}\nconst CLS = { a: '[aăâ]', ă: '[aăâ]', â: '[aăâ]', i: '[iî]', î: '[iî]', s: '[sșş]', ș: '[sșş]', ş: '[sșş]', t: '[tțţ]', ț: '[tțţ]', ţ: '[tțţ]' };\nconst esc = (c) => c.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\nlet question = p.question;\n// mai lungi întâi, ca „Popescu” să nu fie tăiat de „Pop”\nfor (const w of [...parts].sort((a, b) => b.length - a.length)) {\n  const body = [...w.toLowerCase()].map((c) => CLS[c] ?? esc(c)).join('');\n  question = question.replace(new RegExp('(?<![\\\\p{L}\\\\d])' + body + '(?![\\\\p{L}\\\\d])', 'giu'), '<NUME>');\n}\nreturn [{ json: { ...p, question, namesRedacted: question !== p.question } }];\n"
+      },
+      "name": "Redact client names",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        820
+      ]
     }
   ],
   "connections": {
@@ -537,14 +652,7 @@
         ],
         [
           {
-            "node": "List open claims",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Ask copilot (WF04)",
+            "node": "Load client names",
             "type": "main",
             "index": 0
           }
@@ -607,39 +715,6 @@
         ]
       ]
     },
-    "List open claims": {
-      "main": [
-        [
-          {
-            "node": "Compose list",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Compose list": {
-      "main": [
-        [
-          {
-            "node": "Send message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Ask copilot (WF04)": {
-      "main": [
-        [
-          {
-            "node": "Compose answer",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Compose answer": {
       "main": [
         [
@@ -656,6 +731,94 @@
         [
           {
             "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Broker agent": {
+      "main": [
+        [
+          {
+            "node": "Compose answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq bot model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Broker agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Broker agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list_open_claims": {
+      "ai_tool": [
+        [
+          {
+            "node": "Broker agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_claim": {
+      "ai_tool": [
+        [
+          {
+            "node": "Broker agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search_knowledge_base": {
+      "ai_tool": [
+        [
+          {
+            "node": "Broker agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load client names": {
+      "main": [
+        [
+          {
+            "node": "Redact client names",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redact client names": {
+      "main": [
+        [
+          {
+            "node": "Broker agent",
             "type": "main",
             "index": 0
           }

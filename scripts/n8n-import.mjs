@@ -41,6 +41,14 @@ for (const w of all) for (const n of w.nodes ?? []) for (const [type, c] of Obje
   byName.set(`${type}|${c.name}`, c);
   byType.set(type, [...(byType.get(type) ?? []).filter((x) => x.id !== c.id), c]);
 }
+// rezervă: lista de credențiale din API (versiunile noi de n8n o au), pentru tipuri nefolosite încă în niciun workflow
+try {
+  for (const c of (await api("/credentials?limit=100")).data ?? []) {
+    const ref = { id: c.id, name: c.name };
+    if (!byName.has(`${c.type}|${c.name}`)) byName.set(`${c.type}|${c.name}`, ref);
+    if (!(byType.get(c.type) ?? []).some((x) => x.id === c.id)) byType.set(c.type, [...(byType.get(c.type) ?? []), ref]);
+  }
+} catch { /* API fără listare de credențiale: rămân cele din workflow-uri */ }
 for (const n of wf.nodes) for (const [type, c] of Object.entries(n.credentials ?? {})) {
   if (c.id === "REPLACE_ME") {
     const candidates = byType.get(type) ?? [];
