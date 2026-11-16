@@ -332,7 +332,7 @@
         640
       ],
       "parameters": {
-        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: răspunsul agentului pentru Telegram: HTML escapat, **bold** → <b>, limită de lungime; la eroare, mesaj clar.\nconst p = $('Parse update').first().json;\nconst r = $input.first().json ?? {};\nconst answer = typeof r.output === 'string' ? r.output.trim() : '';\nconst text = answer\n  ? esc(answer).replace(/\\*\\*([^*\\n]+?)\\*\\*/g, '<b>$1</b>')\n  : '⚠️ Asistentul nu răspunde acum. Încearcă mai târziu sau folosește dashboardul.';\nreturn [{ json: { chatId: p.chatId, text: text.slice(0, 3900) } }];\n"
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Why Code: răspunsul agentului pentru Telegram: numele brokerilor puse în locul marcajelor [broker:<id>] (numele nu trec\n// prin LLM), HTML escapat, **bold** → <b>, limită de lungime; la eroare, mesaj clar.\nconst p = $('Parse update').first().json;\nconst r = $('Broker agent').first().json ?? {};\nlet brokers = [];\ntry { brokers = JSON.parse($input.first().json.data || '[]'); } catch { brokers = []; }\nconst names = new Map((Array.isArray(brokers) ? brokers : []).map((b) => [String(b.id).toLowerCase(), String(b.name ?? '').trim()]));\nconst UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';\nconst nameOf = (id) => names.get(String(id).toLowerCase()) || 'un broker';\nlet answer = typeof r.output === 'string' ? r.output.trim() : '';\nanswer = answer\n  .replace(new RegExp('\\\\[\\\\s*broker\\\\s*:\\\\s*(' + UUID + ')\\\\s*\\\\]', 'gi'), (_m, id) => nameOf(id))\n  // dacă agentul a scris doar id-ul, fără marcaj\n  .replace(new RegExp('(?<![0-9a-f-])(' + UUID + ')(?![0-9a-f-])', 'gi'), (m, id) => (names.has(id.toLowerCase()) ? nameOf(id) : m));\nconst text = answer\n  ? esc(answer).replace(/\\*\\*([^*\\n]+?)\\*\\*/g, '<b>$1</b>')\n  : '⚠️ Asistentul nu răspunde acum. Încearcă mai târziu sau folosește dashboardul.';\nreturn [{ json: { chatId: p.chatId, text: text.slice(0, 3900) } }];\n"
       }
     },
     {
@@ -435,7 +435,7 @@
     },
     {
       "parameters": {
-        "toolDescription": "Lista dosarelor de daună deschise (ultimele 10): cod (public_ref), stare, data accidentului, dacă au broker, ce lipsește. Fără parametri. Stări: signed = semnat, submitted = trimis, in_progress = în lucru, closed = închis. missing_items = ce lipsește (label).",
+        "toolDescription": "Lista dosarelor de daună deschise (ultimele 10): cod (public_ref), stare, data accidentului, dacă au broker, ce lipsește. Fără parametri. Stări: signed = semnat, submitted = trimis, in_progress = în lucru, closed = închis. missing_items = ce lipsește (label). broker_id = brokerul care lucrează dosarul (null = fără broker). Când numești brokerul unui dosar scrii exact [broker:<broker_id>] (sistemul pune numele); pentru null scrii „fără broker”.",
         "method": "GET",
         "url": "__SUPABASE_URL__/rest/v1/claims",
         "authentication": "predefinedCredentialType",
@@ -481,7 +481,7 @@
     },
     {
       "parameters": {
-        "toolDescription": "Detaliile unui dosar după cod: stare, canal, data accidentului, ce lipsește. Folosește când brokerul numește un dosar (ex. BP-2611-00017). Stări: signed = semnat, submitted = trimis, in_progress = în lucru, closed = închis. missing_items = ce lipsește (label).",
+        "toolDescription": "Detaliile unui dosar după cod: stare, canal, data accidentului, ce lipsește. Folosește când brokerul numește un dosar (ex. BP-2611-00017). Stări: signed = semnat, submitted = trimis, in_progress = în lucru, closed = închis. missing_items = ce lipsește (label). broker_id = brokerul care lucrează dosarul (null = fără broker). Când numești brokerul unui dosar scrii exact [broker:<broker_id>] (sistemul pune numele); pentru null scrii „fără broker”.",
         "method": "GET",
         "url": "__SUPABASE_URL__/rest/v1/claims",
         "authentication": "predefinedCredentialType",
@@ -583,7 +583,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Why Code: numele clienților agenției din întrebare devin <NUME> înainte de agent (ca knownNames în lib/kb/copilot.ts):\n// „polița lui Popescu” nu pleacă la LLM cu numele. Potrivire pe cuvânt întreg, fără diferență de majuscule sau diacritice.\nconst p = $('Parse update').first().json;\nlet rows = [];\ntry { rows = JSON.parse($input.first().json.data || '[]'); } catch { rows = []; }\nconst parts = new Set();\nfor (const r of Array.isArray(rows) ? rows : []) {\n  for (const w of String(r?.full_name ?? '').replace(/\\s*\\(fictiv\\)\\s*$/i, '').split(/[\\s-]+/)) if (w.length >= 3) parts.add(w);\n}\nconst CLS = { a: '[aăâ]', ă: '[aăâ]', â: '[aăâ]', i: '[iî]', î: '[iî]', s: '[sșş]', ș: '[sșş]', ş: '[sșş]', t: '[tțţ]', ț: '[tțţ]', ţ: '[tțţ]' };\nconst esc = (c) => c.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\nlet question = p.question;\n// mai lungi întâi, ca „Popescu” să nu fie tăiat de „Pop”\nfor (const w of [...parts].sort((a, b) => b.length - a.length)) {\n  const body = [...w.toLowerCase()].map((c) => CLS[c] ?? esc(c)).join('');\n  question = question.replace(new RegExp('(?<![\\\\p{L}\\\\d])' + body + '(?![\\\\p{L}\\\\d])', 'giu'), '<NUME>');\n}\nreturn [{ json: { ...p, question, namesRedacted: question !== p.question } }];\n"
+        "jsCode": "// Why Code: numele clienților agenției din întrebare devin <NUME> înainte de agent (ca knownNames în lib/kb/copilot.ts):\n// „polița lui Popescu” nu pleacă la LLM cu numele. Potrivire pe cuvânt întreg, fără diferență de majuscule sau diacritice.\nconst p = $('Parse update').first().json;\nlet rows = [];\ntry { rows = JSON.parse($input.first().json.data || '[]'); } catch { rows = []; }\nconst parts = new Set();\nfor (const r of Array.isArray(rows) ? rows : []) {\n  for (const w of String(r?.full_name ?? '').replace(/\\s*\\(fictiv\\)\\s*$/i, '').split(/[\\s-]+/)) if (w.length >= 3) parts.add(w);\n}\nconst CLS = { a: '[aăâ]', ă: '[aăâ]', â: '[aăâ]', i: '[iî]', î: '[iî]', s: '[sșş]', ș: '[sșş]', ş: '[sșş]', t: '[tțţ]', ț: '[tțţ]', ţ: '[tțţ]' };\nconst esc = (c) => c.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\nlet question = p.question;\n// mai lungi întâi, ca „Popescu” să nu fie tăiat de „Pop”\nfor (const w of [...parts].sort((a, b) => b.length - a.length)) {\n  const body = [...w.toLowerCase()].map((c) => CLS[c] ?? esc(c)).join('');\n  question = question.replace(new RegExp('(?<![\\\\p{L}\\\\d])' + body + '(?![\\\\p{L}\\\\d])', 'giu'), '<NUME>');\n}\nreturn [{ json: { ...p, question, namesRedacted: question !== p.question, startedAt: Date.now() } }];\n"
       },
       "name": "Redact client names",
       "type": "n8n-nodes-base.code",
@@ -592,6 +592,76 @@
         800,
         820
       ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "__SUPABASE_URL__/rest/v1/brokers?select=id,name",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "name": "Load brokers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        700
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Numele brokerilor nu trec prin LLM (regula PII): agentul scrie [broker:<id>], Compose answer pune numele."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "__SUPABASE_URL__/rest/v1/ai_calls",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: 'WF05', task: 'broker_agent@1', provider: 'groq', model: $env.MODEL_BOT || 'openai/gpt-oss-20b', redacted: true, latency_ms: Date.now() - $('Redact client names').first().json.startedAt, success: typeof $json.output === 'string' && $json.output.trim() !== '', error: typeof $json.output === 'string' && $json.output.trim() !== '' ? null : String($json.error ?? 'fără răspuns').slice(0, 300) }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "name": "Log AI call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        880
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_ME",
+          "name": "Supabase BrokerPilot (service role)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Regula gateway-ului: fiecare apel LLM are un rând în ai_calls (pagina Costuri). Nodul Agent nu întoarce tokenii, deci rândul are model, durată și reușită, fără cost. Un eșec aici nu oprește răspunsul."
     }
   ],
   "connections": {
@@ -741,7 +811,12 @@
       "main": [
         [
           {
-            "node": "Compose answer",
+            "node": "Load brokers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log AI call",
             "type": "main",
             "index": 0
           }
@@ -819,6 +894,17 @@
         [
           {
             "node": "Broker agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load brokers": {
+      "main": [
+        [
+          {
+            "node": "Compose answer",
             "type": "main",
             "index": 0
           }

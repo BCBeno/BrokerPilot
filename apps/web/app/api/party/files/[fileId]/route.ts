@@ -26,6 +26,7 @@ export async function DELETE(request: Request, ctx: { params: Promise<{ fileId: 
     .eq("claim_id", auth.claimId)
     .eq("party_role", auth.role)
     .eq("kind", "damage")
+    .is("uploaded_by", null)
     .maybeSingle();
   if (file.error) return SERVER_ERROR();
   if (!file.data) return NOT_FOUND();

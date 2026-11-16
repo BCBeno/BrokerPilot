@@ -35,3 +35,22 @@ export function parseSignature(dataUrl: unknown): Uint8Array | null {
 }
 
 export const toDataUrl = (bytes: Uint8Array, mime: string) => `data:${mime};base64,${Buffer.from(bytes).toString("base64")}`;
+
+/* ---------- Fișiere adăugate de broker după primirea dosarului (poze sau PDF venite mai târziu) ---------- */
+
+/** Limita bucket-ului `claim-files` (10 MB); brokerul încarcă originale, necomprimate. */
+export const MAX_BROKER_FILE_BYTES = 10 * 1024 * 1024;
+/** Câte fișiere poate adăuga brokerul pe un dosar. */
+export const MAX_BROKER_FILES_PER_CLAIM = 30;
+
+/** Extensia din tipul real al fișierului (vezi `sniffMime`). */
+export const BROKER_FILE_EXT = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "application/pdf": "pdf" } as const;
+
+export const brokerFilePath = (claimId: string, fileId: string, ext: string) => `claims/${claimId}/broker-${fileId}.${ext}`;
+
+/** Numele afișat în fișă: fără cale, fără caractere de control, cel mult 120 de caractere. */
+export function cleanFileName(name: string): string {
+  const base = name.split(/[\\/]/).pop() ?? "";
+  const clean = base.replace(/[\u0000-\u001f\u007f]/g, "").trim();
+  return (clean || "document").slice(0, 120);
+}

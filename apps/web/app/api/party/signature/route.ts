@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createRateLimiter } from "@/lib/ai/upload";
 import { CLAIM_BUCKET, parseSignature, signaturePath } from "@/lib/claims/files";
+import { linkClaimParties } from "@/lib/claims/link-client";
+import { addConsentingPartiesToPortfolio } from "@/lib/claims/portfolio-from-party";
 import { EXPIRED, NOT_CONFIGURED, NOT_FOUND, SERVER_ERROR, TOO_MANY, authorizeParty, clientIp, fail } from "@/lib/claims/server";
 
 export const runtime = "nodejs";
@@ -10,7 +12,11 @@ const allow = createRateLimiter(30, 10 * 60_000);
 
 const bodySchema = z.object({ signature: z.string().max(400_000) });
 
-/** Un șofer își depune semnătura (PNG desenat pe ecran). Când au semnat ambii, dosarul trece în „signed”. */
+/**
+ * Un șofer își depune semnătura (PNG desenat pe ecran). Când au semnat ambii, dosarul trece în „signed” și se leagă
+ * clienții agenției (ca la finalizare, aceeași ordine), ca brokerul să-i vadă și dacă A nu apasă trimiterea.
+ * Finalizarea le rulează din nou; părțile deja legate se sar.
+ */
 export async function PUT(request: Request) {
   if (!allow(clientIp(request))) return TOO_MANY();
   const auth = await authorizeParty(request);
@@ -38,6 +44,10 @@ export async function PUT(request: Request) {
 
   const signed = await auth.db.from("claim_parties").select("id", { count: "exact", head: true }).eq("claim_id", auth.claimId).not("signature_path", "is", null);
   const both = !signed.error && (signed.count ?? 0) === 2;
-  if (both) await auth.db.from("claims").update({ status: "signed" }).eq("id", auth.claimId).in("status", ["draft", "awaiting_b"]);
+  if (both) {
+    await auth.db.from("claims").update({ status: "signed" }).eq("id", auth.claimId).in("status", ["draft", "awaiting_b"]);
+    await addConsentingPartiesToPortfolio(auth.db, auth.claimId);
+    await linkClaimParties(auth.db, auth.claimId);
+  }
   return NextResponse.json({ ok: true, bothSigned: both });
 }

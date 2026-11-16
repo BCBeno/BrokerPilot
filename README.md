@@ -98,7 +98,7 @@ Next.js (App Router, TypeScript, Tailwind, shadcn/ui, Zod) · Supabase (Postgres
 | Folder | Conținut |
 |---|---|
 | `apps/web` | aplicația: wizardul clientului, dashboard-ul brokerului, API-uri |
-| `n8n/workflows` | `WF01` dosar nou → Telegram, `WF02`/`WF03` unelte și final de apel Vapi, `WF04` RAG, `WF05` botul brokerului, `WF08` ingestie Drive, `WF99` erori |
+| `n8n/workflows` | `WF01` dosar nou → Telegram, `WF02`/`WF03` unelte și final de apel Vapi, `WF04` RAG, `WF05` botul brokerului, `WF08` ingestie Drive, `WF13` alertă de buget AI, `WF99` erori |
 | `supabase` | migrări și seed |
 | `prompts` | promptul asistentului vocal |
 | `data/fixtures` | date fictive și acte SPECIMEN |

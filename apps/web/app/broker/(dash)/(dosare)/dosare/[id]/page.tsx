@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { AlertTriangle, ArrowLeft, CheckCircle2, FileDown } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -5,6 +6,7 @@ import type { ReactNode } from "react";
 import { z } from "zod";
 import { SketchView } from "@/components/amiabila-form/sketch-view";
 import { AddToPortfolio } from "@/components/broker/add-to-portfolio";
+import { ClaimExtras, type ClaimNote, type ExtraFile } from "@/components/broker/claim-extras";
 import { ClaimCalls } from "@/components/broker/claim-calls";
 import { Plate } from "@/components/broker/plate";
 import { DueText, RoleTag, StatusPill } from "@/components/broker/status-pill";
@@ -45,15 +47,16 @@ export default async function ClaimDetail({ params }: { params: Promise<{ id: st
   const { db, broker } = await requireBroker();
 
   const callCols = "id, created_at, summary, transcript";
-  const [doc, metaRes, filesRes, eventsRes, partiesRes, linkedCallsRes, openCallsRes] = await Promise.all([
+  const [doc, metaRes, filesRes, eventsRes, partiesRes, linkedCallsRes, openCallsRes, brokersRes] = await Promise.all([
     loadClaimDocument(db, id.data),
     db.from("claims").select("status, broker_id, created_at, updated_at, ai_summary, pdf_path, brokers(name)").eq("id", id.data).maybeSingle(),
-    db.from("claim_files").select("kind, party_role, created_at").eq("claim_id", id.data).order("created_at"),
+    db.from("claim_files").select("id, kind, party_role, created_at, storage_path, uploaded_by, file_name").eq("claim_id", id.data).order("created_at"),
     db.from("events").select("type, payload, at").eq("entity_type", "claim").eq("entity_id", id.data).order("at"),
     db.from("claim_parties").select("role, client_id, driver, clients(full_name)").eq("claim_id", id.data),
     // Apelurile vocale: cele legate de dosar și cele încă nelegate (cu rezumat, adică încheiate), pe care brokerul le poate atașa.
     db.from("conversations").select(callCols).eq("channel", "voice").eq("claim_id", id.data).order("created_at"),
     db.from("conversations").select(callCols).eq("channel", "voice").is("claim_id", null).is("claim_ignored_at", null).not("summary", "is", null).order("created_at", { ascending: false }).limit(30),
+    db.from("brokers").select("id, name"),
   ]);
   const linkedCalls = (linkedCallsRes.data ?? []) as unknown as CallRow[];
   type PartyLink = { role: "A" | "B"; client_id: string | null; driver: { fullName?: string } | null; clients: { full_name: string } | null };
@@ -80,8 +83,21 @@ export default async function ClaimDetail({ params }: { params: Promise<{ id: st
   const checks = crossChecks(form);
   const mine = meta.broker_id === broker.id;
   const canTake = !meta.broker_id && (meta.status === "signed" || meta.status === "submitted");
-  const timeline = buildTimeline(meta, filesRes.data ?? [], eventsRes.data ?? []);
+  const brokerNames = new Map(((brokersRes.data ?? []) as { id: string; name: string }[]).map((b) => [b.id, displayName(b.name)]));
+  const files = (filesRes.data ?? []) as FileRow[];
+  const events = (eventsRes.data ?? []) as EventRow[];
+  const timeline = buildTimeline(meta, files, events, brokerNames);
+  const extraFiles = await brokerFiles(db, files, brokerNames);
+  const notes: ClaimNote[] = events
+    .filter((e) => e.type === "broker_note" && e.payload?.text)
+    .map((e) => ({ at: e.at, by: brokerNames.get(e.payload?.broker_id ?? "") ?? null, text: e.payload?.text ?? "" }))
+    .reverse();
   const summary = summarizeClaim(missing, checks);
+  // Legitim după poliță sau număr (flotă, familie), dar rar: brokerul trebuie să observe.
+  const clientA = clientsByRole.get("A");
+  if (clientA && clientA.id === clientsByRole.get("B")?.id) {
+    summary.warnings.push(`Ambele vehicule sunt ale aceluiași client (${displayName(clientA.name)}). Verificați că nu e o greșeală.`);
+  }
   const candidateCalls = rankCandidateCalls((openCallsRes.data ?? []) as unknown as CallRow[], doc.ref, form.place);
   const owner = meta.brokers?.name ? `preluat de ${displayName(meta.brokers.name)}` : canTake ? null : "nepreluat";
 
@@ -162,6 +178,8 @@ export default async function ClaimDetail({ params }: { params: Promise<{ id: st
         />
 
         <ClaimCalls claimId={id.data} linked={linkedCalls} candidates={candidateCalls} />
+
+        <ClaimExtras claimId={id.data} files={extraFiles} notes={notes} />
 
         {(doc.photos.length > 0 || form.sketch) && (
           <section aria-labelledby="media" className="border-b border-border py-3.5">
@@ -437,13 +455,54 @@ const Empty = () => (
   </span>
 );
 
+type FileRow = {
+  id: string;
+  kind: string;
+  party_role: "A" | "B" | null;
+  created_at: string;
+  storage_path: string;
+  uploaded_by: string | null;
+  file_name: string | null;
+};
+type EventRow = { type: string; payload: { role?: string; method?: string; broker_id?: string; text?: string } | null; at: string };
+
+/** Fișierele puse de broker (nu ale șoferilor), cele mai noi primele, cu adrese semnate valabile 10 minute. */
+async function brokerFiles(db: SupabaseClient, files: FileRow[], names: Map<string, string>): Promise<ExtraFile[]> {
+  const mine = files.filter((f) => f.uploaded_by);
+  if (mine.length === 0) return [];
+  const { data } = await db.storage.from(CLAIM_BUCKET).createSignedUrls(
+    mine.map((f) => f.storage_path),
+    600,
+  );
+  const urls = new Map((data ?? []).map((s) => [s.path, s.signedUrl]));
+  return mine
+    .map((f) => ({
+      id: f.id,
+      name: f.file_name ?? "document",
+      url: urls.get(f.storage_path) ?? null,
+      role: f.party_role,
+      pdf: f.storage_path.endsWith(".pdf"),
+      at: f.created_at,
+      by: names.get(f.uploaded_by ?? "") ?? null,
+    }))
+    .reverse();
+}
+
 const FILE_LABELS: Record<string, string> = {
   damage: "Poză cu daunele",
   sketch: "Schiță salvată",
   policy: "Poliță încărcată",
   license: "Permis încărcat",
   id_doc: "Act de identitate încărcat",
+  document: "Document adăugat",
 };
+
+const fileLabel = (f: FileRow) =>
+  f.uploaded_by
+    ? f.kind === "damage"
+      ? `Poză adăugată de broker (${f.party_role})`
+      : `Document adăugat de broker: ${f.file_name ?? "document"}`
+    : `${FILE_LABELS[f.kind] ?? f.kind}${f.party_role ? ` (${f.party_role})` : ""}`;
 
 const TZ = "Europe/Bucharest";
 
@@ -456,23 +515,32 @@ const LINK_METHODS: Record<string, string> = {
   consent_added: "adăugat în portofoliu (a acceptat contactul și și-a scanat polița)",
   policy_scanned: "recunoscut după poliță; polița scanată a fost adăugată",
 };
-const eventLabel = (e: { type: string; payload: { role?: string; method?: string } | null }) =>
-  e.type === "client_linked"
+const eventLabel = (e: EventRow, names: Map<string, string>) =>
+  e.type === "broker_note"
+    ? `Notă${names.get(e.payload?.broker_id ?? "") ? ` de la ${names.get(e.payload?.broker_id ?? "")}` : ""}`
+    : e.type === "client_linked"
     ? `Client${e.payload?.role ? ` ${e.payload.role}` : ""}: ${LINK_METHODS[e.payload?.method ?? ""] ?? "legat"}`
     : e.type === "voice_call_linked"
       ? `Apel telefonic ${CALL_LINK_METHODS[e.payload?.method ?? ""] ?? "legat de dosar"}`
-      : e.type;
+      : (EVENT_LABELS[e.type] ?? e.type);
+
+/** Evenimente scrise de botul brokerului din Telegram (butoanele „Preiau” și „Cere info lipsă”). */
+const EVENT_LABELS: Record<string, string> = {
+  broker_took: "Preluat de broker (Telegram)",
+  info_requested: "Cerere de informații lipsă (Telegram)",
+};
 
 /** Istoricul pe zile; rândurile identice consecutive (ex. mai multe poze) se adună: „Poză cu daunele (A) ×3”. */
 function buildTimeline(
   meta: Meta,
-  files: { kind: string; party_role: string | null; created_at: string }[],
-  events: { type: string; payload: { role?: string; method?: string } | null; at: string }[],
+  files: FileRow[],
+  events: EventRow[],
+  names: Map<string, string>,
 ) {
   const raw = [
     { at: meta.created_at, label: "Dosar creat" },
-    ...files.map((f) => ({ at: f.created_at, label: `${FILE_LABELS[f.kind] ?? f.kind}${f.party_role ? ` (${f.party_role})` : ""}` })),
-    ...events.map((e) => ({ at: e.at, label: eventLabel(e) })),
+    ...files.map((f) => ({ at: f.created_at, label: fileLabel(f) })),
+    ...events.map((e) => ({ at: e.at, label: eventLabel(e, names) })),
   ];
   if (meta.updated_at !== meta.created_at) raw.push({ at: meta.updated_at, label: `Ultima schimbare: ${STATUS_LABELS[meta.status]}` });
   raw.sort((x, y) => new Date(x.at).getTime() - new Date(y.at).getTime());

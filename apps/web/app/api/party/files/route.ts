@@ -34,7 +34,8 @@ export async function POST(request: Request) {
     .select("id", { count: "exact", head: true })
     .eq("claim_id", auth.claimId)
     .eq("party_role", auth.role)
-    .eq("kind", "damage");
+    .eq("kind", "damage")
+    .is("uploaded_by", null);
   if (count.error) return SERVER_ERROR();
   if ((count.count ?? 0) >= MAX_PHOTOS_PER_PARTY) {
     return fail(422, `Puteți încărca cel mult ${MAX_PHOTOS_PER_PARTY} poze.`, "too_many");

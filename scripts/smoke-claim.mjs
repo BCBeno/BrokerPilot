@@ -4,7 +4,8 @@
 // Folosește acte din `data/fixtures/documents.json` (fictive). La final verifică execuția n8n și rezumatul din dosar,
 // apoi șterge dosarul de test (`--keep` îl păstrează).
 //
-//   node scripts/smoke-claim.mjs [--keep] [--base http://localhost:3000]
+//   node scripts/smoke-claim.mjs [--keep] [--until-signed] [--base http://localhost:3000]
+// `--until-signed`: se oprește după semnături (fără PDF, n8n, Telegram) și arată legarea clienților făcută la semnare.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,6 +14,7 @@ import { deflateSync, crc32 } from "node:zlib";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 process.loadEnvFile(join(ROOT, ".env"));
 const keep = process.argv.includes("--keep");
+const untilSigned = process.argv.includes("--until-signed");
 const baseArg = process.argv.indexOf("--base");
 const APP = baseArg >= 0 ? process.argv[baseArg + 1] : "http://localhost:3000";
 const SB = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -90,7 +92,8 @@ async function cleanup(id) {
 
 let claimId = null;
 try {
-  const A = docs[0], B = docs[1];
+  // A și B trebuie să fie clienți care există în baza de date (al doilea client din fixtures a fost scos la curățenia de demo).
+  const A = docs[0], B = docs[2];
   const created = await call("A creează dosarul", "POST", "/api/claims", {
     body: {
       documents: documentsOf(A),
@@ -109,25 +112,34 @@ try {
   const sig = signaturePng();
   await call("A semnează", "PUT", "/api/party/signature", { token: created.aToken, body: { signature: sig } });
   await call("B semnează", "PUT", "/api/party/signature", { token: created.joinToken, body: { signature: sig } });
-  const fin = await call("A finalizează (PDF + n8n)", "POST", `/api/claims/${claimId}/finalize`, { token: created.aToken });
-  console.log(`   webhook: ${fin.webhook}, PDF: ${fin.pdfUrl ? "generat" : "lipsește"}`);
   // Legarea daună → client (S6b): A și B din fixtures sunt clienți ai agenției, deci ambii trebuie recunoscuți.
-  const parties = await (await fetch(`${SB}/rest/v1/claim_parties?select=role,client_id&claim_id=eq.${claimId}&order=role`, { headers: { apikey: SB_KEY } })).json();
-  for (const p of parties) {
-    const want = (p.role === "A" ? A : B).client_id;
-    console.log(`   ${p.client_id === want ? "✓" : "✗"} ${p.role} legat de client: ${p.client_id ?? "nu"}`);
-  }
+  const checkLinks = async () => {
+    const parties = await (await fetch(`${SB}/rest/v1/claim_parties?select=role,client_id&claim_id=eq.${claimId}&order=role`, { headers: { apikey: SB_KEY } })).json();
+    for (const p of parties) {
+      const want = (p.role === "A" ? A : B).client_id;
+      console.log(`   ${p.client_id === want ? "✓" : "✗"} ${p.role} legat de client: ${p.client_id ?? "nu"}`);
+    }
+  };
+  if (untilSigned) {
+    const row = (await (await fetch(`${SB}/rest/v1/claims?select=status&id=eq.${claimId}`, { headers: { apikey: SB_KEY } })).json())[0];
+    console.log(`   status după semnături: ${row.status}`);
+    await checkLinks();
+  } else {
+    const fin = await call("A finalizează (PDF + n8n)", "POST", `/api/claims/${claimId}/finalize`, { token: created.aToken });
+    console.log(`   webhook: ${fin.webhook}, PDF: ${fin.pdfUrl ? "generat" : "lipsește"}`);
+    await checkLinks();
 
-  await new Promise((r) => setTimeout(r, 15_000)); // n8n: Telegram + rezumat
-  const ex = await (await fetch(`${N8N_API}/executions?workflowId=${WF01}&limit=1`, { headers: { "X-N8N-API-KEY": N8N_KEY } })).json();
-  const last = ex.data?.[0];
-  console.log(`n8n: execuția ${last?.id} ${last?.status} (${last?.startedAt})`);
-  if (last) {
-    const e = await (await fetch(`${N8N_API}/executions/${last.id}?includeData=true`, { headers: { "X-N8N-API-KEY": N8N_KEY } })).json();
-    for (const [n, r] of Object.entries(e.data?.resultData?.runData ?? {})) console.log(`   - ${n}: ${r[0].executionStatus}${r[0].error ? ` (${r[0].error.message})` : ""}`);
+    await new Promise((r) => setTimeout(r, 15_000)); // n8n: Telegram + rezumat
+    const ex = await (await fetch(`${N8N_API}/executions?workflowId=${WF01}&limit=1`, { headers: { "X-N8N-API-KEY": N8N_KEY } })).json();
+    const last = ex.data?.[0];
+    console.log(`n8n: execuția ${last?.id} ${last?.status} (${last?.startedAt})`);
+    if (last) {
+      const e = await (await fetch(`${N8N_API}/executions/${last.id}?includeData=true`, { headers: { "X-N8N-API-KEY": N8N_KEY } })).json();
+      for (const [n, r] of Object.entries(e.data?.resultData?.runData ?? {})) console.log(`   - ${n}: ${r[0].executionStatus}${r[0].error ? ` (${r[0].error.message})` : ""}`);
+    }
+    const row = (await (await fetch(`${SB}/rest/v1/claims?select=status,ai_summary&id=eq.${claimId}`, { headers: { apikey: SB_KEY } })).json())[0];
+    console.log(`Dosar: status ${row.status}, rezumat salvat: ${row.ai_summary ? "da" : "nu"}`);
   }
-  const row = (await (await fetch(`${SB}/rest/v1/claims?select=status,ai_summary&id=eq.${claimId}`, { headers: { apikey: SB_KEY } })).json())[0];
-  console.log(`Dosar: status ${row.status}, rezumat salvat: ${row.ai_summary ? "da" : "nu"}`);
 } catch (e) {
   console.error(`EȘEC: ${e.message}`);
   process.exitCode = 1;

@@ -21,6 +21,7 @@ export async function GET(request: Request) {
       .eq("claim_id", auth.claimId)
       .eq("party_role", auth.role)
       .eq("kind", "damage")
+      .is("uploaded_by", null)
       .order("created_at"),
   ]);
   if (claim.error || party.error || files.error) return SERVER_ERROR();

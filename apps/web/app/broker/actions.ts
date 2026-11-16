@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { addDays, todayRo } from "@/lib/broker/renewals";
 import { requireBroker } from "@/lib/broker/session";
+import { CLAIM_BUCKET } from "@/lib/claims/files";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { getServerClient } from "@/lib/supabase/server";
 
 const loginSchema = z.object({ email: z.email(), password: z.string().min(1).max(200) });
@@ -61,6 +63,51 @@ export async function verifyClient(clientId: string) {
   revalidatePath("/broker", "layout");
 }
 
+const noteSchema = z.string().trim().min(1, "Scrieți nota.").max(2000, "Nota e prea lungă (cel mult 2000 de caractere).");
+
+export type NoteState = { error: string | null; ok: number };
+
+/**
+ * Notă internă pe dosar (ex. „clientul a trimis pe WhatsApp devizul”). E un rând în `events` (apare și în istoric);
+ * RLS (`events_insert_claim_note`) permite doar dosare din agenția brokerului și doar în numele lui. Nu se editează, nu se șterge.
+ */
+export async function addClaimNote(claimId: string, _prev: NoteState, form: FormData): Promise<NoteState> {
+  const id = z.uuid().parse(claimId);
+  const text = noteSchema.safeParse(form.get("text"));
+  if (!text.success) return { error: text.error.issues[0]?.message ?? "Nota nu e validă.", ok: _prev.ok };
+  const { db, broker } = await requireBroker();
+  const { error } = await db
+    .from("events")
+    .insert({ entity_type: "claim", entity_id: id, type: "broker_note", payload: { broker_id: broker.id, text: text.data } });
+  if (error) return { error: "Nu am putut salva nota. Încercați din nou.", ok: _prev.ok };
+  revalidatePath("/broker", "layout");
+  return { error: null, ok: _prev.ok + 1 };
+}
+
+/**
+ * Șterge un fișier adăugat greșit. Doar fișierele încărcate de broker (`uploaded_by`), niciodată pozele sau actele șoferilor.
+ * RLS confirmă că fișierul e într-un dosar al agenției; ștergerea efectivă merge cu service_role (brokerul nu scrie în Storage).
+ */
+export async function removeClaimFile(claimId: string, fileId: string) {
+  const claim = z.uuid().parse(claimId);
+  const file = z.uuid().parse(fileId);
+  const { db } = await requireBroker();
+  const admin = getAdminClient();
+  if (!admin) throw new Error("Serviciul nu e disponibil acum.");
+  const { data } = await db
+    .from("claim_files")
+    .select("storage_path")
+    .eq("id", file)
+    .eq("claim_id", claim)
+    .not("uploaded_by", "is", null)
+    .maybeSingle();
+  if (!data) throw new Error("Fișierul nu mai există sau nu poate fi șters.");
+  const { error } = await admin.from("claim_files").delete().eq("id", file);
+  if (error) throw new Error("Nu am putut șterge fișierul. Încercați din nou.");
+  await admin.storage.from(CLAIM_BUCKET).remove([data.storage_path]);
+  revalidatePath("/broker", "layout");
+}
+
 /**
  * „Atașează” un apel vocal la dosar. Funcția SQL `attach_voice_call` verifică singură că apelul și dosarul sunt ale
  * agenției brokerului și că apelul nu era deja legat, apoi scrie interacțiunea și evenimentul din istoric.
@@ -96,7 +143,7 @@ export async function ignoreCall(conversationId: string) {
   revalidatePath("/broker", "layout");
 }
 
-const snoozeSchema =z.union([z.literal(1), z.literal(3), z.literal(7)]);
+const snoozeSchema = z.union([z.literal(1), z.literal(3), z.literal(7)]);
 
 /**
  * Reînnoiri: „Am contactat” și „Reamintește-mi” sunt rânduri în `events` (entity_type 'policy').

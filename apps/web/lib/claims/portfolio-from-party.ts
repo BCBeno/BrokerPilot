@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeDate, normalizeEmail, normalizePhone, normalizePlate, normalizeVin } from "@/lib/amiabila/documents";
-import { decideLink, type Candidate } from "@/lib/claims/link-client";
+import { decideLink, phoneCandidateNames, trustedCandidates, type Candidate } from "@/lib/claims/link-client";
 
 type PartyData = {
   client_id: string | null;
@@ -88,7 +88,14 @@ export async function addPartyToPortfolio(
   const match = await db.rpc("match_party_client", { p_agency: agencyId, p_policy_no: policyNo, p_plate: plate, p_phone: party.driver?.phone || null });
   // Dacă potrivirea a eșuat nu știm dacă există deja: nu creăm (ar putea ieși un duplicat).
   if (match.error) return null;
-  const candidates = (match.data ?? []) as Candidate[];
+  const raw = (match.data ?? []) as Candidate[];
+  // Telefonul contează doar cu numele potrivit și nu clientul de pe cealaltă parte; un candidat respins nu blochează crearea.
+  const other = await db.from("claim_parties").select("client_id").eq("claim_id", claimId).eq("role", role === "A" ? "B" : "A").maybeSingle();
+  const candidates = trustedCandidates(raw, {
+    driverName: party.driver?.fullName ?? null,
+    clientNames: await phoneCandidateNames(db, raw),
+    otherClientId: (other.data?.client_id as string | null | undefined) ?? null,
+  });
   const found = decideLink(candidates);
   if (found) {
     // Telefonul e scris de mână: nu adăugăm vehicule și polițe pe baza lui.
