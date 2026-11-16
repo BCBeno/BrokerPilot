@@ -48,7 +48,7 @@ export default async function ClientsLayout({ children }: { children: React.Reac
           Nu am putut încărca clienții. Reîncărcați pagina.
         </p>
       )}
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)]">
         <ClientsList rows={rows} />
         {children}
       </div>
