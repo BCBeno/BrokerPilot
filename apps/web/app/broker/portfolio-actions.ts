@@ -59,7 +59,7 @@ export async function importPortfolio(_prev: ImportState, form: FormData): Promi
 
   // Ordinea contează: polițele trimit la vehicule, vehiculele la clienți.
   const steps = [
-    { table: "clients", rows: plan.clients.map((c) => ({ ...c, agency_id: broker.agency_id })) },
+    { table: "clients", rows: plan.clients },
     { table: "vehicles", rows: plan.vehicles },
     { table: "policies", rows: plan.policies.map((p) => ({ ...p, broker_id: broker.id })) },
   ] as const;
@@ -101,7 +101,7 @@ export async function addPartyToPortfolio(claimId: string, role: "A" | "B"): Pro
   const id = z.uuid().parse(claimId);
   const r = z.enum(["A", "B"]).parse(role);
   const { db, broker } = await requireBroker();
-  const res = await addPartyToPortfolioDb(db, { agencyId: broker.agency_id, claimId: id, role: r, actor: { kind: "broker", brokerId: broker.id } });
+  const res = await addPartyToPortfolioDb(db, { claimId: id, role: r, actor: { kind: "broker", brokerId: broker.id } });
   if (!res) throw new Error("Clientul nu se poate identifica sigur (poliță sau număr la mai mulți clienți). Legați-l manual.");
   revalidatePath("/broker", "layout");
   return res;

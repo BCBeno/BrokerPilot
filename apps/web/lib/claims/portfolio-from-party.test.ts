@@ -8,7 +8,7 @@ type Call = { table: string; op: string; row?: Record<string, unknown> };
 function fakeDb(opts: { parties: object[]; candidates?: object[]; vehicles?: object[] }) {
   const calls: Call[] = [];
   const reads: Record<string, object[]> = {
-    claims: [{ agency_id: "ag1" }],
+    claims: [{ id: "c1" }],
     claim_parties: opts.parties,
     vehicles: opts.vehicles ?? [],
   };

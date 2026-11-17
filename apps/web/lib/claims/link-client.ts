@@ -98,11 +98,10 @@ export async function partyClients(db: SupabaseClient, claimId: string): Promise
 export async function linkClaimParties(db: SupabaseClient, claimId: string): Promise<LinkResult[]> {
   try {
     const [claimRes, partiesRes] = await Promise.all([
-      db.from("claims").select("agency_id").eq("id", claimId).maybeSingle(),
+      db.from("claims").select("id").eq("id", claimId).maybeSingle(),
       db.from("claim_parties").select("role, client_id, driver, vehicle, insurance").eq("claim_id", claimId),
     ]);
     if (claimRes.error || partiesRes.error || !claimRes.data) return [];
-    const agency = claimRes.data.agency_id as string;
 
     const linked: LinkResult[] = [];
     const parties = ((partiesRes.data ?? []) as PartyKeys[]).sort((x, y) => x.role.localeCompare(y.role));
@@ -113,7 +112,7 @@ export async function linkClaimParties(db: SupabaseClient, claimId: string): Pro
       const policyNo = party.insurance?.policyNo || null;
       const phone = party.driver?.phone || null;
       if (!plate && !policyNo && !phone) continue;
-      const { data, error } = await db.rpc("match_party_client", { p_agency: agency, p_policy_no: policyNo, p_plate: plate, p_phone: phone });
+      const { data, error } = await db.rpc("match_party_client", { p_policy_no: policyNo, p_plate: plate, p_phone: phone });
       if (error) {
         console.error("[link-client]", error.message);
         continue;

@@ -17,7 +17,7 @@ export type PortfolioActor = { kind: "broker"; brokerId: string } | { kind: "con
 export type PortfolioResult = { clientId: string; created: boolean };
 
 /**
- * Pune șoferul unei părți din dosar în portofoliul agenției: întâi caută un client existent (poliță, apoi număr, apoi telefon);
+ * Pune șoferul unei părți din dosar în portofoliu: întâi caută un client existent (poliță, apoi număr, apoi telefon);
  * dacă nu e, creează clientul, vehiculul și polița din actele lui. Pe un client recunoscut după poliță sau număr adaugă
  * vehiculul și polița citite, dacă lipsesc (așa o poliță nouă o înlocuiește pe cea veche în Reînnoiri).
  * Polița nu e vândută de noi: fără broker. Leagă partea și scrie `client_linked` în `events`.
@@ -25,9 +25,9 @@ export type PortfolioResult = { clientId: string; created: boolean };
  */
 export async function addPartyToPortfolio(
   db: SupabaseClient,
-  args: { agencyId: string; claimId: string; role: "A" | "B"; actor: PortfolioActor },
+  args: { claimId: string; role: "A" | "B"; actor: PortfolioActor },
 ): Promise<PortfolioResult | null> {
-  const { agencyId, claimId, role, actor } = args;
+  const { claimId, role, actor } = args;
   const { data } = await db.from("claim_parties").select("client_id, contact_consent_at, driver, vehicle, insurance").eq("claim_id", claimId).eq("role", role).maybeSingle();
   const party = data as PartyData | null;
   if (!party) throw new Error("Partea nu există în acest dosar.");
@@ -50,7 +50,7 @@ export async function addPartyToPortfolio(
   const addVehicleAndPolicy = async (clientId: string): Promise<boolean> => {
     let vehicleId: string | null = null;
     if (plate) {
-      const found = await db.from("vehicles").select("id, client_id, clients!inner(agency_id)").eq("plate", plate).eq("clients.agency_id", agencyId).limit(1);
+      const found = await db.from("vehicles").select("id, client_id").eq("plate", plate).limit(1);
       const row = (found.data?.[0] ?? null) as { id: string; client_id: string } | null;
       if (row) {
         vehicleId = row.client_id === clientId ? row.id : null;
@@ -85,7 +85,7 @@ export async function addPartyToPortfolio(
     if (actor.kind === "consent") await db.from("clients").update({ needs_review: true }).eq("id", clientId);
   };
 
-  const match = await db.rpc("match_party_client", { p_agency: agencyId, p_policy_no: policyNo, p_plate: plate, p_phone: party.driver?.phone || null });
+  const match = await db.rpc("match_party_client", { p_policy_no: policyNo, p_plate: plate, p_phone: party.driver?.phone || null });
   // Dacă potrivirea a eșuat nu știm dacă există deja: nu creăm (ar putea ieși un duplicat).
   if (match.error) return null;
   const raw = (match.data ?? []) as Candidate[];
@@ -114,7 +114,6 @@ export async function addPartyToPortfolio(
   const clientId = randomUUID();
   const client = await db.from("clients").insert({
     id: clientId,
-    agency_id: agencyId,
     full_name: name,
     phone: party.driver?.phone ? normalizePhone(party.driver.phone) : null,
     email: party.driver?.email ? normalizeEmail(party.driver.email) : null,
@@ -135,14 +134,14 @@ export async function addConsentingPartiesToPortfolio(db: SupabaseClient, claimI
   const out: { role: "A" | "B"; clientId: string; created: boolean }[] = [];
   try {
     const [claimRes, partiesRes] = await Promise.all([
-      db.from("claims").select("agency_id").eq("id", claimId).maybeSingle(),
+      db.from("claims").select("id").eq("id", claimId).maybeSingle(),
       db.from("claim_parties").select("role, client_id, contact_consent_at").eq("claim_id", claimId),
     ]);
     if (claimRes.error || partiesRes.error || !claimRes.data) return out;
     for (const p of (partiesRes.data ?? []) as { role: "A" | "B"; client_id: string | null; contact_consent_at: string | null }[]) {
       if (p.client_id || !p.contact_consent_at) continue;
       try {
-        const res = await addPartyToPortfolio(db, { agencyId: claimRes.data.agency_id as string, claimId, role: p.role, actor: { kind: "consent" } });
+        const res = await addPartyToPortfolio(db, { claimId, role: p.role, actor: { kind: "consent" } });
         if (res) out.push({ role: p.role, ...res });
       } catch (error) {
         console.error("[portfolio-consent]", p.role, error instanceof Error ? error.message : error);
