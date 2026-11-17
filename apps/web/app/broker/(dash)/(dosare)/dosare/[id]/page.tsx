@@ -11,7 +11,7 @@ import { ClaimCalls } from "@/components/broker/claim-calls";
 import { Plate } from "@/components/broker/plate";
 import { DueText, RoleTag, StatusPill } from "@/components/broker/status-pill";
 import { Button } from "@/components/ui/button";
-import { FORM_CIRCUMSTANCES, IMPACT_LABELS } from "@/lib/amiabila/content";
+import { FORM_CIRCUMSTANCES, IMPACT_LABELS, VEHICLE_KIND_LABELS } from "@/lib/amiabila/content";
 import type { Party } from "@/lib/amiabila/form";
 import { CHANNEL_LABELS, STATUS_LABELS, type ClaimStatus } from "@/lib/broker/claims";
 import { CALL_LINK_METHODS, rankCandidateCalls, type CallRow } from "@/lib/broker/calls";
@@ -334,7 +334,11 @@ function cells(p: Party, photos: number) {
     driver: name || null,
     contact: contactLines(p.driver.contact),
     license: secondLine(p.driver.licenseNo || null, licenseDetail || null),
-    impact: p.impactPoint ? IMPACT_LABELS[p.impactPoint] : null,
+    impact: p.impactPoint
+      ? p.vehicleKind === "car"
+        ? IMPACT_LABELS[p.impactPoint]
+        : `${IMPACT_LABELS[p.impactPoint]} (${VEHICLE_KIND_LABELS[p.vehicleKind].toLowerCase()})`
+      : null,
     damage: p.visibleDamage || null,
     circumstances: circ.length ? (
       <ul className="space-y-0.5">

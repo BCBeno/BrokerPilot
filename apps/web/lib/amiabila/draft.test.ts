@@ -122,3 +122,19 @@ describe("circumstanțe", () => {
     expect(toggleCircumstance([3, 5, 11], 5)).toEqual([3, 11]);
   });
 });
+
+describe("tipul vehiculului", () => {
+  it("ciornele vechi, fără tip, rămân valide și devin autoturism", () => {
+    const old = { ...EMPTY_DRAFT, circumstances: { checked: [1], impact: "front", damage: "", notes: "" } };
+    const parsed = parseDraft(JSON.stringify(old));
+    expect(parsed.circumstances.checked).toEqual([1]);
+    expect(parsed.circumstances.vehicleKind).toBe("car");
+  });
+
+  it("păstrează motocicleta și respinge un tip necunoscut", () => {
+    const moto = { ...EMPTY_DRAFT, circumstances: { ...EMPTY_DRAFT.circumstances, vehicleKind: "motorcycle" } };
+    expect(parseDraft(JSON.stringify(moto)).circumstances.vehicleKind).toBe("motorcycle");
+    const bad = { ...EMPTY_DRAFT, circumstances: { ...EMPTY_DRAFT.circumstances, vehicleKind: "tractor" } };
+    expect(parseDraft(JSON.stringify(bad))).toEqual(EMPTY_DRAFT);
+  });
+});

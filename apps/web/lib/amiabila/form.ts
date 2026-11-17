@@ -1,4 +1,4 @@
-import { type ImpactZone } from "./content";
+import { type ImpactZone, type VehicleKind } from "./content";
 import type { Draft } from "./draft";
 import { fieldValue } from "./documents";
 import type { Sketch } from "./sketch";
@@ -41,7 +41,8 @@ export type Party = {
     category: string;
     licenseValidTo: string;
   };
-  /** Caseta 10. */
+  /** Caseta 10: silueta pe care se desenează săgeata și zona lovită. */
+  vehicleKind: VehicleKind;
   impactPoint: ImpactZone | null;
   /** Caseta 11. */
   visibleDamage: string;
@@ -102,6 +103,7 @@ export function emptyParty(): Party {
       category: "",
       licenseValidTo: "",
     },
+    vehicleKind: "car",
     impactPoint: null,
     visibleDamage: "",
     circumstances: [],
@@ -197,6 +199,7 @@ export function buildParty({ documents, circumstances }: PartyInput): Party {
     category: fieldValue(lic, "categories"),
     licenseValidTo: formatFormDate(fieldValue(lic, "expiresOn")),
   };
+  party.vehicleKind = circumstances.vehicleKind;
   party.impactPoint = circumstances.impact;
   party.visibleDamage = circumstances.damage;
   party.circumstances = [...circumstances.checked];

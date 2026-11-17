@@ -145,9 +145,9 @@ function ImpactBox({ p, who, letter }: { p: Party; who: Who; letter: "A" | "B" }
   return (
     <Box n={10} who={who} title={<>Indicați punctul inițial de impact pentru vehiculul {letter} printr-o săgeată →</>} className="af-impact">
       <div className="af-art">
-        <BikeArt />
-        <CarImpact zone={zone} />
-        <TruckArt />
+        <BikeArt zone={p.vehicleKind === "motorcycle" ? zone : null} />
+        <CarImpact zone={p.vehicleKind === "car" ? zone : null} />
+        <TruckArt zone={p.vehicleKind === "van" ? zone : null} />
       </div>
     </Box>
   );

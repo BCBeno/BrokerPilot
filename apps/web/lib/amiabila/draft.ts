@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ELIGIBILITY_KEYS, IMPACT_ZONES, type EligibilityKey } from "./content";
+import { ELIGIBILITY_KEYS, IMPACT_ZONES, VEHICLE_KINDS, type EligibilityKey } from "./content";
 import { DOC_TYPES, extractedDocSchema, isDocConfirmed, type DocType } from "./documents";
 import { sketchSchema } from "./sketch";
 
@@ -55,6 +55,8 @@ export const draftSchema = z.object({
   circumstances: z.object({
     checked: z.array(z.number().int().min(1).max(17)).max(17),
     impact: z.enum(IMPACT_ZONES).nullable(),
+    /** Tipul vehiculului (caseta 10). `default` păstrează valide ciornele și dosarele de dinainte, care erau toate autoturisme. */
+    vehicleKind: z.enum(VEHICLE_KINDS).default("car"),
     damage: z.string().max(1000),
     notes: z.string().max(1000),
   }),
@@ -93,7 +95,7 @@ export const EMPTY_DRAFT: Draft = {
   place: { address: "", lat: null, lng: null, source: null, whenMode: "now", customWhen: "", occurredAt: null },
   documentsConsent: false,
   documents: { registration: null, license: null, policy: null },
-  circumstances: { checked: [], impact: null, damage: "", notes: "" },
+  circumstances: { checked: [], impact: null, vehicleKind: "car", damage: "", notes: "" },
   sketch: null,
   claim: null,
   identity: null,

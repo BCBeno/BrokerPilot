@@ -87,6 +87,16 @@ export const FORM_CIRCUMSTANCES: readonly string[] = [
   "neobservând indicatorul de prioritate sau lumina roșie a semaforului",
 ];
 
+/** Tipul vehiculului unui șofer; formularul oficial are câte o siluetă pentru fiecare (caseta 10). */
+export const VEHICLE_KINDS = ["car", "motorcycle", "van"] as const;
+export type VehicleKind = (typeof VEHICLE_KINDS)[number];
+
+export const VEHICLE_KIND_LABELS: Record<VehicleKind, string> = {
+  car: "Autoturism",
+  motorcycle: "Motocicletă",
+  van: "Autoutilitară",
+};
+
 export const IMPACT_ZONES = [
   "front-left",
   "front",

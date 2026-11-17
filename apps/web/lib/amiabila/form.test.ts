@@ -77,7 +77,7 @@ describe("formular amiabilă", () => {
           },
         },
       },
-      circumstances: { checked: [13, 2], impact: "right", damage: "Portieră", notes: "Observație" },
+      circumstances: { checked: [13, 2], impact: "right", vehicleKind: "car", damage: "Portieră", notes: "Observație" },
     };
     const form = buildForm(draft);
     expect(form.place).toBe("Str. Test 1, București");
@@ -110,12 +110,14 @@ describe("formular amiabilă", () => {
         license: { fields: { fullName: field("POPA Ana"), licenseNo: field("C1"), categories: field("B"), expiresOn: field("2030-05-05") } },
         policy: { fields: { insurer: field("Alt SA"), policyNo: field("RCA2"), validFrom: field("2026-02-01"), validTo: field("2027-01-31") } },
       },
-      circumstances: { checked: [1, 12], impact: "rear", damage: "bara spate", notes: "" },
+      circumstances: { checked: [1, 12], impact: "rear", vehicleKind: "motorcycle", damage: "bara spate", notes: "" },
     });
     expect(form.b.vehicle).toMatchObject({ makeType: "Ford Focus", plate: "CJ 99 XYZ" });
     expect(form.b.driver).toMatchObject({ surname: "POPA", firstName: "Ana", licenseValidTo: "05.05.2030" });
     expect(form.b.insurance).toMatchObject({ company: "Alt SA", validTo: "31.01.2027" });
     expect(form.b.impactPoint).toBe("rear");
+    expect(form.b.vehicleKind).toBe("motorcycle");
+    expect(form.a.vehicleKind).toBe("car");
     expect(countChecked(form.b)).toBe(2);
     expect(countChecked(form.a)).toBe(0);
   });

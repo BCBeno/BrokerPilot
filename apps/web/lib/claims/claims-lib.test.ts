@@ -9,7 +9,7 @@ const filled = (type: DocType): ExtractedDoc => ({
 });
 const party = (): PartySubmission => ({
   documents: { registration: filled("registration"), license: filled("license"), policy: filled("policy") },
-  circumstances: { checked: [3], impact: "front", damage: "", notes: "" },
+  circumstances: { checked: [3], impact: "front", vehicleKind: "car", damage: "", notes: "" },
 });
 const full = (): CompletenessInput => ({
   partyA: party(),

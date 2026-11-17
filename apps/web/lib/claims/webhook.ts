@@ -1,4 +1,4 @@
-import { CIRCUMSTANCES, IMPACT_LABELS } from "@/lib/amiabila/content";
+import { CIRCUMSTANCES, IMPACT_LABELS, VEHICLE_KIND_LABELS } from "@/lib/amiabila/content";
 import type { FormData, Party } from "@/lib/amiabila/form";
 import { summarizeClaim } from "@/lib/broker/claim-summary";
 import { crossChecks } from "@/lib/broker/compare";
@@ -51,7 +51,11 @@ function partySummary(p: Party, client: string | null): PartySummary {
     vehicle: vehicleName(p.vehicle.makeType),
     insurer: insurerName(p.insurance.company),
     policyNo: p.insurance.policyNo,
-    impact: p.impactPoint ? IMPACT_LABELS[p.impactPoint] : "",
+    impact: p.impactPoint
+      ? p.vehicleKind === "car"
+        ? IMPACT_LABELS[p.impactPoint]
+        : `${IMPACT_LABELS[p.impactPoint]} (${VEHICLE_KIND_LABELS[p.vehicleKind].toLowerCase()})`
+      : "",
     damage: p.visibleDamage,
     observations: p.observations,
     circumstances: p.circumstances.map((n) => ({ n, label: labels.get(n) ?? "" })),
