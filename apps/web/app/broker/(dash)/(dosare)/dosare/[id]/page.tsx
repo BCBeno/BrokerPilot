@@ -207,7 +207,7 @@ export default async function ClaimDetail({ params }: { params: Promise<{ id: st
               )}
               {form.sketch && (
                 <div className="max-w-md overflow-hidden rounded border border-border [&_svg]:h-auto [&_svg]:w-full">
-                  <SketchView sketch={form.sketch} />
+                  <SketchView sketch={form.sketch} kinds={{ A: form.a.vehicleKind, B: form.b.vehicleKind }} />
                 </div>
               )}
             </div>

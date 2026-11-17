@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Camera, CarFront, ImagePlus, Pencil, RotateCcw, RotateCw, StickyNote, Trash2, Undo2, type LucideIcon } from "lucide-react";
-import { SketchView } from "@/components/amiabila-form/sketch-view";
+import { SketchView, type SketchKinds } from "@/components/amiabila-form/sketch-view";
+import type { PartyBResponse } from "@/lib/amiabila/claim";
+import type { VehicleKind } from "@/lib/amiabila/content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateDraft, useDraft, useHydrated } from "@/lib/amiabila/draft-store";
@@ -34,12 +36,12 @@ import { cn } from "@/lib/utils";
 import { StepFrame } from "./step-frame";
 
 const MODES: { value: SketchMode; icon: LucideIcon; title: string; hint: string }[] = [
-  { value: "template", icon: CarFront, title: "Aleg drumul și așez mașinile", hint: "Rezultatul cel mai curat, fără desenat." },
+  { value: "template", icon: CarFront, title: "Aleg drumul și așez vehiculele", hint: "Rezultatul cel mai curat, fără desenat." },
   { value: "drawing", icon: Pencil, title: "Desenez cu degetul", hint: "Liber, ca pe hârtie." },
   { value: "photo", icon: Camera, title: "Fotografiez o schiță de pe hârtie", hint: "Dacă ați desenat deja." },
 ];
 
-const MODE_NAME: Record<SketchMode, string> = { template: "cu drum și mașini", drawing: "desen", photo: "poză" };
+const MODE_NAME: Record<SketchMode, string> = { template: "cu drum și vehicule", drawing: "desen", photo: "poză" };
 
 /** Un punct al desenului (unități ale caietului de 450 × 220) pornind de la poziția degetului pe ecran. */
 function toPoint(svg: SVGSVGElement, e: { clientX: number; clientY: number }) {
@@ -63,8 +65,36 @@ const chip =
 
 // ---------------------------------------------------------------- A. șablon de drum
 
+/**
+ * Ce vehicule apar în schiță: A din ciornă (pasul „Impact”), B de pe server dacă a trimis deja.
+ * Până trimite B, apare ca autoturism (ca pe hârtie, schița se poate corecta oricând).
+ */
+function useSketchKinds(): SketchKinds {
+  const draft = useDraft();
+  const [kindB, setKindB] = useState<VehicleKind | undefined>(undefined);
+  const claimId = draft.claim?.id;
+  const aToken = draft.claim?.aToken;
+  useEffect(() => {
+    if (!claimId || !aToken) return;
+    let live = true;
+    fetch(`/api/claims/${claimId}/party-b`, { headers: { "x-claim-token": aToken }, cache: "no-store" })
+      .then((res) => (res.ok ? (res.json() as Promise<PartyBResponse>) : null))
+      .then((body) => {
+        if (live && body?.submitted) setKindB(body.circumstances.vehicleKind);
+      })
+      .catch(() => {
+        /* B rămâne autoturism în schiță */
+      });
+    return () => {
+      live = false;
+    };
+  }, [claimId, aToken]);
+  return { A: draft.circumstances.vehicleKind, B: kindB };
+}
+
 function TemplateEditor() {
   const draft = useDraft();
+  const kinds = useSketchKinds();
   const [work, setWork] = useState<TemplateSketch>(() => (draft.sketch?.mode === "template" ? draft.sketch : defaultTemplateSketch()));
   const [selected, setSelected] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -172,6 +202,7 @@ function TemplateEditor() {
     <div className="space-y-5">
       <SketchView
         sketch={work}
+        kinds={kinds}
         svgRef={svgRef}
         grab={{ selected, onGrab, onRotate }}
         svgProps={{
@@ -183,7 +214,7 @@ function TemplateEditor() {
           onPointerDown: () => setSelected(null),
         }}
       />
-      <p className="text-[15px] text-muted-foreground">Trageți mașinile și semnele ca să le mutați. Atingeți o mașină și rotiți-o din cerculețul de deasupra ei sau din butoane.</p>
+      <p className="text-[15px] text-muted-foreground">Trageți vehiculele și semnele ca să le mutați. Atingeți un vehicul și rotiți-l din cerculețul de deasupra lui sau din butoane.</p>
 
       <div className="space-y-2">
         <p className="text-base font-semibold">Drumul</p>
@@ -198,7 +229,7 @@ function TemplateEditor() {
 
       <div className="space-y-2">
         <p className="text-base font-semibold">
-          Mașina {selectedIsCar ? selected : "aleasă"}
+          Vehiculul {selectedIsCar ? selected : "ales"}
         </p>
         <div className="grid grid-cols-4 gap-2">
           <Button type="button" variant="outline" className="h-11" disabled={!selectedIsCar} onClick={() => rotate(-90)} aria-label="Rotește 90 de grade la stânga">
@@ -261,6 +292,7 @@ type Tool = "pen" | "A" | "B";
 
 function DrawingEditor() {
   const draft = useDraft();
+  const kinds = useSketchKinds();
   const [work, setWork] = useState<DrawingSketch>(() =>
     draft.sketch?.mode === "drawing" ? draft.sketch : { mode: "drawing", strokes: [], marks: [] },
   );
@@ -363,6 +395,7 @@ function DrawingEditor() {
     <div className="space-y-5">
       <SketchView
         sketch={shown}
+        kinds={kinds}
         svgRef={svgRef}
         grab={{ selected, onGrab, onRotate }}
         svgProps={{
@@ -389,19 +422,19 @@ function DrawingEditor() {
             ) : (
               <>
                 <CarFront className="mr-1.5 size-4" aria-hidden />
-                Mașina {t}
+                Vehiculul {t}
               </>
             )}
           </button>
         ))}
       </div>
       <p className="text-[15px] text-muted-foreground">
-        Desenați drumul și traseul. Alegeți „Mașina A” sau „Mașina B” și atingeți locul unde era la impact. Apoi trageți-o ca s-o mutați și
-        rotiți-o din cerculețul de deasupra ei sau din butoane.
+        Desenați drumul și traseul. Alegeți „Vehiculul A” sau „Vehiculul B” și atingeți locul unde era la impact. Apoi trageți-l ca să-l mutați și
+        rotiți-l din cerculețul de deasupra lui sau din butoane.
       </p>
       {selected ? (
         <div className="space-y-2">
-          <p className="text-base font-semibold">Rotește mașina {selected}</p>
+          <p className="text-base font-semibold">Rotește vehiculul {selected}</p>
           <div className="grid grid-cols-4 gap-2">
             {(
               [
@@ -416,7 +449,7 @@ function DrawingEditor() {
                 type="button"
                 variant="outline"
                 className="h-11"
-                aria-label={`Rotește mașina ${selected} ${aria}`}
+                aria-label={`Rotește vehiculul ${selected} ${aria}`}
                 onClick={() => commit({ ...work, marks: rotateMark(work.marks, selected, delta) })}
               >
                 <Icon aria-hidden /> {label}
@@ -494,7 +527,7 @@ function PhotoEditor() {
       ) : (
         <div className="rounded-lg border border-dashed bg-card px-4 py-8 text-center text-muted-foreground">
           <ImagePlus className="mx-auto mb-2 size-8" aria-hidden />
-          Desenați pe o foaie drumul, mașinile A și B cu săgeți, semnele și numele străzilor. Apoi fotografiați foaia de sus, cu lumină bună.
+          Desenați pe o foaie drumul, vehiculele A și B cu săgeți, semnele și numele străzilor. Apoi fotografiați foaia de sus, cu lumină bună.
         </div>
       )}
       <Button type="button" variant={photo ? "outline" : "cta"} size="xl" className="w-full" disabled={busy} onClick={() => inputRef.current?.click()}>

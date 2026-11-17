@@ -4,7 +4,8 @@
 // Folosește acte din `data/fixtures/documents.json` (fictive). La final verifică execuția n8n și rezumatul din dosar,
 // apoi șterge dosarul de test (`--keep` îl păstrează).
 //
-//   node scripts/smoke-claim.mjs [--keep] [--until-signed] [--base http://localhost:3000]
+//   node scripts/smoke-claim.mjs [--keep] [--until-signed] [--vehicles motorcycle,van] [--base http://localhost:3000]
+//   node scripts/smoke-claim.mjs --delete <id>   (șterge un dosar păstrat cu --keep)
 // `--until-signed`: se oprește după semnături (fără PDF, n8n, Telegram) și arată legarea clienților făcută la semnare.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -16,6 +17,10 @@ process.loadEnvFile(join(ROOT, ".env"));
 const keep = process.argv.includes("--keep");
 const untilSigned = process.argv.includes("--until-signed");
 const baseArg = process.argv.indexOf("--base");
+const vehiclesArg = process.argv.indexOf("--vehicles");
+// Tipul vehiculului pentru A și B (car | motorcycle | van); cu el se trimite și o schiță cu șablon.
+const [kindA, kindB] = vehiclesArg >= 0 ? process.argv[vehiclesArg + 1].split(",") : ["car", "car"];
+const deleteArg = process.argv.indexOf("--delete");
 const APP = baseArg >= 0 ? process.argv[baseArg + 1] : "http://localhost:3000";
 const SB = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -91,6 +96,10 @@ async function cleanup(id) {
 }
 
 let claimId = null;
+if (deleteArg >= 0) {
+  await cleanup(process.argv[deleteArg + 1]);
+  process.exit(0);
+}
 try {
   // A și B trebuie să fie clienți care există în baza de date (al doilea client din fixtures a fost scos la curățenia de demo).
   const A = docs[0], B = docs[2];
@@ -103,11 +112,24 @@ try {
   });
   claimId = created.id;
   console.log(`   ref ${created.ref}`);
-  const circA = { checked: [1, 12], impact: "front", damage: "Bară față ușor deformată (test)", notes: "Test de fum automat." };
-  await call("A trimite circumstanțele", "PATCH", `/api/claims/${claimId}`, { token: created.aToken, body: { circumstances: circA } });
+  const circA = { checked: [1, 12], impact: "front", vehicleKind: kindA, damage: "Bară față ușor deformată (test)", notes: "Test de fum automat." };
+  const sketch =
+    vehiclesArg >= 0
+      ? {
+          mode: "template",
+          road: "crossing",
+          streetNames: ["", ""],
+          vehicles: {
+            A: { x: 238, y: 168, angle: 0, path: [{ x: 238, y: 218 }, { x: 238, y: 196 }] },
+            B: { x: 300, y: 95, angle: -90, path: [{ x: 400, y: 95 }, { x: 328, y: 95 }] },
+          },
+          signs: [],
+        }
+      : undefined;
+  await call("A trimite circumstanțele", "PATCH", `/api/claims/${claimId}`, { token: created.aToken, body: { circumstances: circA, sketch } });
   await call("B deschide linkul", "GET", `/api/claims/join/${created.joinToken}`);
   await call("B trimite datele", "POST", `/api/claims/join/${created.joinToken}`, {
-    body: { documents: documentsOf(B), circumstances: { checked: [3], impact: "rear", damage: "Bară spate (test)", notes: "" } },
+    body: { documents: documentsOf(B), circumstances: { checked: [3], impact: "rear", vehicleKind: kindB, damage: "Bară spate (test)", notes: "" } },
   });
   const sig = signaturePng();
   await call("A semnează", "PUT", "/api/party/signature", { token: created.aToken, body: { signature: sig } });

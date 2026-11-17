@@ -309,7 +309,7 @@ export function FormSheet({ form }: { form: FormData }) {
           <DamageBox p={form.a} who="a" letter="A" />
         </div>
         <section className="af-sketch">
-          <SketchView sketch={form.sketch} />
+          <SketchView sketch={form.sketch} kinds={{ A: form.a.vehicleKind, B: form.b.vehicleKind }} />
         </section>
         <div className="af-side b">
           <ImpactBox p={form.b} who="b" letter="B" />

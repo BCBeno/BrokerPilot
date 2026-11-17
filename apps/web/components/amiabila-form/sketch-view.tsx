@@ -10,6 +10,10 @@ import {
   type Sketch,
   type SketchVehicle,
 } from "@/lib/amiabila/sketch";
+import type { VehicleKind } from "@/lib/amiabila/content";
+
+/** Ce vehicul are fiecare șofer (pasul „Impact”); lipsă = autoturism. */
+export type SketchKinds = Partial<Record<"A" | "B", VehicleKind>>;
 
 /**
  * Desenează caseta 13 („Schița accidentului la momentul producerii impactului”) din modelul `Sketch`.
@@ -175,9 +179,35 @@ function Sign({ kind, x, y, grab, id }: { kind: SignKind; x: number; y: number; 
   );
 }
 
-/** Mașina văzută de sus, cu botul în sus; folosită și la schița cu șablon, și la desenul liber. */
-function CarBody({ who, counterRotate = 0 }: { who: "A" | "B"; counterRotate?: number }): ReactNode {
+/** Vehiculul văzut de sus, cu botul în sus; folosit și la schița cu șablon, și la desenul liber. */
+function CarBody({ who, kind = "car", counterRotate = 0 }: { who: "A" | "B"; kind?: VehicleKind; counterRotate?: number }): ReactNode {
   const c = COLORS[who];
+  const label = (y: number, size: number) => (
+    <text textAnchor="middle" y={y} fontSize={size} fontWeight={700} fill={c.text} transform={`rotate(${-counterRotate} 0 0)`}>
+      {who}
+    </text>
+  );
+  if (kind === "motorcycle") {
+    return (
+      <>
+        <rect x={-3} y={-24} width={6} height={12} rx={3} fill={INK} />
+        <rect x={-3} y={12} width={6} height={12} rx={3} fill={INK} />
+        <line x1={-10} y1={-11} x2={10} y2={-11} stroke={INK} strokeWidth={2.2} strokeLinecap="round" />
+        <ellipse cx={0} cy={0} rx={7} ry={13} fill={c.fill} stroke={INK} strokeWidth={1.2} />
+        {label(3.5, 10)}
+      </>
+    );
+  }
+  if (kind === "van") {
+    return (
+      <>
+        <rect x={-12} y={-30} width={24} height={60} rx={4} fill={c.fill} stroke={INK} strokeWidth={1.2} />
+        <rect x={-9} y={-26} width={18} height={8} rx={2} fill="#ffffff" fillOpacity={0.55} />
+        <line x1={-12} y1={-14} x2={12} y2={-14} stroke={INK} strokeWidth={1} />
+        {label(8, 13)}
+      </>
+    );
+  }
   return (
     <>
       <rect x={-11} y={-22} width={22} height={44} rx={5} fill={c.fill} stroke={INK} strokeWidth={1.2} />
@@ -190,7 +220,7 @@ function CarBody({ who, counterRotate = 0 }: { who: "A" | "B"; counterRotate?: n
   );
 }
 
-function Car({ who, v, grab }: { who: "A" | "B"; v: SketchVehicle; grab?: Grab }): ReactNode {
+function Car({ who, v, kind, grab }: { who: "A" | "B"; v: SketchVehicle; kind?: VehicleKind; grab?: Grab }): ReactNode {
   const c = COLORS[who];
   const tip = endAngle(v.path);
   const last = v.path[v.path.length - 1];
@@ -206,14 +236,14 @@ function Car({ who, v, grab }: { who: "A" | "B"; v: SketchVehicle; grab?: Grab }
       )}
       <g transform={`translate(${v.x} ${v.y}) rotate(${v.angle})`}>
         <Grabbable id={who} grab={grab} r={40} rotatable>
-          <CarBody who={who} counterRotate={v.angle} />
+          <CarBody who={who} kind={kind} counterRotate={v.angle} />
         </Grabbable>
       </g>
     </g>
   );
 }
 
-function Drawing({ sketch, grab }: { sketch: DrawingSketch; grab?: Grab }): ReactNode {
+function Drawing({ sketch, kinds, grab }: { sketch: DrawingSketch; kinds?: SketchKinds; grab?: Grab }): ReactNode {
   return (
     <>
       {sketch.strokes.map((pts, i) => (
@@ -230,7 +260,7 @@ function Drawing({ sketch, grab }: { sketch: DrawingSketch; grab?: Grab }): Reac
       {sketch.marks.map((m) => (
         <g key={m.who} transform={`translate(${m.x} ${m.y}) rotate(${m.angle})`}>
           <Grabbable id={m.who} grab={grab} r={40} rotatable>
-            <CarBody who={m.who} counterRotate={m.angle} />
+            <CarBody who={m.who} kind={kinds?.[m.who]} counterRotate={m.angle} />
           </Grabbable>
         </g>
       ))}
@@ -240,6 +270,8 @@ function Drawing({ sketch, grab }: { sketch: DrawingSketch; grab?: Grab }): Reac
 
 type SketchViewProps = {
   sketch: Sketch | null;
+  /** Motocicletă / autoutilitară în loc de mașină, după pasul „Impact” al fiecărui șofer. */
+  kinds?: SketchKinds;
   /** Doar în editor: trage și rotește mașinile, trage semnele. */
   grab?: Grab;
   /** Doar în editor: ref și evenimente pe SVG (desen liber, mutare). */
@@ -247,7 +279,7 @@ type SketchViewProps = {
   svgProps?: SVGProps<SVGSVGElement>;
 };
 
-export function SketchView({ sketch, grab, svgRef, svgProps }: SketchViewProps) {
+export function SketchView({ sketch, kinds, grab, svgRef, svgProps }: SketchViewProps) {
   return (
     <svg
       ref={svgRef}
@@ -286,11 +318,11 @@ export function SketchView({ sketch, grab, svgRef, svgProps }: SketchViewProps) 
           {sketch.signs.map((s, i) => (
             <Sign key={i} id={`sign-${i}`} kind={s.kind} x={s.x} y={s.y} grab={grab} />
           ))}
-          <Car who="A" v={sketch.vehicles.A} grab={grab} />
-          <Car who="B" v={sketch.vehicles.B} grab={grab} />
+          <Car who="A" v={sketch.vehicles.A} kind={kinds?.A} grab={grab} />
+          <Car who="B" v={sketch.vehicles.B} kind={kinds?.B} grab={grab} />
         </>
       )}
-      {sketch?.mode === "drawing" && <Drawing sketch={sketch} grab={grab} />}
+      {sketch?.mode === "drawing" && <Drawing sketch={sketch} kinds={kinds} grab={grab} />}
       {sketch?.mode === "photo" && (
         <>
           <rect width={SKETCH_W} height={SKETCH_H} fill="#ffffff" />
