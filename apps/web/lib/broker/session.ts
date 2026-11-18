@@ -2,7 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { getServerClient } from "@/lib/supabase/server";
 
-export type Broker = { id: string; name: string };
+export type Broker = { id: string; name: string; is_admin: boolean };
+
+const BROKER_COLUMNS = "id, name, is_admin";
 
 /**
  * Brokerul logat și clientul lui (RLS: doar brokeri activi). Fără sesiune → login; cont fără broker activ → login cu mesaj.
@@ -14,7 +16,7 @@ export async function requireBroker(): Promise<{ db: SupabaseClient; broker: Bro
   const { data } = await db.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) redirect("/broker/login");
-  const { data: broker } = await db.from("brokers").select("id, name").eq("auth_user_id", userId).eq("active", true).maybeSingle();
+  const { data: broker } = await db.from("brokers").select(BROKER_COLUMNS).eq("auth_user_id", userId).eq("active", true).maybeSingle<Broker>();
   if (!broker) redirect("/broker/login?e=not_broker");
   return { db, broker };
 }
@@ -26,6 +28,6 @@ export async function getBrokerOrNull(): Promise<{ db: SupabaseClient; broker: B
   const { data } = await db.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) return null;
-  const { data: broker } = await db.from("brokers").select("id, name").eq("auth_user_id", userId).eq("active", true).maybeSingle();
+  const { data: broker } = await db.from("brokers").select(BROKER_COLUMNS).eq("auth_user_id", userId).eq("active", true).maybeSingle<Broker>();
   return broker ? { db, broker } : null;
 }

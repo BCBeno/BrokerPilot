@@ -20,6 +20,10 @@ const serverSchema = z.object({
   TWILIO_AUTH_TOKEN: z.string().min(1).optional(),
   TWILIO_VERIFY_SERVICE_SID: z.string().min(1).optional(),
   OTP_HASH_PEPPER: z.string().min(16).optional(),
+  /** Linkurile de acces pentru brokeri, trimise pe e-mail. Fără cheie, adminul copiază linkul. */
+  RESEND_API_KEY: z.string().min(1).optional(),
+  /** Expeditorul, de pe un domeniu verificat în Resend. `onboarding@resend.dev` trimite doar spre adresa contului Resend. */
+  MAIL_FROM: z.string().min(3).default("BrokerPilot <onboarding@resend.dev>"),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

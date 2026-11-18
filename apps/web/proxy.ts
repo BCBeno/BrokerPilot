@@ -24,8 +24,9 @@ export async function proxy(request: NextRequest) {
   });
 
   const { data } = await supabase.auth.getClaims();
-  const isLogin = request.nextUrl.pathname === "/broker/login";
-  if (!data?.claims && !isLogin) {
+  // Login și setarea parolei din linkul de acces (brokerul nu are încă sesiune) rămân deschise.
+  const isPublic = request.nextUrl.pathname === "/broker/login" || request.nextUrl.pathname === "/broker/parola";
+  if (!data?.claims && !isPublic) {
     const login = request.nextUrl.clone();
     login.pathname = "/broker/login";
     login.search = "";

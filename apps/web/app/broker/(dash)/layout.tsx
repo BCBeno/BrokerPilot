@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BrokerNav } from "@/components/broker/broker-nav";
 import { CopilotChat } from "@/components/broker/copilot-chat";
 import { displayName } from "@/lib/broker/format";
@@ -16,10 +17,12 @@ export default async function BrokerShell({ children }: { children: React.ReactN
       <header className="flex shrink-0 items-center justify-between gap-3 bg-navy px-4 py-1.5 text-navy-foreground">
         <div className="flex min-w-0 items-center gap-4">
           <span className="text-[15px] font-semibold">BrokerPilot</span>
-          <BrokerNav />
+          <BrokerNav isAdmin={broker.is_admin} />
         </div>
         <div className="flex items-center gap-3 text-[13px]">
-          <span className="hidden text-navy-muted sm:inline">{displayName(broker.name)}</span>
+          <Link href="/broker/profil" title="Profil" className="max-w-[10rem] truncate rounded px-2 py-1 text-navy-muted underline-offset-4 hover:bg-white/10 hover:underline">
+            {displayName(broker.name)}
+          </Link>
           <form action={signOut}>
             <button type="submit" className="rounded px-2 py-1 text-navy-foreground hover:bg-white/10">
               Ieșire

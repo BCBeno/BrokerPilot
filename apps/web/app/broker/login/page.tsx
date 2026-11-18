@@ -21,6 +21,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h1 className="text-xl font-semibold">Autentificare</h1>
           <p className="mt-1 text-sm text-muted-foreground">Contul de broker al agenției.</p>
           <LoginForm note={e ? (NOTES[e] ?? null) : null} />
+          <p className="mt-4 text-xs text-muted-foreground">Ați uitat parola? Cereți administratorului un link nou din pagina Echipă.</p>
         </div>
       </main>
     </div>

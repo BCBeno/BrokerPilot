@@ -13,12 +13,15 @@ const ITEMS = [
   { href: "/broker/costuri", label: "Costuri AI", match: (p: string) => p.startsWith("/broker/costuri") },
 ];
 
-/** Navigarea din banda de sus; secțiunea curentă e subliniată (nu doar colorată). */
-export function BrokerNav() {
+const ADMIN_ITEMS = [{ href: "/broker/echipa", label: "Echipă", match: (p: string) => p.startsWith("/broker/echipa") }];
+
+/** Navigarea din banda de sus; secțiunea curentă e subliniată (nu doar colorată). „Echipă” apare doar la administratori. */
+export function BrokerNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
+  const items = isAdmin ? [...ITEMS, ...ADMIN_ITEMS] : ITEMS;
   return (
     <nav aria-label="Secțiuni" className="flex items-center gap-1 overflow-x-auto">
-      {ITEMS.map((item) => {
+      {items.map((item) => {
         const active = item.match(pathname);
         return (
           <Link
