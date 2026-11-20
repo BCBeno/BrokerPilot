@@ -7,7 +7,7 @@ import type { Issue, Severity } from "@/lib/verify/checks";
 import type { Highlight, VerifyReport } from "@/lib/verify/pipeline";
 import { cn } from "@/lib/utils";
 
-type ApiReport = VerifyReport & { fileName: string; pageCount: number };
+type ApiReport = VerifyReport & { fileName: string; pageCount: number; source?: "text" | "ocr" };
 type Decision = "accepted" | "rejected";
 
 const SEVERITY_LABEL: Record<Severity, string> = { critical: "Eroare", warning: "Atenție", info: "Sugestie" };
@@ -123,7 +123,7 @@ export function DocumentVerifier({ clients }: { clients: Array<{ id: string; ful
     const blob = new Blob([reportToText(report, decisions)], { type: "text/plain;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `raport-${report.fileName.replace(/\.pdf$/i, "")}.txt`;
+    a.download = `raport-${report.fileName.replace(/\.(pdf|jpe?g|png)$/i, "")}.txt`;
     a.click();
     URL.revokeObjectURL(a.href);
   }
@@ -132,11 +132,11 @@ export function DocumentVerifier({ clients }: { clients: Array<{ id: string; ful
     <div className="space-y-3 p-4 text-[13px]">
       <form ref={formRef} onSubmit={onSubmit} className="flex flex-wrap items-end gap-3 rounded-md border border-border p-3">
         <label className="block min-w-[220px] flex-1">
-          <span className="mb-1 block font-medium">Document PDF (cu text)</span>
+          <span className="mb-1 block font-medium">Document (PDF, scan sau poză)</span>
           <input
             type="file"
             name="file"
-            accept="application/pdf,.pdf"
+            accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
             required
             className="block w-full text-[13px] file:mr-3 file:h-8 file:rounded-md file:border file:border-border file:bg-muted file:px-3 file:text-[13px] file:font-medium"
           />
@@ -175,6 +175,12 @@ export function DocumentVerifier({ clients }: { clients: Array<{ id: string; ful
                 <Download aria-hidden /> Exportă raportul
               </Button>
             </div>
+
+            {report.source === "ocr" && (
+              <p role="note" className="rounded-md bg-tone-todo px-3 py-2 text-tone-todo-foreground">
+                Textul a fost citit prin OCR local și poate conține greșeli de recunoaștere (de exemplu 0 în loc de O într-un VIN). Verificați în document valorile marcate înainte să le considerați erori.
+              </p>
+            )}
 
             <section aria-labelledby="sigur">
               <h2 id="sigur" className="mb-1 font-semibold">

@@ -1,0 +1,20 @@
+REM Malduino Elite - Sofer A (date fictive SPECIMEN, fixture 01)
+REM Foloseste: click in "Nume si prenume" (primul camp din "Permisul si datele de contact"), apoi pornesti scriptul.
+REM Doar ASCII: fara diacritice (Malduino tasteaza layout US).
+DELAY 3000
+STRING Grigore Andreea
+TAB
+STRING TST1000000
+TAB
+STRING B
+TAB
+STRING 11.03.2029
+TAB
+STRING 14.06.1990
+TAB
+STRING Str. Exemplu 1, Bucuresti, Sector 1
+TAB
+STRING 0722000001
+TAB
+STRING andreea.test@example.com
+TAB

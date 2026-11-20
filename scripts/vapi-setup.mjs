@@ -81,7 +81,9 @@ const assistant = {
     model: MODEL_VOICE || "gpt-4.1",
     temperature: 0.3,
     messages: [{ role: "system", content: readFileSync(new URL("../prompts/ana-system.md", import.meta.url), "utf8") }],
-    tools,
+    // Funcțiile sunt tool-uri Vapi separate (vizibile în Dashboard → Tools), atașate prin toolIds; doar transferCall rămâne inline.
+    tools: tools.filter((t) => t.type !== "function"),
+    toolIds: [], // completat mai jos, după ce tool-urile sunt create/actualizate
   },
   // Română explicită: „multi” a transcris româna ca maghiară/portugheză/arabă (test 12.11). Alternativă: deepgram nova-2 cu language "ro".
   transcriber: process.env.STT === "deepgram" ? { provider: "deepgram", model: "nova-2", language: "ro" } : { provider: "azure", language: "ro-RO" },
@@ -126,6 +128,18 @@ const api = async (path, init = {}) => {
   if (!res.ok) throw new Error(`${init.method ?? "GET"} ${path} → ${res.status}: ${text.slice(0, 600)}`);
   return JSON.parse(text);
 };
+
+// Tool-uri reutilizabile: creează sau actualizează (după numele funcției). PATCH nu acceptă `type`.
+const existingTools = await api("/tool?limit=100");
+for (const t of tools.filter((x) => x.type === "function")) {
+  const found = existingTools.find((e) => e.type === "function" && e.function?.name === t.function.name);
+  const { type, ...patchBody } = t;
+  const savedTool = found
+    ? await api(`/tool/${found.id}`, { method: "PATCH", body: JSON.stringify(patchBody) })
+    : await api("/tool", { method: "POST", body: JSON.stringify(t) });
+  assistant.model.toolIds.push(savedTool.id);
+  console.log(`${found ? "Actualizat" : "Creat"} tool: ${t.function.name}`);
+}
 
 const list = await api("/assistant?limit=100");
 const existing = list.find((a) => a.name === NAME);

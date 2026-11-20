@@ -54,6 +54,7 @@ function policy(o) {
   ];
   const lines = rows.map(([k, v]) => `<div class="r"><span>${esc(k)}:</span> ${esc(v)}</div>`).join("");
   return `<!doctype html><meta charset="utf-8"><style>
+html{background:#fff;color-scheme:light}
 body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:40px 56px;font-size:14px;line-height:1.55}
 h1{font-size:22px;margin:0 0 2px} .sp{color:#a00;font-weight:700;font-size:12px;margin-bottom:22px}
 .r span{display:inline-block;min-width:210px;color:#444} h2{font-size:15px;margin:22px 0 4px}
@@ -103,6 +104,9 @@ try {
     const page = await browser.newPage();
     await page.setContent(policy(c.opts), { waitUntil: "load" });
     await page.pdf({ path: join(OUT, c.file), format: "A4", printBackground: true });
+    // Aceeași poliță ca imagine (fără strat de text), pentru OCR: `<nume>.png`.
+    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
+    await page.screenshot({ path: join(OUT, c.file.replace(/\.pdf$/, ".png")), fullPage: true });
     await page.close();
     console.log("scris", c.file);
   }

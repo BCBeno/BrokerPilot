@@ -19,8 +19,27 @@ services:
     ports:
       # Ascultă pe toate interfețele LXC-ului, ca tunelul Cloudflare din celălalt LXC să ajungă la el.
       - "3000:3000"
+    environment:
+      # Serviciul OCR e doar în rețeaua compose (fără port publicat).
+      OCR_URL: http://ocr:8080
     restart: unless-stopped
     mem_limit: 1536m   # Chromium (PDF) are nevoie de ~300–500 MB în plus
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # OCR local (Tesseract `ron`) pentru verificatorul de documente: scanurile și pozele nu pleacă în cloud.
+  # Se construiește pe gazdă (`docker compose build ocr`); watchtower actualizează doar `web`.
+  ocr:
+    build: ./ocr
+    image: brokerpilot-ocr:local
+    environment:
+      OCR_SECRET: ${OCR_SECRET:-}
+    ports:
+      # Doar loopback (pentru `npm run dev` pe laptop, cu OCR_URL=http://localhost:8099); `web` îl folosește prin rețeaua compose.
+      - "127.0.0.1:8099:8080"
+    restart: unless-stopped
+    mem_limit: 768m
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }

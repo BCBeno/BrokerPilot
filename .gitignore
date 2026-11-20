@@ -31,3 +31,6 @@ docs/
 .claude/skills/
 CLAUDE.md
 .mcp.json
+
+# Poze de acte reale folosite la teste locale (nu se comit)
+data/fixtures/specimens/talon.jpg

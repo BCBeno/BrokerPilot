@@ -1,0 +1,20 @@
+REM Malduino Elite - Sofer B (date fictive SPECIMEN, fixture 02)
+REM Foloseste: click in "Nume si prenume" (primul camp din "Permisul si datele de contact"), apoi pornesti scriptul.
+REM Doar ASCII: fara diacritice (Malduino tasteaza layout US).
+DELAY 3000
+STRING Albu Bogdan
+TAB
+STRING TST1000137
+TAB
+STRING B
+TAB
+STRING 10.01.2031
+TAB
+STRING 03.09.1985
+TAB
+STRING Str. Proba 7, Cluj-Napoca, Cluj
+TAB
+STRING 0733000002
+TAB
+STRING bogdan.test@example.com
+TAB

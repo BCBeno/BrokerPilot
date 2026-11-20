@@ -14,6 +14,9 @@ const serverSchema = z.object({
   MODEL_VISION: z.string().min(1).optional(),
   /** Text redactat (Groq), de ex. `openai/gpt-oss-20b`. */
   MODEL_TEXT: z.string().min(1).optional(),
+  /** Serviciul OCR local (`infra/ocr`), de ex. `http://localhost:8080` în dev sau `http://ocr:8080` în compose. Fără el, scanurile nu se verifică. */
+  OCR_URL: z.url().optional(),
+  OCR_SECRET: z.string().min(1).optional(),
   AI_DAILY_BUDGET_USD: z.coerce.number().positive().default(5),
   /** OTP pe SMS (Twilio Verify). Fără ele, în dev codul apare în consola serverului. */
   TWILIO_ACCOUNT_SID: z.string().min(1).optional(),
